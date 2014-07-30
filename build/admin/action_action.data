@@ -1,0 +1,78 @@
+update PID URL|modify object|PID assignment|Source
+update PID URL|date|PID assignment|Source
+update PID URL|period|PID assignment|Source
+update PID checksum|check replicas|integrity check|Source
+update PID checksum|date|integrity check|Source
+update PID checksum|period|integrity check|Source
+update PID child|create object|PID assignment|Source
+update PID child|date|PID assignment|Source
+update PID child|period|PID assignment|Source
+search PID by URL|check replicas|integrity check|Source
+search PID by URL|date|integrity check|Source
+search PID by URL|period|integrity check|Source
+search PID by PID|check replicas|integrity check|Source
+search PID by PID|date|integrity check|Source
+search PID by PID|period|integrity check|Source
+search ROR by PID|check replicas|integrity check|Source
+search ROR by PID|date|integrity check|Source
+search ROR by PID|period|integrity check|Source
+create PID|create object|PID assignment|Source
+create PID|date|PID assignment|Source
+create PID|period|PID assignment|Source
+get checksum by path|check replicas|integrity check|Source
+get checksum by path|date|integrity check|Source
+get checksum by path|period|integrity check|Source
+replicate|replicate|replication|Source
+replicate|date|replication|Source
+replicate|period|replication|Source
+check replicas|check replicas|integrity check|Source
+check replicas|date|integrity check|Source
+check replicas|period|integrity check|Source
+remove object|remove object|manage object|Source
+remove object|date|manage object|Source
+remove object|period|manage object|Source
+copy object|modify object|manage object|Source
+copy object|date|manage object|Source
+copy object|period|manage object|Source
+compare objects by checksum|check replicas|integrity check|Source
+compare objects by checksum|date|integrity check|Source
+compare objects by checksum|period|integrity check|Source
+update PID URL|modify object|PID assignment|Target
+update PID URL|date|PID assignment|Target
+update PID URL|period|PID assignment|Target
+update PID checksum|check replicas|integrity check|Target
+update PID checksum|date|integrity check|Target
+update PID checksum|period|integrity check|Target
+update PID child|create object|PID assignment|Target
+update PID child|date|PID assignment|Target
+update PID child|period|PID assignment|Target
+search PID by URL|check replicas|integrity check|Target
+search PID by URL|date|integrity check|Target
+search PID by URL|period|integrity check|Target
+search PID by PID|check replicas|integrity check|Target
+search PID by PID|date|integrity check|Target
+search PID by PID|period|integrity check|Target
+search ROR by PID|check replicas|integrity check|Target
+search ROR by PID|date|integrity check|Target
+search ROR by PID|period|integrity check|Target
+create PID|create object|PID assignment|Target
+create PID|date|PID assignment|Target
+create PID|period|PID assignment|Target
+get checksum by path|check replicas|integrity check|Target
+get checksum by path|date|integrity check|Target
+get checksum by path|period|integrity check|Target
+replicate|replicate|replication|Target
+replicate|date|replication|Target
+replicate|period|replication|Target
+check replicas|check replicas|integrity check|Target
+check replicas|date|integrity check|Target
+check replicas|period|integrity check|Target
+remove object|remove object|manage object|Target
+remove object|date|manage object|Target
+remove object|period|manage object|Target
+copy object|modify object|manage object|Target
+copy object|date|manage object|Target
+copy object|period|manage object|Target
+compare objects by checksum|check replicas|integrity check|Target
+compare objects by checksum|date|integrity check|Target
+compare objects by checksum|period|integrity check|Target

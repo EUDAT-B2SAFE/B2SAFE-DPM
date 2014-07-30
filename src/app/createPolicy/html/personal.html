@@ -1,0 +1,32 @@
+<data-ng-form name="personalinfo">
+    Policy Name: <input type="text" data-ng-model="policy.name"
+        name="policyname" data-ng-minlength="3" required/><br/>
+    <div data-ng-show="invalidFlag.policyName">
+        <span id="error" data-ng-show="personalinfo.policyname.$invalid">
+            A name must be supplied
+        </span>
+    </div>
+    Version: <input type="text" data-ng-model="policy.version"
+        name="policyversion" data-validate-input-number required/><br/>
+    <div data-ng-show="personalinfo.policyversion.$invalid && invalidFlag.policyVersion">
+        <span id="error" data-ng-show="personalinfo.policyversion.$error.required">
+            Version is invalid (should be a number)
+        </span>
+    </div>
+    Author: <input type="text" data-ng-model="policy.author" 
+        name="policyauthor" data-ng-minlength="3" 
+        ng-readonly="policy.author" required/><br/>
+    <div data-ng-show="invalidFlag.policyAuthor">
+        <span id="error" data-ng-show="personalinfo.policyauthor.$invalid">
+            An author must be supplied
+        </span>
+    </div>
+    Community: <input type="text" data-ng-model="policy.community" 
+        name="policycommunity" data-ng-minlength="3" required/><br>
+    <div data-ng-show="invalidFlag.policyCommunity">
+        <span id="error" data-ng-show="personalinfo.policycommunity.$invalid">
+            A community must be supplied
+        </span>
+    </div>
+</data-ng-form>
+ 
