@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    >
+
+    <xs:include schemaLocation="oneper01.xsd"/>
+    <xs:include schemaLocation="oneper02.xsd"/>
+
+    <xs:element name="root00" type="oneperType00_1" />
+
+    <xs:complexType name="oneperType00_1">
+        <xs:sequence>
+            <xs:element name="inner01" type="oneperType01_1" />
+            <xs:element name="inner02" type="oneperType01_2" />
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>
