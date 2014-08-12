@@ -1,14 +1,15 @@
 # Data Policy Manager (B2Save-DPM)
-This package contains the code for the web-based data policy manager interface.
+This package contains the code for the data policy manager.
+The web-based interface is under the web directory.
 The interface allows users to create and download policies. The users needs
 to be a valid community manager and needs to register with the DPM. Once
 authorised the user can create policies, list all the policies they are
 permitted to see and download policies.
 
-## Building the software
-The DPM consists of html, javascript, css and python scripts that need
-to be assembled for deployment. The assembly is done using the grunt
-task manager tool.
+## Building the web interface
+The DPM web interface consists of html, javascript, css and python scripts 
+that need to be assembled for deployment. The assembly is done using the 
+grunt task manager tool.
 
 1. If you don't have node (http://nodejs.org/) installed then download and
    install it.
@@ -19,6 +20,7 @@ task manager tool.
 '''
 npm install -g grunt-cli
 '''
+2. cd to the web directory
 
 3. You will need to install the various grunt modules:
 '''
