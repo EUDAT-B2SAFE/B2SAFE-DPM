@@ -21,11 +21,18 @@ module.exports = function (grunt) {
                     'build/js/dpm_app.js': ['src/app/createPolicy/js/createUtils.js',
                                             'src/app/common/js/common_utils.js',
                                             'src/app/*/js/*.js', 
+                                            '!src/app/admin/js/*.js',
                                             '!src/app/createProfile/js/*.js'],
                     'build/js/register_app.js': [
                     'src/app/createProfile/js/register_app.js',
                     'src/app/common/js/common_utils.js',
                     'src/app/createProfile/js/*.js'],
+                    'build/js/admin_profile_app.js': [
+                    'src/app/admin/js/admin_profile_app.js',
+                    'src/app/admin/js/*.js'],
+                    'build/js/frontPageApp.js': [
+                    'src/app/frontPage/js/frontPageApp.js',
+                    'src/app/frontPage/js/FrontPageCtrl.js'],
                 },
             },
             // Build the config file - we have different locations for a
@@ -50,7 +57,12 @@ module.exports = function (grunt) {
             },
             // Build the css stylesheet
             css: {
-                files: {"build/css/dpm.css": ['src/app/*/css/*'],
+                files: {"build/css/dpm.css": ['src/app/*/css/*',
+                        '!/src/app/admin/css/*',
+                        '!src/app/frontPage/css/*'],
+                        "build/css/admin.css": ['src/app/admin/css/*'],
+                        "build/css/frontpage.css":[
+                        "src/app/frontPage/css/*"],
                 },
             },
         },
@@ -95,12 +107,18 @@ module.exports = function (grunt) {
                     {expand: true,
                         src: ['src/app/common/config/*.schema'],
                         dest: 'build/admin', flatten: true},
+                    {expand: true,
+                        src: ['src/app/admin/config/*.txt'],
+                        dest: 'build/cgi/dpm/config', flatten: true},
                 ],
             },
             // Copy the html files
             html: {
                 files: [{expand: true,
                             src: ['src/app/common/html/dpm.html'],
+                            dest: 'build', flatten: true},
+                        {expand: true,
+                            src: ['src/app/common/html/.htaccess'],
                             dest: 'build', flatten: true},
                         {expand: true,
                             src: ['src/app/createProfile/index.html'],
@@ -129,6 +147,12 @@ module.exports = function (grunt) {
                             cwd: 'src/app/common/img',
                             src: ['**'],
                             dest: 'build/img'},
+                        {expand: true,
+                            src: ['src/app/admin/html/admin_profile.html'],
+                            dest: 'build', flatten: 'true'},
+                        {expand: true,
+                            src: ['src/app/frontPage/html/frontpage.html'],
+                            dest: 'build', flatten: 'true'},
                         ],
             }
         }
@@ -136,7 +160,8 @@ module.exports = function (grunt) {
     var env = grunt.option('env') || 'dev';
     if (env === 'prod') {
         grunt.registerTask('build', ['jshint', 'concat:js', 
-                'concat:prod_config', 'copy']);
+                'concat:prod_config', 'concat:css', 'copy:python',
+                'copy:script', 'copy:html', 'copy:config']);
     } else {
         grunt.registerTask('build', ['jshint', 'concat:js',
                 'concat:local_config', 'concat:css', 'copy:python',
