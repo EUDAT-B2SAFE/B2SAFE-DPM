@@ -1,0 +1,15 @@
+.ng-table {
+    border: 1px solid #000;
+}
+table.ng-table thead th:not(:first-child) {
+    border-left: 1px solid #000;
+}
+table.ng-table thead th:not(:last-child) {
+    border-right: 1px solid #000;
+}
+table.ng-table tbody td:not(:first-child) {
+    border-left: 1px solid #000;
+}
+table.ng-table tbody td:not(:last-child) {
+    border-right: 1px solid #000;
+}

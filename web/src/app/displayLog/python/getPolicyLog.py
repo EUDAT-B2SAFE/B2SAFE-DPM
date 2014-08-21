@@ -35,10 +35,9 @@ def getLogs(config, username):
         uuid_num = auuid.split(config.get("POLICY_SCHEMA", "uniqueid"))[1]
         
         # We need to skip the log entries if they don't correspond to the
-        # logged in user
-        author_key = "%s%s" % (config.get("POLICY_SCHEMA", "author"),
-                uuid_num)
-        if (db.get(author_key) != username):
+        # logged in users community
+        community_key = "policy_community_%s" % (uuid_num)
+        if (db.get(community_key) != username):
             continue
 
         log_entries = db.get("%s%s" % \

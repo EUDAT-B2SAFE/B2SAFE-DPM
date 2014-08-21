@@ -48,8 +48,7 @@ function listCtrl($scope, $sce, $http, $filter, $location, logPageList,
     // when the author is filled we need to make use of the promise
     userProfile.promise.then(function (response) {
         $http({method: "GET",
-            url: "/cgi-bin/dpm/getPolicyData.py",
-            params: {username: policy.author} }).success(function(data, 
+            url: "/cgi-bin/dpm/getPolicyData.py"}).success(function(data, 
                     status, headers, config) {
                         var i;
                         var j;

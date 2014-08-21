@@ -19,40 +19,49 @@ def usage():
 def openDatabase(dbfile):
     '''Open the database file
     '''
-    conn = None
-    if (not os.path.isfile(dbfile)):
-        conn = sqlite3.connect(dbfile)
-        cur = conn.cursor()
-        cur.execute('''create table user(user_id integer, name text, email
-            text)''')
-        cur.execute('''create table community(community_id integer, 
-                name)''')
-        cur.execute('''create table user_community(user_comm_id integer,
-            user_id integer, community_id integer)''')
-        conn.commit()
-    else:
-        conn = sqlite3.connect(dbfile)
+    conn = sqlite3.connect(dbfile)
     return conn
 
 def queryProfile(conn, username):
     '''Function to return the user profile if it exists
     '''
+    dpmAdmin = False
     user_profile = {}
     u_comm = []
     u_comm_d = {}
     u_user = {}
+    communities = []
 
     cur = conn.cursor()
     cur.execute('''select email from user where name = ?''',
             (username,))
     u_email = cur.fetchone()[0]
-
-    cur.execute('''select community.name from community, user, 
-        user_community where user.name = ? and 
-        user.user_id = user_community.user_id and 
-        user_community.community_id = community.community_id''',
+    # Check if the user is a dpm admin
+    cur.execute('''select roles.role_id from user_community, user, roles,
+        status  where user.name = ? and 
+        user.user_id = user_community.user_id and
+        roles.name = 'dpm admin' and status.status = 'approved' and
+        status.status_id = user_community.status_id and 
+        roles.role_id = user_community.role_id''',
         (username,))
-    communities = cur.fetchall()
+    roles = cur.fetchall()
+    if (len(roles) > 0):
+        dpmAdmin = True
+
+    # If the dpm admin we fetch all the communities
+    if (dpmAdmin):
+        cur.execute('''select community.name from community 
+                where community.name <> 'all' ''')
+        communities = cur.fetchall()
+    else:
+        cur.execute('''select community.name from community, user, status, 
+            user_community where user.name = ? and 
+            user.user_id = user_community.user_id and
+            user_community.status_id = status.status_id and
+            status.status = 'approved' and
+            user_community.community_id = community.community_id''',
+            (username,))
+        communities = cur.fetchall()
     conn.commit()
     u_comm = []
     u_comm_d = {}
@@ -71,7 +80,12 @@ def getProfile(config):
     '''
     print "Content-Type: application/json charset=utf-8"
     print ""
-    username = "adil"
+    
+    if (config.has_option("HTMLENV", "user")):
+        username = config.get("HTMLENV", "user")
+    else:
+        username = os.environ["REMOTE_USER"]
+
     dbfile = config.get("DATABASE", "profile_name")
 
     conn = openDatabase(dbfile)

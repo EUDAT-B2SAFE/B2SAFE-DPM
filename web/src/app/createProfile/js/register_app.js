@@ -13,7 +13,7 @@ function registerCtrl($scope, $http, cMgr, invalidFlags) {
     // Get the communities and roles
     getCommunities = $http({method:"GET", url: "/cgi-bin/dpm/getCommunities.py"}); 
     getCommunities.then(function(result) {
-        $scope.comm_types = result.data.communities;
+        $scope.comm_types = result.data;
         $scope.comm_roles = result.data.roles;
     });
 

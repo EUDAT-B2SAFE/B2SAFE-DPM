@@ -64,7 +64,13 @@ def getProfile(config):
     '''
     print "Content-Type: application/json charset=utf-8"
     print ""
-    username = "adil"
+
+    username = '' 
+    if (config.has_option("HTMLENV", "user")):
+        username = config.option("HTMLENV", "user")
+    else:
+        username = os.environ["REMOTE_USER"]
+
     dbfile = config.get("DATABASE", "profile_name")
 
     conn = openDatabase(dbfile)

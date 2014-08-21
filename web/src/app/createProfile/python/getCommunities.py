@@ -6,6 +6,7 @@ import ConfigParser
 
 def getCommunity(config):
     '''Function to get the list of communities
+    and roles
     '''
     communities = []
     data = {}
@@ -26,6 +27,14 @@ def getCommunity(config):
 
     data["communities"] = communities
     data["roles"] = roles
+    for arole in roles:
+        if (arole == "dpm admin"):
+            data[arole] = ["all"]
+        else:
+            data[arole] = []
+            for community in communities:
+                if (community != "all"):
+                    data[arole].append(community)
 
     print json.dumps(data)
 

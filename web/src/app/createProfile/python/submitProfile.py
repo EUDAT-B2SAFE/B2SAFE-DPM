@@ -11,7 +11,19 @@ import smtplib
 def submitRequest(config):
     '''Function to post the profile request to the database
     '''
-    dpm_admin = "DPM Admin"
+    dataVals = json.load(sys.stdin)
+    username = ''
+    if (config.has_option("HTMLENV", "user")):
+        username = config.get("HTMLENV", "user")
+    else:
+        username = os.environ["REMOTE_USER"]
+    
+    if (username.strip() != dataVals["username"].strip()):
+        print "Error: username mismatch!"
+        print "Exiting"
+        sys.exit(1)
+
+    dpm_admin = "dpm admin"
     smtpObj = smtplib.SMTP("localhost")
     
     email_from = 'noreply@dmpadmin.localhost'
@@ -21,41 +33,53 @@ def submitRequest(config):
             "the Data Policy Manager for the community '%s'.\n"
 
     reqRes = {}
-    dataVals = json.load(sys.stdin)
     dbfile = config.get("DATABASE", "profile_name")
     conn = sqlite3.connect(dbfile)
 
     cur = conn.cursor()
     for comm in dataVals["communities"]:
-        # Check the user for that community and that role doesn't already exist.
-        cur.execute('''select user_comm_id from user_community, roles,
+        # Check the same user for that community doesn't already exist.
+        cur.execute('''select user_comm_id from user_community,
                 community, user where user.email = ? and user.user_id =
                 user_community.user_id and community.name = ? and
-                community.community_id = user_community.community_id and
-                roles.name = ? and 
-                roles.role_id = user_community.role_id''',
-                (dataVals["email"], comm["name"], dataVals["role"])
+                community.community_id = user_community.community_id''',
+                (dataVals["email"].lower().strip(), 
+                    comm["name"].lower().strip())
                 )
 
         result = cur.fetchone()
+        print "result is ", result
         if (result != None):
             reqRes["roleExists"] = True
         else:
             # Store the request and email the DPM admin
-            
-            # Get the last user id and store the user info
             uid = 0
+            dpm_id = -1
             dpm_date_id = 0
             next_user_comm = 0
-            cur.execute('''select user_id from user where email = ?''',
-                    (dataVals["email"],))
-            u_id = cur.fetchone()
-            if (u_id is not None and u_id[0] is not None):
-                uid = int(u_id[0]) + 1
-            cur.execute('''insert into user (user_id, firstname, lastname,
-                    email)  values(?,?,?,?)''',
-                    (uid, dataVals["firstname"], dataVals["lastname"],
-                        dataVals["email"]))
+            # Do we have this user in the database, if so return
+            # the UID otherwise store with the next id
+            # We will only ever have one user with these details
+            cur.execute('''select user_id from user where email = ? and
+                    firstname = ? and lastname = ? and name = ?''',
+                    (dataVals["email"].lower().strip(), 
+                        dataVals["firstname"].lower().strip(),
+                        dataVals["lastname"].lower().strip(),
+                        dataVals["username"].lower().strip()))
+            res = cur.fetchall()
+            if (len(res) == 0):
+                cur.execute("select max(user_id) from user")
+                u_id = cur.fetchone()
+                if (u_id is not None and u_id[0] is not None):
+                    uid = int(u_id[0]) + 1
+                cur.execute('''insert into user (user_id, name, firstname, 
+                    lastname, email)  values(?,?,?,?,?)''',
+                    (uid, dataVals["username"].strip(), 
+                        dataVals["firstname"].lower().strip(), 
+                        dataVals["lastname"].lower().strip(),
+                        dataVals["email"].lower().strip()))
+            else:
+                uid = res[0][0]
             
             # Get the last date entry and store the submit time
             cur.execute('''select max(dpm_date_id) from dpm_date''')
@@ -69,14 +93,28 @@ def submitRequest(config):
             # Get the selected community id the rows must exist so 
             # no need to check
             cur.execute('''select community_id from community 
-                where name = ?''', (comm["name"],))
+                where name = ?''', (comm["name"].lower().strip(),))
             comm_id = cur.fetchone()[0]
 
             # Get the selected role id the rows must exist so no need
             # to check
             cur.execute('''select role_id from roles where name = ?''',
-                    (dataVals["role"],))
+                    (dataVals["role"].lower().strip(),))
             role_id = cur.fetchone()[0] 
+
+            # For the admin roles the URL is the front page that allows
+            # the user to choose between the admin and dpm pages
+            if (dataVals["role"].lower().strip() == "dpm admin" or
+                    dataVals["role"].lower().strip() == "community admin"):
+                cur.execute('''select url from dpm_page where 
+                    name = "frontpage" ''')
+                res = cur.fetchall()
+                dpm_id = res[0][0]
+            else:
+                cur.execute('''select url from dpm_page where
+                    name = "dpm" ''')
+                res = cur.fetchall()
+                dpm_id = res[0][0]
 
             # Get the last used community id
             cur.execute('''select max(user_comm_id) from user_community''');
@@ -86,7 +124,7 @@ def submitRequest(config):
             cur.execute('''insert into user_community (user_comm_id,
             user_id, community_id, dpm_id, dpm_date_id, role_id, 
             status_id) values (?,?,?,?,?,?,?)''',
-            (next_user_comm, uid, comm_id, 0, dpm_date_id, role_id, 1))
+            (next_user_comm, uid, comm_id, dpm_id, dpm_date_id, role_id, 1))
             
             conn.commit()
 

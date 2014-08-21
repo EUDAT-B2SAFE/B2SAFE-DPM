@@ -14,7 +14,7 @@ def usage():
     print 'for creating policies.'
     print 'Usage: populate_db.py [-h][-v] <type>'
     print ''
-    print 'The <type> can be either "resource" or "action"'
+    print 'The <type> can be: "resource", "profile" or "action"'
     print ''
     print 'Options:'
     print '-h, --help              Print this help'
@@ -38,7 +38,14 @@ def create_tables(conn, config, dbtype):
         cur.execute(config.get("CREATE", "locationtype"))
         cur.execute(config.get("CREATE", "organisation"))
         cur.execute(config.get("CREATE", "action"))
-
+    elif (dbtype == 'profile'):
+        cur.execute(config.get("CREATE", "dpm_page"))
+        cur.execute(config.get("CREATE", "roles"))
+        cur.execute(config.get("CREATE", "status"))
+        cur.execute(config.get("CREATE", "community"))
+        cur.execute(config.get("CREATE", "user"))
+        cur.execute(config.get("CREATE", "user_community"))
+        cur.execute(config.get("CREATE", "dpm_date"))
     conn.commit()
 
 def get_next_actions_indexes(conn, config):

@@ -15,18 +15,41 @@
     </div>
     Author: <input type="text" data-ng-model="policy.author" 
         name="policyauthor" data-ng-minlength="3" 
-        ng-readonly="policy.author" required/><br/>
+        data-ng-readonly="policy.author" required/><br/>
     <div data-ng-show="invalidFlag.policyAuthor">
         <span id="error" data-ng-show="personalinfo.policyauthor.$invalid">
             An author must be supplied
         </span>
     </div>
-    Community: <input type="text" data-ng-model="policy.community" 
-        name="policycommunity" data-ng-minlength="3" required/><br>
-    <div data-ng-show="invalidFlag.policyCommunity">
-        <span id="error" data-ng-show="personalinfo.policycommunity.$invalid">
-            A community must be supplied
-        </span>
+    <div data-ng-switch on="community_number">
+        <div data-ng-switch-when="one">
+            Community: <input type="text" data-ng-model="policy.community" 
+            name="policycommunity" data-ng-minlength="3" 
+            data-ng-readonly="policy.community" required/><br>
+            <div data-ng-show="invalidFlag.policyCommunity">
+                <span id="error" 
+                    data-ng-show="personalinfo.policycommunity.$invalid">
+                    A community must be supplied
+                </span>
+            </div>
+        </div>
+        <div data-ng-switch-when="many">
+            Community: <select name="policycommunity" 
+                data-ng-options="comm for comm in communities"
+                data-ng-change="changeCommunity($index)"
+                data-ng-model="policy.community"
+                data-validate-select required>
+                <option value="">
+                    --- Select ---
+                </option>
+            </select>
+            <div data-ng-show="invalidFlag.policyCommunity">
+                <span id="error" 
+                    data-ng-show="personalinfo.policycommunity.$invalid">
+                    A community must be supplied
+                </span>
+            </div>
+        </div>
     </div>
 </data-ng-form>
  

@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Data Policy Manager Registration</title>
+           <link rel="stylesheet" type="text/css"
+            href="./css/dpm.css" type="text/css" />
 </head>
 
 
@@ -50,7 +52,7 @@
         </div>
         <div data-ng-repeat="community in cm.communities | startFrom:currentPage*3 | limitTo:3">
             Community: <select name="cm_community"
-                data-ng-options="comm_type for comm_type in comm_types"
+                data-ng-options="comm_type for comm_type in comm_types[cm.role]"
                 data-ng-change="changeCommunity($index + currentPage *3)"
                 data-ng-model="cm.communities[$index + currentPage *3].name"
                 data-validate-select required>
