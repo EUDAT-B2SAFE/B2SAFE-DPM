@@ -140,7 +140,9 @@ def fill_resource(conn, config, next_indexes, data):
     resource_count = 0
     for row in data:
         system, site, store = row.split('|') 
-
+        system = system.strip()
+        site = site.strip()
+        store = store.strip()
         system_IOK, system_count = fill_table(cur, config, 
                 "systems", next_indexes['system'], system)
         if (system_IOK):
@@ -202,6 +204,10 @@ def fill_action(conn, config, next_indexes, data, data_org):
     # Fill the action tables from the ascii file
     for row in data:
         atype, atrigger, aoperation, alocation = row.split('|')
+        atype = atype.strip()
+        atrigger = atrigger.strip()
+        aoperation = aoperation.strip()
+        alocation = alocation.strip()
         
         atype_IOK, atype_count = fill_table(cur, config, "type", 
                 next_indexes["type"], atype)
@@ -244,6 +250,8 @@ def fill_action(conn, config, next_indexes, data, data_org):
     pid_count = 0
     for row in data_org:
         org, pid = row.split('|')
+        org = org.strip()
+        pid = pid.strip()
         org_IOK, org_count = fill_table(cur, config, 
                 "organisation", next_indexes["organisation"], org)
         if (org_IOK):

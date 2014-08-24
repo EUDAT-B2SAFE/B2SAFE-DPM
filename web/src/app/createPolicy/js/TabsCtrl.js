@@ -1,5 +1,6 @@
-function tabsCtrl($scope, $http, logPageList, polList, userProfile,
+function tabsCtrl($scope, $http, logPageList, $route, polList, userProfile,
         policy) {
+    $scope.list_url = "template/listtable.html";
     $scope.hideLog = logPageList.hide;
     $scope.displayLog = logPageList.active;
     $scope.listPolicy = polList.active;
@@ -22,4 +23,11 @@ function tabsCtrl($scope, $http, logPageList, polList, userProfile,
             policy.author = data.profile[0].username;
             $scope.policy = policy;
     });
+
+    // Function to change the location of the for the list view
+    $scope.changeLoc = function (turl) {
+        alert("parent scope function called " + turl);
+        $scope.list_url = turl;
+        $route.reload();
+    };
 }

@@ -21,6 +21,9 @@
                     data-ng-show="policy_col.visible">
                     {{policy_col.name}}
                 </th>
+                <th>
+                    Action
+                </th>
             </tr>
         </thead>
         <tbody>
@@ -31,6 +34,13 @@
                 <td data-ng-repeat="pol_val in pol_data.pol_vals"
                     data-ng-show="pol_val.visible">
                     {{pol_val.name}}
+                </td>
+                <td>
+                    <select data-ng-model="polselected"
+                    data-ng-change="actionPolicy()"
+                    data-ng-options="laction.name for laction in listaction">
+                    <option value=""> --- Select --- </option>
+                    </select>
                 </td>
             </tr>
         </tbody>

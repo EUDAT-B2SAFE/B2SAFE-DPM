@@ -56,7 +56,7 @@ def fetchPolicy():
     # Extract the policy from the database and return as a string
     policy = db.get(policy_object_id)
     if (policy):
-        print policy
+        sys.stdout.write(policy)
     else:
         print "Error: cannot find a policy with id: ", policy_object_id
         sys.exit(20)

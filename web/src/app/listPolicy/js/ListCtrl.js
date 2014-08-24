@@ -1,6 +1,33 @@
-function listCtrl($scope, $sce, $http, $filter, $location, logPageList,
-        logData, policy, polList, userProfile, ngTableParams) {
-    var keys = []; 
+function listCtrl($scope, $sce, $http, $route, 
+        $filter, $location, logPageList,
+        logData, policy, polList, userProfile, listaction, ngTableParams) {
+            
+    var keys = [];
+
+    // Set the type of list action
+    $scope.listaction = listaction;
+
+    $scope.actionPolicy = function() {
+        alert("the selected action is " + angular.toJson(this.pol_data));
+        $scope.policy.name = this.pol_data.pol_vals[0].name;
+        $scope.policy.version = this.pol_data.pol_vals[1].name;
+        $scope.policy.author = this.pol_data.pol_vals[2].name;
+        $scope.policy.uuid = this.pol_data.pol_vals[3].name;
+        $scope.policy.community = this.pol_data.pol_vals[6].name;
+        $scope.policy.collections = 0;
+        $scope.policy.action.name = this.pol_data.pol_vals[9].name;
+        $scope.policy.type.name = this.pol_data.pol_vals[10].name;
+        // $scope.policy.trigger.name = this.pol_data.pol_vals[11].name;
+
+        alert("policy is " + angular.toJson($scope.policy));
+        var url = "";
+        if (this.polselected.name === "Modify") {
+            url = "template/modify.html";
+        } else if (this.polselected.name === "Remove") {
+            url = "template/remove.html";
+        }
+        $scope.$parent.changeLoc(url);
+    };
 
     // Read in from the config file the database schema. These will
     // be our search fields
@@ -40,6 +67,7 @@ function listCtrl($scope, $sce, $http, $filter, $location, logPageList,
         }
     };
 
+    // 
     // Get the policies from the database as well as the log information
     var dvals = [];
     var dataSave = [];
@@ -50,6 +78,8 @@ function listCtrl($scope, $sce, $http, $filter, $location, logPageList,
         $http({method: "GET",
             url: "/cgi-bin/dpm/getPolicyData.py"}).success(function(data, 
                     status, headers, config) {
+                        alert("we got " + JSON.stringify(data));
+
                         var i;
                         var j;
                         for (i = 0; i < data.length; i++) {
@@ -63,6 +93,10 @@ function listCtrl($scope, $sce, $http, $filter, $location, logPageList,
                             dvals.push({pol_vals: ddvals, visible: true});
                         }
                         $scope.data = dvals;
+                        var totlen = 0;
+                        if ($scope.data.length > 0) {
+                            totlen = $scope.data.length;
+                        }
                         // Also save a copy of the data for quicker access
                         // when using filtering
                         dataSave = dvals;
@@ -70,7 +104,7 @@ function listCtrl($scope, $sce, $http, $filter, $location, logPageList,
                             page: 1,
                             count: 10},
                         {
-                            total: $scope.data.length,
+                            total: totlen,
                             getData: function($defer, params) {
                                 $defer.resolve($scope.data.slice((params.page() - 1) * params.count(), params.page() * params.count()));
                 
