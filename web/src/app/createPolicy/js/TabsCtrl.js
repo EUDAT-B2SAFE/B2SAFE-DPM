@@ -1,9 +1,10 @@
 function tabsCtrl($scope, $http, logPageList, $route, polList, userProfile,
-        policy) {
+        policy, showLog, uuids) {
     $scope.list_url = "template/listtable.html";
     $scope.hideLog = logPageList.hide;
     $scope.displayLog = logPageList.active;
     $scope.listPolicy = polList.active;
+
     // Get the username from the environment. We need a promise to
     // work with the results when ready
     userProfile.promise = $http({method: "GET",

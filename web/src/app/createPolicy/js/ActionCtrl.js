@@ -30,33 +30,8 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
                 $scope.operations = action_obj.operations;
                 data_action.setActions(action_obj);
     });
-    weekday = new Array({name: "*"});
-    for (i = 0; i < 7; i++) {
-        weekday.push({name: i});
-    }
 
-    month = new Array({name: "*"});
-    for (i = 0; i < 12; i++) {
-        month.push({name: i});
-    }
- 
-    day = new Array({name: "*"});
-    for (i = 0; i < 32; i++) {
-        day.push({name: i});
-    }
- 
-    hour = new Array({name: "*"});
-    for (i = 0; i < 24; i++) {
-        hour.push({name: i});
-    }
- 
-    minute = new Array({name: "*"});
-    for (i = 0; i < 60; i++) {
-        minute.push({name: i});
-    }
-
-    $scope.period = {month: month, weekday: weekday, day: day, 
-        hour: hour, minute: minute};
+    $scope.period = getPeriod();
    
     // Only show the date fields for the date option
     var tdate = new Date();

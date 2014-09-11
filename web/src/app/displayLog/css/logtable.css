@@ -1,0 +1,9 @@
+.running {
+    background-color: yellow;
+}
+.finished {
+    background-color: LightGreen;
+}
+.failed {
+    background-color: red;
+}

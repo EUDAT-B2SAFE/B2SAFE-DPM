@@ -27,7 +27,7 @@
            </div>
         </div>
         <div id="page">
-            <h2 class="subtitle">Eudat File manager </h2>
+            <h2 class="subtitle">Data Policy Manager </h2>
 
             <div id="dpm-content" data-ng-app="dpmApp">
                 <div ng-controller="tabsCtrl">
@@ -62,13 +62,8 @@
                                 </div>
                             </form>
                         </tab>
-                        <tab heading="List Policies" active="listPolicy">
+                        <tab heading="Manage Policies" active="listPolicy">
                             <div data-ng-include src="list_url"></div>
-                        </tab>
-                        <tab heading="Display Logs" active="displayLog"
-                        disabled="false">
-                            <div
-                                data-ng-include src="'template/listlogs.html'"></div>
                         </tab>
                     </tabset>
                 </div>

@@ -7,7 +7,8 @@
         </span>
     </div>
     Version: <input type="text" data-ng-model="policy.version"
-        name="policyversion" data-validate-input-number required/><br/>
+        name="policyversion" data-validate-input-number 
+        data-ng-readonly="policy.version" required/><br/>
     <div data-ng-show="personalinfo.policyversion.$invalid && invalidFlag.policyVersion">
         <span id="error" data-ng-show="personalinfo.policyversion.$error.required">
             Version is invalid (should be a number)

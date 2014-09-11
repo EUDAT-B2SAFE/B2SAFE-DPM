@@ -1,5 +1,8 @@
 <div data-ng-controller="logsCtrl">
-    hello
+    <div id="listbuttons">
+        <input type="button" data-ng-click="loadPolicyList()" 
+            value="List Policies">
+    </div>
     <table data-ng-table="logtabs" data-show-filter="true" class="table">
         <thead>
             <tr>
@@ -9,8 +12,12 @@
             </tr>
         </thead>
         <tbody>
-            <tr data-ng-repeat="log_dat in logData">
-                <td data-ng-repeat="log_dat_cpt in log_dat">
+            <tr data-ng-repeat="log_dat in logData"
+                data-ng-show="log_dat.visible">
+                <td data-ng-repeat="log_dat_cpt in log_dat.row"
+                    data-ng-class="{'running': log_dat_cpt=='RUNNING', 
+                    'finished': log_dat_cpt=='FINISHED', 
+                    'failed': log_dat_cpt=='FAILED'}">
                     {{log_dat_cpt}}
                 </td>
             </tr>

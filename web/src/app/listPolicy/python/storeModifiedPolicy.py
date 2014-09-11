@@ -14,6 +14,103 @@ import policy_irods_sub
 import policy_irods_lib
 import policy_lib
 
+class VisitUUID(kyotocabinet.Visitor):
+    def __init__(self, uuid):
+        self.keys = []
+        self.uuid = uuid
+    def visit_full(self, key, value):
+        if (value == self.uuid):
+            uuid_val = key.split('_')[-1].strip()
+            version = "policy_version_%s" % uuid_val
+            self.keys.append(version)
+        return self.NOP
+    def visit_empty(self, key):
+        return self.NOP
+
+
+class VisitVersion(kyotocabinet.Visitor):
+    def __init__(self, version):
+        self.values = []
+        self.version_len = len(version.split('.'))
+
+    def visit_full(self, key, value):
+        # We only want to consider versions at the same level (eg
+        # A.B with C.D and not A.B with A.B.C)
+        if (len(value.split('.')) == self.version_len):
+            self.values.append(value)
+        return self.NOP
+    def visit_empty(self, key):
+        return self.NOP
+
+def highVer(versions):
+    '''Find the highest version
+    '''
+    high = -1
+    fversions = {}
+    if (len(versions) > 0):
+        for aver in versions:
+            vals = aver.split('.')
+            fval = ''.join(vals)
+            fversions[fval] = aver
+
+        keys = fversions.keys()
+        keys.sort()
+        keys.reverse()
+        high = fversions[keys[0]]
+    return high
+
+def nextVersion(config, uid, version):
+    '''Function to get the last used version number from the database
+    and return the next available one
+    '''
+    vers = 0.0
+    dbfile = config.get("DATABASE", "name").strip()
+    db = kyotocabinet.DB()
+
+    # Open the database
+    if (not db.open(dbfile, 
+        kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)):
+        sys.stderr.write("open error: " + str(db.error()))
+
+    # Get the keys for all policies containing this uuid
+    uid_keys = db.match_prefix("policy_id")
+    uidObj = VisitUUID(uid)
+    versionObj = VisitVersion(version)
+    db.accept_bulk(uid_keys, uidObj)
+    db.accept_bulk(uidObj.keys, versionObj)
+    
+    # What is the highest version number we have
+    highver = highVer(versionObj.values)
+
+    # If we are at the highest version number we need to just
+    # bump the version number otherwise we need to go a level
+    # down and find the highest version number and bump that
+    if (version == highver):
+        intval = 1
+        # Since we are only interested in incrementing the smallest
+        # digit
+        vcpts = version.split('.')
+        lvers = int(vcpts[-1]) + int(intval)
+        vcpts[-1] = str(lvers)
+        vers = '.'.join(vcpts)
+    else:
+        newVersion = "%s.1" % (version)
+        versionObj = VisitVersion(newVersion)
+        db.accept_bulk(uidObj.keys, versionObj)
+        intval = 1
+        # No versions exist at this level so we are at the highest
+        # and set the version accordingly
+        if (len(versionObj.values) == 0):
+            vers = newVersion
+        else:
+            highver = highVer(versionObj.values)
+            if (highver > 0):
+                vcpts = highver.split('.')
+                lvers = int(vcpts[-1]) + int(intval)
+                vcpts[-1] = str(lvers)
+                vers = '.'.join(vcpts)
+    return vers
+
 class Policy():
     '''policy class'''
     def __init__(self, config):
@@ -31,8 +128,6 @@ class Policy():
         '''
         trigger_val = ''
         self.policy[self.config.get('POLICY_SCHEMA',
-            'removed').strip()] = 'false'
-        self.policy[self.config.get('POLICY_SCHEMA',
             'community').strip()] = formdata['community']
         self.policy[self.config.get('POLICY_SCHEMA', 
             'uniqueid').strip()] = formdata['uuid']
@@ -40,14 +135,20 @@ class Policy():
             'id').strip()] = formdata['id']
         self.policy[self.config.get('POLICY_SCHEMA', 
             'name').strip()] = formdata['name']
+        self.policy[self.config.get('POLICY_SCHEMA',
+            'removed').strip()] = "false"
+        # For the version we need to query the db and get the
+        # highest version number that has been used and then
+        # use the next one.
         self.policy[self.config.get('POLICY_SCHEMA', 
-            'version').strip()] = formdata['version']
+            'version').strip()] = nextVersion(self.config, formdata['id'],
+                    formdata['version'])
         self.policy[self.config.get('POLICY_SCHEMA', 
             'author').strip()] = formdata['author']
         self.policy[self.config.get('ACTIONS_SCHEMA', 
             'type').strip()] = formdata['type']['name']
         if (formdata['trigger']['name'] == self.dateType):
-            trigger_val = formdata['trigger_date']
+            trigger_val = formdata['trigger']['value']
         elif (formdata['trigger']['name'] == self.periodicType):
             trigger_val = "%s, %s, %s, %s, %s" %\
                     (formdata['trigger_period']['minute']['name'],
@@ -68,7 +169,7 @@ class Policy():
             akeytype = "%s_%s" % (self.config.get('DATASETS_SCHEMA',
                 'type').strip(), col_idx)
             self.policy[akeypid] = acoll['name']
-            self.policy[akeytype] = acoll['type']['name']
+            self.policy[akeytype] = acoll['type']
             col_idx += 1
 
         self.policy[self.config.get('TARGETS_SCHEMA', 
@@ -103,7 +204,9 @@ class Policy():
         # Build the policy node
         xml_pol = policy_lib.policy()
         xml_pol.uniqueid = formdata['uuid']
-        xml_pol.version = formdata['version']
+        xml_pol.version = nextVersion(self.config, formdata['id'],
+                    formdata['version'])
+
         xml_pol.name = formdata['name']
         xml_pol.author = formdata['author']
         xml_pol.dataset = xml_dataset
@@ -138,7 +241,7 @@ class Policy():
         if (formdata['trigger']['name'] == self.dateType):
             # The date is in the wrong format according to XML schema
             # it should be: secs mins hours day month year
-            trigger_tmp = formdata['trigger_date'].split("-")
+            trigger_tmp = formdata['trigger']['value'].split("-")
             trigger_val = "0 0 0 %s %s %s" % (trigger_tmp[2],
                     trigger_tmp[1], trigger_tmp[0])
             dateSpecified = True
@@ -216,7 +319,7 @@ class Policy():
             xml_collection = policy_lib.locationPoint()
             xml_persistentIdentifier = policy_lib.persistentIdentifierType7()
             xml_persistentIdentifier.valueOf_ = acoll['name']
-            xml_persistentIdentifier.type_ = acoll['type']['name']
+            xml_persistentIdentifier.type_ = acoll['type']
             xml_collection.id = col_idx
             xml_collection.persistentIdentifier = xml_persistentIdentifier
             xml_collections.append(xml_collection)

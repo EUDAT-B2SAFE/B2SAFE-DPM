@@ -1,30 +1,53 @@
 function listCtrl($scope, $sce, $http, $route, 
         $filter, $location, logPageList,
-        logData, policy, polList, userProfile, listaction, ngTableParams) {
+        logData, policy, polList, uuids,
+        showLog, userProfile, listaction, ngTableParams) {
             
     var keys = [];
-
+    var dkeys = {};
+ 
     // Set the type of list action
     $scope.listaction = listaction;
 
     $scope.actionPolicy = function() {
-        alert("the selected action is " + angular.toJson(this.pol_data));
-        $scope.policy.name = this.pol_data.pol_vals[0].name;
-        $scope.policy.version = this.pol_data.pol_vals[1].name;
-        $scope.policy.author = this.pol_data.pol_vals[2].name;
-        $scope.policy.uuid = this.pol_data.pol_vals[3].name;
-        $scope.policy.community = this.pol_data.pol_vals[6].name;
-        $scope.policy.collections = 0;
-        $scope.policy.action.name = this.pol_data.pol_vals[9].name;
-        $scope.policy.type.name = this.pol_data.pol_vals[10].name;
-        // $scope.policy.trigger.name = this.pol_data.pol_vals[11].name;
+        for (i = 0; i < keys.length; i++) {
+            dkeys[keys[i].name] = keys[i].idx;
+        }
+        $scope.policy.name = this.pol_data.pol_vals[dkeys.policy_name].name;
+        $scope.policy.version = this.pol_data.pol_vals[dkeys.policy_version].name;
+        $scope.policy.author = this.pol_data.pol_vals[dkeys.policy_author].name;
+        $scope.policy.uuid = this.pol_data.pol_vals[dkeys.policy_uniqueid].name;
+        $scope.policy.id = this.pol_data.pol_vals[dkeys.policy_id].name;
+        
+        $scope.policy.community = this.pol_data.pol_vals[dkeys.policy_community].name.toLowerCase();
+        // We need to split the collection name as we display as
+        // a string more than one collection
+        colls = this.pol_data.pol_vals[dkeys.collection_persistentIdentifier].name.split(',');
+        coll_types = this.pol_data.pol_vals[dkeys.collection_persistentIdentifier_type].name.split(',');
+        policy.collections = [];
+        for (var i = 0; i < colls.length; i++) {
+            var coll = colls[i].replace(/ /g,'');
+            var coll_type = coll_types[i].replace(/ /g,'');
+            policy.collections.push({"name": coll, 
+                "type": coll_type});
+        }
+        $scope.policy.action.name = this.pol_data.pol_vals[dkeys.action_name].name;
+        $scope.policy.type.name = this.pol_data.pol_vals[dkeys.action_type].name;
+        $scope.policy.trigger.name = this.pol_data.pol_vals[dkeys.action_trigger_type].name;
+        $scope.policy.trigger.value = this.pol_data.pol_vals[dkeys.action_trigger_action].name;
+        $scope.policy.target.organisation.name = this.pol_data.pol_vals[dkeys.location_site_type].name;
+        $scope.policy.target.site.name = this.pol_data.pol_vals[dkeys.location_site].name;
+        $scope.policy.target.path = this.pol_data.pol_vals[dkeys.location_path].name;
+        $scope.policy.target.resource.name = this.pol_data.pol_vals[dkeys.location_resource].name;
+        $scope.policy.target.system.name = this.pol_data.pol_vals[dkeys.location_type].name;
+        $scope.policy.target.loctype.name = this.pol_data.pol_vals[dkeys.loctype].name;
 
-        alert("policy is " + angular.toJson($scope.policy));
         var url = "";
         if (this.polselected.name === "Modify") {
             url = "template/modify.html";
         } else if (this.polselected.name === "Remove") {
             url = "template/remove.html";
+            $scope.policy.saved_uuid = $scope.policy.uuid;
         }
         $scope.$parent.changeLoc(url);
     };
@@ -39,6 +62,9 @@ function listCtrl($scope, $sce, $http, $route,
                     for (i = 0; i < data.length; i++) {
                         is_visible = (data[i][1] === 'true');
                         keys.push({idx: i, name: data[i][0], visible: is_visible});
+                    }
+                    for (i = 0; i < keys.length; i++) {
+                        dkeys[keys[i].name] = keys[i].idx;
                     }
     });
     $scope.policy_columns = keys;
@@ -78,10 +104,9 @@ function listCtrl($scope, $sce, $http, $route,
         $http({method: "GET",
             url: "/cgi-bin/dpm/getPolicyData.py"}).success(function(data, 
                     status, headers, config) {
-                        alert("we got " + JSON.stringify(data));
-
                         var i;
                         var j;
+                        uuids = clearArray(uuids);
                         for (i = 0; i < data.length; i++) {
                             var ddvals = [];
                             var is_visible = false;
@@ -90,7 +115,16 @@ function listCtrl($scope, $sce, $http, $route,
                                 ddvals.push({name: data[i][j][0], 
                                     visible: is_visible});
                             }
-                            dvals.push({pol_vals: ddvals, visible: true});
+                            // Capture also the flag to identify if the
+                            // policy has been removed
+                            var polrm = false;
+                            if (data[i][8][0] === 'true') {
+                                polrm = true;
+                            }
+                            dvals.push({pol_vals: ddvals, visible: true,
+                            removed: polrm});
+                            // Keep the uid for matching with the log files
+                            uuids.push(data[i][dkeys.policy_uniqueid][0]);
                         }
                         $scope.data = dvals;
                         var totlen = 0;
@@ -113,17 +147,19 @@ function listCtrl($scope, $sce, $http, $route,
         });
     }
     );
-    // Filter the policy so we only show those that 
+    // Filter the policy so we only show those that have visibility selected 
     $scope.filterPolicy = function() {
         var i;
         var j;
         var count = 0;
         // We need to reset the array and repopulate from the saved list
         $scope.data = [];
+        uuids = clearArray(uuids);
         for (i = 0; i < dataSave.length; i++) {
             for (j = 0; j < dataSave[i].pol_vals.length; j++) {
                 if (null == $scope.searchparam || $scope.searchparam.length === 0 || dataSave[i].pol_vals[j].name.indexOf($scope.searchparam) >= 0) {
                     $scope.data[count] = dataSave[i];
+                    uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
                     count += 1;
                     break;
                 }             
@@ -145,15 +181,22 @@ function listCtrl($scope, $sce, $http, $route,
                     status, headers, config) {
                         var i;
                         var j;
+                        uuids = clearArray(uuids);
                         for (i = 0; i < data.length; i++) {
                             var ddvals = [];
-                            var is_visible = false;
                             for (j = 0; j < data[i].length; j++) {
-                                is_visible = (data[i][j][1] === 'true');
                                 ddvals.push({name: data[i][j][0], 
-                                    visible: is_visible});
+                                    visible: $scope.policy_columns[j].visible});
                             }
-                            dvals.push({pol_vals: ddvals, visible: true});
+                            // Capture also the flag to identify if the
+                            // policy has been removed
+                            var polrm = false;
+                            if (data[i][8][0] === 'true') {
+                                polrm = true;
+                            }
+                            dvals.push({pol_vals: ddvals, visible: true,
+                            removed: polrm});
+                            uuids.push(data[i][dkeys.policy_uniqueid][0]);
                         }
                         dataSave = dvals;
                         $scope.data = dvals;
@@ -169,6 +212,7 @@ function listCtrl($scope, $sce, $http, $route,
 
     // Function to reset the highlight flags for rows
     $scope.resetFlag = function() {
+        uuids = clearArray(uuids);
         var i;
         for (i = 0; i < $scope.data.length; i++) {
             if ($scope.data[i].$selected === true) {
@@ -180,14 +224,14 @@ function listCtrl($scope, $sce, $http, $route,
 
     // Function to display the policy
     $scope.display_pol = function(pol_data) {
-        // change the colour of the row to hightlight it
-        
         // The 4th element is the id. Query the database to get the policy
         // corresponding to the uuid
         $http({method: "GET",
             url: "/cgi-bin/dpm/getPolicy.py",
             params: {uuid: pol_data.pol_vals[3].name} }).success(function(data, 
                 status, headers, config) {
+                    uuids = clearArray(uuids);
+                    uuids.push(pol_data.pol_vals[dkeys.policy_uniqueid].name);
                     $scope.policy_obj = JSON.parse(data); 
                 });
     };
@@ -195,18 +239,8 @@ function listCtrl($scope, $sce, $http, $route,
     // Function to display the log information
     // (the flags for the tabs are in the parent of the parent)
     $scope.loadLogList = function() {
-        logList.hide = false;
-        logList.active = true;
-        polList.active = false;
-        $http({method: "GET",
-            url: "/cgi-bin/dpm/getPolicyLog.py"}).success(function(data,
-                    status, headers, config) {
-                        logData = data;
-                        $location.url(logList[0].url);
-        });
-        $scope.$parent.$parent.hideLog = logList.hide;
-  //      $scope.$parent.$parent.loadLogs = logList.active;
-//        $scope.$parent.$parent.listPolicy = polList.active;
-        
+       var url = "template/listlogs.html";
+       showLog.name = true;
+       $scope.$parent.changeLoc(url);
     };
 }

@@ -1,1 +1,67 @@
-Policy removal to be implemented
+<div data-ng-controller="removeCtrl">
+    <button data-ng-click="backToList()">Back to List Policies</button>
+    <br/>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Title</td>
+                <td>{{policy.name}}</td>
+            </tr><tr>
+                <td>Author</td>
+                <td>{{policy.author}}</td>
+            </tr>
+             <tr>
+                 <td>Version</td>
+                 <td>{{policy.version}}</td>
+            </tr><tr>
+                <td>Community</td>
+                <td>{{policy.community}}</td>
+            </tr>
+            <tr data-ng-repeat="col in policy.collections">
+                <td>Identifier Type </td><td>{{col.type}}</td>
+            </tr>
+            <tr data-ng-repeat="col in policy.collections">
+                <td>Collection </td><td>{{col.name}}</td>
+            </tr>
+            <tr>
+                <td>Action</td>
+                <td>{{policy.action.name}}</td>
+            </tr><tr>
+                <td>Type</td> 
+                <td>{{policy.type.name}}</td>
+            </tr>
+            <tr>
+                <td>Trigger</td>
+                <td>{{policy.trigger.name}}</td>
+            </tr><tr>
+                <td>Organisation</td>
+                <td>{{policy.target.organisation.name}}</td>
+            </tr>
+            <tr>
+                <td>Location Type </td>
+                <td>{{policy.target.loctype.name}}</td>
+            </tr><tr>
+                <td>System</td>
+                <td>{{policy.target.system.name}}</td>
+            </tr>
+            <tr>
+                <td>Site</td>
+                <td>{{policy.target.site.name}}</td>
+            </tr><tr>
+                <td>Path</td>
+                <td>{{policy.target.path}}<td/>
+            </tr>
+            <tr>
+                <td>Resource</td>
+                <td>{{policy.target.resource.name}}</td>
+            </tr>
+        </tbody>
+    </table>
+    <button data-ng-click="removePolicy()">Remove Policy?</button>
+</div>

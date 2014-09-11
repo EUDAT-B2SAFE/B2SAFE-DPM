@@ -47,7 +47,7 @@ function datasetCtrl($scope, $http, $injector, data_identifier, policy,
     $scope.showCollection = function(trname) {
         var show = false;
         var tname = trname.replace(/^\s+|\s+$/g, '');
-        if (tname == "PID") {
+        if (tname == "pid") {
             show = true;
         }
         return show;

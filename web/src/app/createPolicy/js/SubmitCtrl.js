@@ -24,6 +24,9 @@ function submitCtrl($scope, $location, submitFlag, policy, pristineFlags,
         }
     };
     $scope.confirmOK = function() {
+        // We can now set the id for the policy before sending to the
+        // database
+        policy.id = policy.uuid;
         $http.post("/cgi-bin/dpm/storePolicy.py", JSON.stringify(policy),
                 {headers: "Content-Type: application/x-www-form-urlencoded"})
             .success(function(data, status, headers, config) {

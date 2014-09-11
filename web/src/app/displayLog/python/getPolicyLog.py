@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import cgi
 import json
 import ConfigParser
+import sqlite3
 import kyotocabinet
 
 def usage():
@@ -13,6 +15,41 @@ def usage():
     print "Usage:"
     print " ?help=help      Prints this help"
     print ""
+
+def getUserCommunities(config, username):
+    '''Function to get the communities a user belongs to
+    '''
+    dpmAdmin = False
+    conn = sqlite3.connect(config.get("DATABASE", "profile_name"))
+    cur = conn.cursor()
+    cur.execute('''select roles.role_id from user_community, user,
+    roles where user.name = ? and user.user_id = user_community.user_id
+    and roles.name = 'dpm admin' and 
+    roles.role_id = user_community.role_id''', (username,))
+
+    roles = cur.fetchall()
+    if (len(roles) > 0):
+        dpmAdmin = True
+
+    res = []
+    if (dpmAdmin):
+        cur.execute('''select community.name from community''')
+        res = cur.fetchall()
+    else:
+        cur.execute('''select community.name from community, user_community,
+            user where user.name = ? and 
+            user.user_id = user_community.user_id and 
+            community.community_id = user_community.community_id''',
+            (username.lower(),))
+        res = cur.fetchall()
+    conn.commit()
+    communities = []
+
+    for ares in res:
+        communities.append(res[0][0])
+
+    return communities
+
 
 def getLogs(config, username):
     '''Function to get the log information for all policies
@@ -26,7 +63,10 @@ def getLogs(config, username):
         kyotocabinet.DB.OREADER)):
         print "Unable to open the database " + str(db.error())
         sys.exit(10)
-    
+   
+    # Find out which communities the user belongs to
+    communities = getUserCommunities(config, username)
+
     # Get the keys for the uuid
     uuid_keys = db.match_prefix(config.get("POLICY_SCHEMA", "uniqueid"))
     policy_logs = {}
@@ -36,8 +76,8 @@ def getLogs(config, username):
         
         # We need to skip the log entries if they don't correspond to the
         # logged in users community
-        community_key = "policy_community_%s" % (uuid_num)
-        if (db.get(community_key) != username):
+        community_key = "policy_community%s" % (uuid_num)
+        if (db.get(community_key) not in communities):
             continue
 
         log_entries = db.get("%s%s" % \
@@ -72,8 +112,12 @@ if __name__ == '__main__':
     if (fields.has_key("help")):
         usage()
         sys.exit()
-    
-    username = fields.getvalue("username", "")
+   
+    username = ''
+    if (config.has_option("HTMLENV", "user")):
+        username = config.get("HTMLENV", "user")
+    else:
+        username = os.environ["REMOTE_USER"]
 
     getLogs(config, username)
 

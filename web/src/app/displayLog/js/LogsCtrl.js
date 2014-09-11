@@ -1,23 +1,23 @@
-function logsCtrl($scope, $http, logData, policy, ngTableParams) {
+function logsCtrl($scope, $route, $interval, $http, logData, 
+        policy, uuids, showLog, ngTableParams) {
+
     // Query the database for the log information
-    $http({method: "GET",
-        url: "/cgi-bin/dpm/getPolicyLog.py",
-       params: {username: policy.author} }).success(function(data, 
-                status, headers, config) {
-                    $scope.logData = data.data;
-                    var loglen = 0;
-                    if ($scope.logData.length > 0) {
-                        loglen = $scope.logData.length;
-                    }
-                    $scope.logColumns = data.columns;
-                    $scope.logtabs = new ngTableParams({page: 1, 
-                        count: 10}, 
-                        {
-                            total: loglen,
-                            getData: function($defer, params) {
-                                $defer.resolve($scope.logData.slice((params.page() - 1) * params.count(), params.page() * params.count()));
-                
-                            }
-                        }); 
-                });
+    getLogs($scope, ngTableParams, $http, policy.author, uuids);
+    
+    // Regularly query the database for any updates
+    // (only run the repeat when we are actually displaying the log info
+    // otherwise stop)
+    if (showLog.name) {
+        var repeatGetLogs = $interval(function() {
+            getLogs($scope, ngTableParams, $http, policy.author, uuids);
+        }, 6000, 0);
+    }
+
+    //Display the policy information
+    $scope.loadPolicyList = function() {
+        $interval.cancel(repeatGetLogs);
+        showLog.name = false;
+        var url="template/listtable.html";
+        $scope.$parent.changeLoc(url);
+    };
 }

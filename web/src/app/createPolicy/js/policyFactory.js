@@ -37,8 +37,8 @@ var policy = function() {
     };
     var collections = new Array({name: "", type: {name: ""}});
 
-    var policyObj = {name: "",
-        version: "", uuid: "", author: "", community: "", 
+    var policyObj = {name: "", id: "",
+        version: "1.0", uuid: "", author: "", community: "", 
         collections: collections, 
         action: action,
         type: type,
