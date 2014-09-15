@@ -3,8 +3,8 @@
 The Data Policy Manager (DPM) Client is a collection of python scripts running at each EUDAT data center.
 
 Currently there are two main scrips:
-1. The *PolicyManager.py* python script responsible for fetching policies from the DPM server.
-2. The *Upload.py script*, responsible for uploading policy execution state to the DPM server.
+ 1. The *PolicyManager.py* python script responsible for fetching policies from the DPM server.
+ 2. The *Upload.py script*, responsible for uploading policy execution state to the DPM server.
 
 More information on both of these scripts can be found in the next sections.
 
