@@ -11,6 +11,7 @@ More information on both of these scripts can be found in the next sections.
 Required Python Modules:
 
  * argparse
+ * urllib
  * urllib2
  * json
  * hashlib
@@ -19,6 +20,8 @@ Required Python Modules:
    * (https://github.com/josiahcarlson/parse-crontab)
  * libxml and libxslt
    * (http://lxml.de/)
+ * ConfigParser
+ * time
 
 ## Configuration ##
 
