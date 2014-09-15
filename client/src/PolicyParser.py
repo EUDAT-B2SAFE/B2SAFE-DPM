@@ -1,3 +1,5 @@
+__author__ = 'Willem Elbers, MPI-TLA, willem.elbers@mpi.nl'
+
 import urllib2
 from lxml import etree
 from ReplicationPolicy import *
@@ -59,7 +61,6 @@ class PolicyParser():
         """
         response = urllib2.urlopen(url)
         xmlData = response.read()
-#        xmlData += 'incorrect'
 
         #Decide if checksum verification is needed and if yes, compute the checksum for the downloaded policy
         checksumVerificationNeeded = not checksum_algo == None

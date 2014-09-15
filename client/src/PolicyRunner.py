@@ -1,3 +1,5 @@
+__author__ = 'Willem Elbers, MPI-TLA, willem.elbers@mpi.nl'
+
 from cProfile import run
 import subprocess
 import sys

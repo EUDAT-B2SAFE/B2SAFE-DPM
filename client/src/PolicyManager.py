@@ -1,30 +1,13 @@
 #!/usr/bin/env python
 
+__author__ = 'Willem Elbers, MPI-TLA, willem.elbers@mpi.nl'
+
 import argparse
 import urllib2
+import json
 from PolicyParser import PolicyParser
 from PolicyRunner import PolicyRunner
-import json
-import ConfigParser
-
-def readConfig(args):
-    print "Loading configuration from [%s]" % args.config
-    config = ConfigParser.ConfigParser()
-    config.read(args.config)
-    return config
-
-def ConfigSectionMap(config, section):
-    dict1 = {}
-    options = config.options(section)
-    for option in options:
-        try:
-            dict1[option] = config.get(section, option)
-            if dict1[option] == -1:
-                DebugPrint("skip: %s" % option)
-        except:
-            print("exception on %s!" % option)
-            dict1[option] = None
-    return dict1
+from ConfigLoader import ConfigParser
 
 def parseOverHttp(args):
     """
@@ -59,24 +42,26 @@ def runPolicy(policy, test, debug):
     runner.runPolicy(policy)
 
 def queryDpm(args, begin_date=None, end_date=None):
-    config = readConfig(args)
-    username = ConfigSectionMap(config, 'DpmServer')['username']
-    password = ConfigSectionMap(config, 'DpmServer')['password']
-    server = ConfigSectionMap(config, 'DpmServer')['hostname']
+    #load properties from configuration
+    config = ConfigParser(args.config)
+    username = config.SectionMap('DpmServer')['username']
+    password = config.SectionMap('DpmServer')['password']
+    server = config.SectionMap('DpmServer')['hostname']
     url = '%s://%s%s?community_id=%s&center_id=%s' % \
-          (ConfigSectionMap(config, 'DpmServer')['scheme'],
-           ConfigSectionMap(config, 'DpmServer')['hostname'],
-           ConfigSectionMap(config, 'DpmServer')['path'],
-           ConfigSectionMap(config, 'Community')['id'],
-           ConfigSectionMap(config, 'Center')['id'])
+          (config.SectionMap('DpmServer')['scheme'],
+           config.SectionMap('DpmServer')['hostname'],
+           config.SectionMap('DpmServer')['path'],
+           config.SectionMap('Community')['id'],
+           config.SectionMap('Center')['id'])
 
+    #apply parameters
     if not begin_date is None:
         url += '&begin_date=%s' % begin_date
     if not end_date is None:
         url += '&end_date=%s' % end_date
 
+    #start interaction with DPM server
     print 'Listing policies [%s]' % url
-
     authinfo = urllib2.HTTPPasswordMgrWithDefaultRealm()
     authinfo.add_password(None, server, username, password)
     handler = urllib2.HTTPBasicAuthHandler(authinfo)

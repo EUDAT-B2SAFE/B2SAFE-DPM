@@ -1,3 +1,5 @@
+__author__ = 'Willem Elbers, MPI-TLA, willem.elbers@mpi.nl'
+
 from lxml import etree
 from Policy import Policy
 
