@@ -14,7 +14,8 @@ Required Python Modules:
  * json
  * hashlib
  * crontab
-   * (https://pypi.python.org/packages/source/c/crontab/crontab-0.18.tar.gz or https://github.com/josiahcarlson/parse-crontab)
+   * (https://pypi.python.org/packages/source/c/crontab/crontab-0.18.tar.gz)
+   * (https://github.com/josiahcarlson/parse-crontab)
  * libxml and libxslt
    * (http://lxml.de/)
 
@@ -86,27 +87,27 @@ iRODS policy is not started.
 
 ### Examples ###
 
-./policy_manager.py -t -v -T cli -su http://eudat.eu/policy.template.xsd http -u https://dpm-eudat.norstore.uio.no/DPM1/DataPolicyMgr/data/output-1379580840.xml
+`./policy_manager.py -t -v -T cli -su http://eudat.eu/policy.template.xsd http -u https://dpm-eudat.norstore.uio.no/DPM1/DataPolicyMgr/data/output-1379580840.xml`
 
-./policy_manager.py -t -v -T cli -sp policy.template.xsd file -p ./policy_test.xml
+`./policy_manager.py -t -v -T cli -sp policy.template.xsd file -p ./policy_test.xml`
 
 ### Running the DPM client inside iRODS ###
 
 The following rule can be run in order to execute the DPM script every 5 minutes inside the iRODS rule engine.
-`
-startPolicyManager {
-    *Cmd="runPolicyManager.sh"
-    *Arg="-T cli -sp /srv/irods/iRODS-pre-production/server/bin/cmd/policy.template.xsd http -c /srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
 
-    delay("<EF>5m</EF>") {
-	    msiExecCmd(*Cmd,*Arg,"null","null","null",*Result);
-	    msiGetStdoutInExecCmdOut(*Result,*Out);
-        writeLine("serverLog","Policy manager executed [*Out]");
+    startPolicyManager {
+        *Cmd="runPolicyManager.sh"
+        *Arg="-T cli -sp /srv/irods/iRODS-pre-production/server/bin/cmd/policy.template.xsd http -c /srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
+
+        delay("<EF>5m</EF>") {
+            msiExecCmd(*Cmd,*Arg,"null","null","null",*Result);
+            msiGetStdoutInExecCmdOut(*Result,*Out);
+            writeLine("serverLog","Policy manager executed [*Out]");
+        }
     }
-}
-INPUT null
-OUTPUT ruleExecOut
-`
+    INPUT null
+    OUTPUT ruleExecOut
+
 If this rule is stored in a file called 'queuePolicyManager.r', you can start this rule with the 'irule -vF queuePolicyManager.r' command
 and check it status via 'iqstat -l'.
 
@@ -115,42 +116,40 @@ and check it status via 'iqstat -l'.
 iRODS api hooks, configured on core.re.
 
 Update policy state during replication policy execution:
-`
-acPostProcForPut {
-    ON($objPath like "\*.replicate") {
-        #Set replication policy state when queing the policy
-        *config = "/srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
-        msiExecCmd("uploadPolicyState.sh", "-c *config -d $objPath -S QUEUED", "null", "null", "null", *out);
 
-        delay("<PLUSET>1m</PLUSET>") {
-                #Set replication policy state when starting policy execution
-                *config = "/srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
-                msiExecCmd("uploadPolicyState.sh", "-c *config -d $objPath -S RUNNING", "null", "null", "null", *out);
-                processReplicationCommandFile($objPath);
+    acPostProcForPut {
+        ON($objPath like "\*.replicate") {
+            #Set replication policy state when queing the policy
+            *config = "/srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
+            msiExecCmd("uploadPolicyState.sh", "-c *config -d $objPath -S QUEUED", "null", "null", "null", *out);
+
+            delay("<PLUSET>1m</PLUSET>") {
+                    #Set replication policy state when starting policy execution
+                    *config = "/srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
+                    msiExecCmd("uploadPolicyState.sh", "-c *config -d $objPath -S RUNNING", "null", "null", "null", *out);
+                    processReplicationCommandFile($objPath);
+            }
         }
     }
-}
-`
 
 Update policy state after a replication policy is finished:
-`
-acPostProcForObjRename(*sourceObject,*destObject) {
-        ON($objPath like "\*.replicate\*") {
-                *config = "/srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
-                msiExecCmd("uploadPolicyState.sh", "-c *config -s *sourceObject -d *destObject", "null", "null", "null", *out);
-        }
-}
-`
+
+    acPostProcForObjRename(*sourceObject,*destObject) {
+            ON($objPath like "\*.replicate\*") {
+                    *config = "/srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
+                    msiExecCmd("uploadPolicyState.sh", "-c *config -s *sourceObject -d *destObject", "null", "null", "null", *out);
+            }
+    }
 
 ### Data send to the DPM server ###
 
 Data uploads to the server HTTP API endpoint have the following format and will be send as form-www/encoded name,value pairs:
 
-{
-    'id': policyId,                 policy uid, extracted from .replicate file
-    'state': args.state,            policy state, extracted from .replicate file (RUNNING, FINISHED, FAILED)
-    'timestamp': timestamp,         unix timestamp (seconds since EPOCH) when this script was triggered
-    'center': args.center,          center id
-    'community': args.community     community id
-}
+    {
+        'id': policyId,                 policy uid, extracted from .replicate file
+        'state': args.state,            policy state, extracted from .replicate file (RUNNING, FINISHED, FAILED)
+        'timestamp': timestamp,         unix timestamp (seconds since EPOCH) when this script was triggered
+        'center': args.center,          center id
+        'community': args.community     community id
+    }
 
