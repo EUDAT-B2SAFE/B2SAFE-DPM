@@ -25,13 +25,12 @@ scripts in a subdirectory under the iRODS/service/bin/cmd directory and use shel
 script.
 
 Such a organization would look something like this:
-`
-iRODS/server/bin/cmd/
-    dpm-v1/
-    dpm-current/ -> dpm-v1/
-    runPolicyManager.sh
-    uploadPolicyState.sh
-`
+
+    iRODS/server/bin/cmd/
+        dpm-v1/
+        dpm-current/ -> dpm-v1/
+        runPolicyManager.sh
+        uploadPolicyState.sh
 
 Inside the dpm-current/ directory is a file called 'config.ini'. This file holds center specific properties and should be
 configured for each center.
