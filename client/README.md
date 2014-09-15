@@ -9,6 +9,7 @@ Currently there are two main scrips:
 More information on both of these scripts can be found in the next sections.
 
 Required Python Modules:
+
  * argparse
  * urllib2
  * json
