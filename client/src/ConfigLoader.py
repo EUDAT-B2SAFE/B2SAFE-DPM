@@ -2,7 +2,7 @@ __author__ = 'Willem Elbers, MPI-TLA, willem.elbers@mpi.nl'
 
 import ConfigParser
 
-class ConfigParser():
+class ConfigLoader():
 
     def __init__(self, config_file):
         self.config_file = config_file

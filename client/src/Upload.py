@@ -6,22 +6,22 @@ import argparse
 import urllib2
 import urllib
 import time
-from ConfigLoader import ConfigParser
+from ConfigLoader import ConfigLoader
 
 def upload(args):
     #load properties from configuration
-    config = ConfigParser(args.config)
+    config = ConfigLoader(args.config)
     username = config.SectionMap('DpmServer')['username']
     password = config.SectionMap('DpmServer')['password']
     server = config.SectionMap('DpmServer')['hostname']
-    url = '%s://%s%s?community_id=%s&center_id=%s' % \
+    url = '%s://%s%s' % \
           (config.SectionMap('DpmServer')['scheme'],
            config.SectionMap('DpmServer')['hostname'],
            config.SectionMap('DpmServer')['uploadpath'])
 
     #Extract the policy id and the policy execution status from the policy name
     state = fetchPolicyState(args.destination)
-    policyId = fetchPolicyState(args.destination)
+    policyId = fetchPolicyId(args.destination)
     #Get the current UNIX timestamp
     timestamp = time.time()
 
@@ -34,7 +34,7 @@ def upload(args):
 
     # Upload information
     data = urllib.urlencode({'id': policyId, 'state': state, 'timestamp': timestamp, 'center': config.SectionMap('Center')['id'], 'community': config.SectionMap('Community')['id']})
-    print 'url: %s, data: %s' % (args.url, data)
+    print 'url: %s, data: %s' % (url, data)
     req = urllib2.Request(url=url, data=data)
     response = urllib2.urlopen(req).read()
     print response
@@ -50,7 +50,9 @@ def fetchPolicyState(destination):
 
 def fetchPolicyId(destination):
     segments = destination.split('.')
-    return segments[0]
+    segments2 = segments[0].split('/')
+    policyId = segments2[-1]
+    return policyId
 
 
 def main():
@@ -58,6 +60,7 @@ def main():
     argp.add_argument('-c', '--config', required=True, help='Path to config.ini')
     argp.add_argument('-s', '--source', required=False, help='Object before rename')
     argp.add_argument('-d', '--destination', required=False, help='Object after rename')
+    argp.add_argument('-S', '--state', required=False, help='Set the specified state')
 
     args = argp.parse_args()
     upload(args)

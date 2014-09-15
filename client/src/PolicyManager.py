@@ -7,7 +7,7 @@ import urllib2
 import json
 from PolicyParser import PolicyParser
 from PolicyRunner import PolicyRunner
-from ConfigLoader import ConfigParser
+from ConfigLoader import ConfigLoader
 
 def parseOverHttp(args):
     """
@@ -43,7 +43,7 @@ def runPolicy(policy, test, debug):
 
 def queryDpm(args, begin_date=None, end_date=None):
     #load properties from configuration
-    config = ConfigParser(args.config)
+    config = ConfigLoader(args.config)
     username = config.SectionMap('DpmServer')['username']
     password = config.SectionMap('DpmServer')['password']
     server = config.SectionMap('DpmServer')['hostname']
