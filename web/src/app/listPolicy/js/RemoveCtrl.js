@@ -1,4 +1,4 @@
-function removeCtrl($scope, $http, policy) {
+function removeCtrl($scope, $http, $window, policy) {
    
     // Back to the list
     $scope.backToList = function() {
@@ -7,11 +7,15 @@ function removeCtrl($scope, $http, policy) {
 
     // Delete the policy
     $scope.removePolicy = function() {
-        var rmpolicy = $http({method: "POST", 
-            url: "/cgi-bin/dpm/removePolicy.py",
-            data: angular.toJson({uuid: $scope.policy.saved_uuid})});
-        rmpolicy.then(function(response) {
-            alert("Policy has been removed");
-        });
+        var resp = confirm("Are you sure?");
+        if (resp === true) {
+            var rmpolicy = $http({method: "POST", 
+                url: "/cgi-bin/dpm/removePolicy.py",
+                data: angular.toJson({uuid: $scope.policy.saved_uuid})});
+            rmpolicy.then(function(response) {
+                alert("Policy has been removed");
+                $window.location.reload();
+            });
+        }
     };
 }

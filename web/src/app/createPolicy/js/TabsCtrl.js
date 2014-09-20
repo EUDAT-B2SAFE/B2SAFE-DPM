@@ -27,7 +27,7 @@ function tabsCtrl($scope, $http, logPageList, $route, polList, userProfile,
 
     // Function to change the location of the for the list view
     $scope.changeLoc = function (turl) {
-        alert("parent scope function called " + turl);
+        // alert("parent scope function called " + turl);
         $scope.list_url = turl;
         $route.reload();
     };

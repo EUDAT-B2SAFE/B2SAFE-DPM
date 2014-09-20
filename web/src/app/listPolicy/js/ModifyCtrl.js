@@ -1,4 +1,4 @@
-function modifyCtrl($scope, policy, $http, data_identifier, userProfile) {
+function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile) {
 
     // We need to make a copy of the original policy so any updates
     // can be compared
@@ -375,14 +375,17 @@ function modifyCtrl($scope, policy, $http, data_identifier, userProfile) {
         var polChangedObj = checkPolChanged(polChanged);
         if (polChangedObj.changed) { 
             if (polChangedObj.invalid.length === 0) {
+                policy.uuid = createGuid(); 
                 $http.post("/cgi-bin/dpm/storeModifiedPolicy.py", 
                         JSON.stringify(policy),
                         {headers: "Content-Type: application/x-www-form-urlencoded"}).success(function(data, status, headers, config) 
                             {
-                                alert("Updated policy has been successfully stored in the database");
                                 if (data.policy_exists) {
                                     alert("The policy exists in the database");
+                                } else {
+                                    alert("Updated policy has been successfully stored in the database");
                                 }
+                                $window.location.reload();
                             }).error(function(data, status, headers, config)
                                 {
                                     alert("Problem with storing the policy");

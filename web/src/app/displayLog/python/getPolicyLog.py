@@ -80,6 +80,11 @@ def getLogs(config, username):
         if (db.get(community_key) not in communities):
             continue
 
+        # Get the policy name from the database
+        pol_name_key = "%s%s" % (config.get("POLICY_SCHEMA", "name"),
+                uuid_num)
+        pol_name = db.get(pol_name_key)
+
         log_entries = db.get("%s%s" % \
                 (config.get("LOG_SCHEMA", "log_entries"), uuid_num))
         uuid_val = db.get(auuid)
@@ -94,12 +99,16 @@ def getLogs(config, username):
                 log_center = db.get("%s%s_%s" % \
                         (config.get("LOG_SCHEMA", "log_center"), 
                         uuid_num, log_num))
-                policy_log_data.append((uuid_val, log_state, log_center, 
-                        log_timestamp))
-    policy_logs["columns"] = [config.get("POLICY_SCHEMA", "uniqueid"),
+                policy_log_data.append((pol_name, uuid_val, log_state, 
+                    log_center, float(log_timestamp)*1000))
+    policy_logs["columns"] = [config.get("POLICY_SCHEMA", "name"),
+            config.get("POLICY_SCHEMA", "uniqueid"),
             config.get("LOG_SCHEMA", "log_state"),
             config.get("LOG_SCHEMA", "log_center"),
             config.get("LOG_SCHEMA", "log_timestamp")]
+    # Reverse the order of the log data so the most recent timestamps are
+    # first
+    policy_log_data.sort(key=lambda x: x[-1], reverse=True)
     policy_logs["data"] = policy_log_data
     print json.dumps(policy_logs)
 

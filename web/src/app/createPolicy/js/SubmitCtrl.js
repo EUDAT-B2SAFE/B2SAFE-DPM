@@ -1,5 +1,5 @@
-function submitCtrl($scope, $location, submitFlag, policy, pristineFlags, 
-        invalidFlags, $http, page) {
+function submitCtrl($scope, $location, $window, $route, submitFlag, policy, 
+        pristineFlags, invalidFlags, $http, page) {
     $scope.setSubmitted = function(validObj) {
         var flago = submitFlag.getObj();
         flago.fieldsOK = checkFields(validObj, pristineFlags, invalidFlags,
@@ -30,10 +30,18 @@ function submitCtrl($scope, $location, submitFlag, policy, pristineFlags,
         $http.post("/cgi-bin/dpm/storePolicy.py", JSON.stringify(policy),
                 {headers: "Content-Type: application/x-www-form-urlencoded"})
             .success(function(data, status, headers, config) {
-                alert("Policy successfully stored in the database");
                 if (data.policy_exists) {
                     alert("The policy exists in the database");
+                } else {
+                    alert("Policy successfully stored in the database");
                 }
+                // Reset the policy and reload the page which puts us on
+                // the default page - the policy listing
+                var new_policy = {};
+                new_policy = resetPolicy(policy);
+                $scope.policy = new_policy;
+                // alert("scope is " + JSON.stringify($scope.policy));
+                $window.location.reload();
             }).error(function(data, status, headers, config) {
                 alert("error is " + data);
             });

@@ -104,6 +104,7 @@ function listCtrl($scope, $sce, $http, $route,
         $http({method: "GET",
             url: "/cgi-bin/dpm/getPolicyData.py"}).success(function(data, 
                     status, headers, config) {
+                        // alert("data is " + JSON.stringify(data));
                         var i;
                         var j;
                         uuids = clearArray(uuids);
@@ -228,7 +229,7 @@ function listCtrl($scope, $sce, $http, $route,
         // corresponding to the uuid
         $http({method: "GET",
             url: "/cgi-bin/dpm/getPolicy.py",
-            params: {uuid: pol_data.pol_vals[3].name} }).success(function(data, 
+            params: {uuid: pol_data.pol_vals[dkeys.policy_uniqueid].name} }).success(function(data, 
                 status, headers, config) {
                     uuids = clearArray(uuids);
                     uuids.push(pol_data.pol_vals[dkeys.policy_uniqueid].name);

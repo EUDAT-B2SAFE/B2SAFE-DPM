@@ -48,9 +48,8 @@ def submitRequest(config):
                 )
 
         result = cur.fetchone()
-        print "result is ", result
         if (result != None):
-            reqRes["roleExists"] = True
+            print "roleExists"
         else:
             # Store the request and email the DPM admin
             uid = 0
@@ -85,7 +84,6 @@ def submitRequest(config):
             cur.execute('''select max(dpm_date_id) from dpm_date''')
             res = cur.fetchone()
             if (res is not None and res[0] is not None):
-                print "dpm res ", res
                 dpm_date_id = int(res[0]) + 1
             cur.execute('''insert into dpm_date (dpm_date_id, submit_time)
                 values (?, ?)''', (dpm_date_id, int(time.time())))
@@ -106,12 +104,12 @@ def submitRequest(config):
             # the user to choose between the admin and dpm pages
             if (dataVals["role"].lower().strip() == "dpm admin" or
                     dataVals["role"].lower().strip() == "community admin"):
-                cur.execute('''select url from dpm_page where 
+                cur.execute('''select dpm_id from dpm_page where 
                     name = "frontpage" ''')
                 res = cur.fetchall()
                 dpm_id = res[0][0]
             else:
-                cur.execute('''select url from dpm_page where
+                cur.execute('''select dpm_id from dpm_page where
                     name = "dpm" ''')
                 res = cur.fetchall()
                 dpm_id = res[0][0]
@@ -151,7 +149,7 @@ def submitRequest(config):
 
 
 if __name__ == '__main__':
-    print "Content-Type: text/htm"
+    print "Content-Type: text/html"
     print ""
     cfgfile = "./config/policy_schema.cfg"
     config = ConfigParser.ConfigParser()

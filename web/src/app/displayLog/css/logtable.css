@@ -1,3 +1,6 @@
+.queued {
+    background-color: lightblue;
+}
 .running {
     background-color: yellow;
 }

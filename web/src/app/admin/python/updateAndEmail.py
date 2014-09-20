@@ -18,7 +18,7 @@ def sendEmail(config, dataVals):
     try:
         smtpObj = smtplib.SMTP("localhost")
         smtpObj.sendmail(sender, receivers, msg)
-        print msg
+        print "msgSent"
     except smtplib.SMTPException:
         print "Error: unable to send email"
 
@@ -39,9 +39,13 @@ def update(config):
         cur.execute('''select status_id from status where 
                 status = 'approved' ''')
         status_id = int(cur.fetchone()[0])
-    elif (dataVals["approval"] == "reject"):
+    elif (dataVals["approval"] == "decline"):
         cur.execute('''select status_id from status where
                 status = 'declined' ''')
+        status_id = int(cur.fetchone()[0])
+    elif (dataVals['approval'] == "close"):
+        cur.execute('''select status_id from status where 
+                status = 'closed' ''')
         status_id = int(cur.fetchone()[0])
 
     if (status_id >= 0):

@@ -3,7 +3,7 @@ var dpmApp = angular.module("dpmApp", ["ngRoute", "ui.bootstrap", "ngTable"]);
 // The list of routes. Each 'page' of the form is a route
 var locList = [{url: "/personal", path: "template/personal.html"},
                {url: "/dataset_action", path: "template/dataset_action.html"},
-               {url: "/summary", path: "template/summary.html"}
+               {url: "/summary", path: "template/summary.html"},
               ];
 
 var logList = [{url: "/listlogs", path: "template/listlogs.html"}];
@@ -33,6 +33,10 @@ function dpmFormConfig($routeProvider) {
         when(logList[0].url, {
             controller: logsCtrl,
             templateUrl: logList[0].path
+        }).
+        when("/complete", {
+            controller: completeCtrl,
+            templateUrl: "template/complete.html"
         }).
         otherwise({
             redirectTo: "/"

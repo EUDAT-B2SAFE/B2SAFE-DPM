@@ -112,9 +112,9 @@ def getProfiles(config):
         username = os.environ["REMOTE_USER"].strip()
     
     # Define the options for the status and the table column keys
-    status_options= {"approved": ["reject", "close"], 
-        "closed": ["approve"], "pending": ["approve", "reject"],
-        "rejected": ["approve"]}
+    status_options= {"approved": ["decline", "close"], 
+        "closed": ["approve"], "pending": ["approve", "decline"],
+        "declined": ["approve"]}
 
     keys = ["uid", "lastname", "firstname", "username", "email", "role",
             "community", "submittime", "status"]

@@ -15,7 +15,7 @@ def usage():
     print "Usage: updatepolicy.py?id=<id>&state=<state>&center=<center>&timestamp=<timestamp>&community=<community>"
     print "Options:"
     print "help=help               Prints this help"
-    print "state=state             The log message. Allowed states are: RUNNING, FINISHED, FAILED" 
+    print "state=state             The log message. Allowed states are: QUEUED, RUNNING, FINISHED, FAILED" 
     print "community=<community>   The community identifier"
     print "timestamp=<timestamp>   The timestamp for the message"
     print "center=<center>         The data center origin of the log message"

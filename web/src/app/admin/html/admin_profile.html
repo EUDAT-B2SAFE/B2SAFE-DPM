@@ -52,12 +52,14 @@
                         </td>
                 </tbody>
             </table>
-            <div data-ng-show="show_msg">
-                <textarea data-ng-model="e_subject">
+            <div id="mesg" data-ng-show="show_msg">
+                <textarea data-ng-model="e_subject" rows="2" cols="60" 
+                    id="e_subject">
                     {{e_subject}}
                 </textarea>
                 <br/>
-                <textarea  data-ng-model="e_body">
+                <textarea data-ng-model="e_body" rows="6" cols="60"
+                    id="e_body">
                     {{e_body}}
                 </textarea>
                 <br/>

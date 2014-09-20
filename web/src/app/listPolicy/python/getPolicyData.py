@@ -100,7 +100,14 @@ def getData(config):
         community_key = ''
         
         # Setup the column names
+        # Get the index of the timestamp - we will need this to sort on
+        # later
+        acount = 0
+        time_idx = -1
         for acol in columns:
+            if ("policy_ctime" in acol):
+                time_idx = acount
+            acount += 1
             if ("policy_community" in acol):
                 community_key = "%s_%s" % (acol[0], idx)
             if ("collection_persistentIdentifier" in acol[0]):
@@ -147,6 +154,8 @@ def getData(config):
         
         data.append(dvals)
         
+    # Sort the list according to timestamp
+    data.sort(key=lambda x: x[time_idx][0], reverse=True)
     print json.dumps(data)
 
 if __name__ == '__main__':

@@ -1,0 +1,1 @@
+Role %s for community %s CLOSED

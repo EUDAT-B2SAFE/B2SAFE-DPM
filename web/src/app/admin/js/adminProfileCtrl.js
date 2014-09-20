@@ -1,4 +1,4 @@
-function adminProfileCtrl($scope, $http, reqAction, ngTableParams) {
+function adminProfileCtrl($scope, $window, $http, reqAction, ngTableParams) {
     $scope.data = [];
     $scope.show_msg = false;
     $scope.profile_cols = [];
@@ -6,7 +6,7 @@ function adminProfileCtrl($scope, $http, reqAction, ngTableParams) {
     var getprofiles = $http({method:"GET", 
         url: "/cgi-bin/dpm/getprofiles.py"});
     var reqList = getprofiles.then(function(result) {
-        alert(angular.toJson(result));
+        // alert(angular.toJson(result));
         $scope.profile_cols = result.data.cols;
         $scope.data = result.data.rows;
         $scope.profiles = new ngTableParams({
@@ -73,7 +73,13 @@ function adminProfileCtrl($scope, $http, reqAction, ngTableParams) {
             data: angular.toJson($scope.userInfo)
         });
         update_email.then(function(response) {
-            alert("response is " + response.data);
+            var resp = response.data.replace(/\s/g, '');
+            if (resp === 'msgSent') {
+                alert("Status has been successfully updated");
+                $window.location.reload();
+            } else {
+                alert("Problem sending the email message. Contact the DPM Administrator");
+            }
         });
 
     };

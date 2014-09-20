@@ -13,3 +13,12 @@ table.ng-table tbody td:not(:first-child) {
 table.ng-table tbody td:not(:last-child) {
     border-right: 1px solid #000;
 }
+div#mesg {
+    width: 100px;
+}
+textarea#e_subject {
+    width: auto;
+}
+textarea#e_body {
+    width: auto;
+}

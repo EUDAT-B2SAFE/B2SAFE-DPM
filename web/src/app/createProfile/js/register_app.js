@@ -1,6 +1,21 @@
-var registerApp = angular.module("registerApp", []);
+var registerApp = angular.module("registerApp", ["ngRoute"]);
 
-function registerCtrl($scope, $http, cMgr, invalidFlags) {
+function regConfig($routeProvider) {
+    $routeProvider.
+        when("/", {
+            controller: registerCtrl,
+            templateUrl: "template/reg_tpl.html"}).
+        when("/acknowledge", {
+            controller: acknowledgeCtrl,
+            templateUrl: "template/acknowledge.html"}).
+        otherwise({
+            redirectTo: "/"
+        });
+}
+
+registerApp.config(regConfig);
+
+function regFormCtrl($scope, $http, $route, $location, cMgr, invalidFlags) {
     $scope.register_submitted = false;
     $scope.invalidFlags = invalidFlags;
     $scope.cm = cMgr;
@@ -56,9 +71,27 @@ function registerCtrl($scope, $http, cMgr, invalidFlags) {
             if (! $scope.register.$invalid) {
                 $http.post("/cgi-bin/dpm/submitProfile.py", 
                         angular.toJson($scope.cm),
-                        {headers: "Content-Type: application/x-www-form-urlencoded; charset=UTF-8;"}).then(function(result){
-                        alert("done " + result.data);
-                    });
+                        {headers: "Content-Type: application/x-www-form-urlencoded; charset=UTF-8;"}).then(
+                            function(result){
+                                var retval = result.data.replace(/\s/g, '');
+                                if (retval === "roleExists") {
+                                    alert("The user account is already registered for this role");
+                                } else {
+                                    // Have to reset the fields manually
+                                    // as the $setPristine doesn't work
+                                    //$scope.register.$setPristine();
+                                    cMgr.firstname = '';
+                                    cMgr.lastname = '';
+                                    cMgr.email = '';
+                                    cMgr.role = '';
+                                    cMgr.communities = [{name: ''}];
+                                    $scope.cm = cMgr;
+                                    $location.url("/acknowledge");
+                                }
+                            }, function(error){
+                                alert("There was a problem submitting the request." +
+                                " Please contact the Data Policy Manager for more information");
+                            });
             }
         }
     };
@@ -75,3 +108,9 @@ function registerCtrl($scope, $http, cMgr, invalidFlags) {
         window.location.reload();
     };
 }
+function registerCtrl($scope) {
+}
+
+function acknowledgeCtrl($scope) {
+}
+
