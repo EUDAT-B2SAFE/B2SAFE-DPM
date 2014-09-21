@@ -20,3 +20,81 @@ div#checkboxes {
     display: inline-block;
 }
 
+.buttondiv1 {
+    width: 8px;
+    height: auto;
+    display: inline-block;
+}
+.buttondiv0 {
+    width: 2px;
+    height: auto;
+    display: inline-block;
+}
+div#listbuttons {
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+    height: 7%;
+}
+
+div#listlog {
+    margin-left: auto;
+    margin-right: auto;
+    width: 10%;
+    height: 7%;
+}
+
+input#listlogbutton {
+    width: 100px;
+    height: auto;
+    display: block;
+}
+
+div#buttonspace1 {
+    width: auto;
+    height: 8px;
+}
+
+table {
+    background-color: whitesmoke;
+}
+
+.modify label {
+    width: 120px;
+    float: left;
+}
+div#modify {
+    background-color: whitesmoke;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.modbutton button#backbtn {
+    float: left;
+    margin-right: 180px;
+}
+div#modbutton {
+    float: left;
+    display: block;
+}
+
+div#removebtn {
+    width: 50%;
+    background-color: whitesmoke;
+    margin-left: auto;
+    margin-right: auto;
+}
+button#removeback {
+    margin-top: 20px;
+    margin-right: 150px;
+}
+button#remove {
+    margin-top: 20px;
+}
+table#tabremove {
+    width: 50%;
+    background-color: whitesmoke;
+    margin-left: auto;
+    margin-right: auto;
+}

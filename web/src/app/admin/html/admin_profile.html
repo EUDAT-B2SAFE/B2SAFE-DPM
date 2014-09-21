@@ -17,60 +17,65 @@
             href="./css/admin.css" type="text/css" />
     </head>
     <body data-ng-app="adminProfileApp">
-        <div id="profiles" data-ng-controller="adminProfileCtrl">
-            <table data-ng-table="profiles" show-filter="true" 
-                class="table ng-table-rowselected">
-                <thead>
-                    <tr>
-                        <th data-ng-repeat="profile_col in profile_cols">
-                            {{profile_col}}
-                        </th>
-                        <th>Action</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr data-ng-repeat="profile_data in $data">
-                        <td data-ng-repeat="profile_val in profile_data.values">
-                            {{profile_val.name}}
-                        </td>
-                        <td>
-                            <select name="approvereq" 
-                                data-ng-disabled="disableOption(profile_data.status_options)"
-                                data-ng-model="reqApproval"
-                                data-ng-options="opt for opt in
-                                profile_data.status_options">
-                                <option value="">
-                                    --- Choose ---
-                                </option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="button" value="Select"
-                            data-ng-disabled="disableOption(profile_data.status_options)"
-                            data-ng-click="selectReq(profile_data)">
-                        </td>
-                </tbody>
-            </table>
-            <div id="mesg" data-ng-show="show_msg">
-                <textarea data-ng-model="e_subject" rows="2" cols="60" 
-                    id="e_subject">
-                    {{e_subject}}
-                </textarea>
-                <br/>
-                <textarea data-ng-model="e_body" rows="6" cols="60"
-                    id="e_body">
-                    {{e_body}}
-                </textarea>
-                <br/>
-                <button data-ng-click="submitEmail()">Submit</button>
-            </div>
-        </div>
-        <script src="./script/angular/angular.min.js" 
-            type="text/javascript"></script>
-        <script src="./script/ng-table-master/ng-table.js"
-            type="text/javascript"></script>
-        <script src="./js/admin_profile_app.js" type="text/javascript">
-        </script>
+      <div id="header-wrapper">
+          <div id="header">
+              <img src="img/logo.jpg" />
+              <h1 class="title">DPM Administation Page</h1>
+          </div>
+          <hr style="margin: 0px 0px;">
+      </div>
+      <div id="page">
+          <h2 class="subtitle"></h2>
+          <div id="profiles" data-ng-controller="adminProfileCtrl">
+              <table data-ng-table="profiles" show-filter="true" 
+                  class="table ng-table-rowselected">
+                  <thead>
+                      <tr>
+                          <th data-ng-repeat="profile_col in profile_cols">
+                              {{profile_col}}
+                          </th>
+                          <th>Action</th>
+                          <th></th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr data-ng-repeat="profile_data in $data">
+                          <td data-ng-repeat="profile_val in profile_data.values">
+                              {{profile_val.name}}
+                          </td>
+                          <td>
+                              <select name="approvereq" 
+                                  data-ng-disabled="disableOption(profile_data.status_options)"
+                                  data-ng-model="reqApproval"
+                                  data-ng-options="opt for opt in profile_data.status_options">
+                                  <option value="">
+                                      --- Choose ---
+                                  </option>
+                              </select>
+                          </td>
+                          <td>
+                              <input type="button" value="Select"
+                                  data-ng-disabled="disableOption(profile_data.status_options)"
+                                  data-ng-click="selectReq(profile_data)">
+                          </td>
+                      </tr>
+                  </tbody>
+              </table>
+              <div id="mesg" data-ng-show="show_msg">
+                  <textarea data-ng-model="e_subject" rows="2" cols="60" id="e_subject">
+                       {{e_subject}}
+                  </textarea>
+                  <br/>
+                  <textarea data-ng-model="e_body" rows="6" cols="60" id="e_body">
+                       {{e_body}}
+                  </textarea>
+                  <br/>
+                  <button data-ng-click="submitEmail()">Submit</button>
+              </div>
+          </div>
+      </div>
+      <script src="./script/angular/angular.min.js" type="text/javascript"></script>
+      <script src="./script/ng-table-master/ng-table.js" type="text/javascript"></script>
+      <script src="./js/admin_profile_app.js" type="text/javascript"></script>
     </body>
 </html>

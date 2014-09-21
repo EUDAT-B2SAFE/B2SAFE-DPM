@@ -1,6 +1,8 @@
 div#buttons {
-    width: 50%;
+    width: 30%;
     height: 5%;
+    float: right;
+    margin-top: 5px;
 }
 
 *{	
@@ -98,4 +100,8 @@ select.option, select.select-title{
 	}
 select#period {
     width: 5%;
+}
+
+.dpm-form {
+    background-color: whitesmoke;
 }

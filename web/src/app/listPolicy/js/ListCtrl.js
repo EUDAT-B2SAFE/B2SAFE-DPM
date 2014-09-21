@@ -5,7 +5,18 @@ function listCtrl($scope, $sce, $http, $route,
             
     var keys = [];
     var dkeys = {};
+    $scope.displayKeys = false;
  
+
+    // Display the checkbox for the columns
+    $scope.showCheckbox = function() {
+        if ($scope.displayKeys === false) {
+            $scope.displayKeys = true;
+        } else {
+            $scope.displayKeys = false;
+        }
+    };
+
     // Set the type of list action
     $scope.listaction = listaction;
 
@@ -171,6 +182,13 @@ function listCtrl($scope, $sce, $http, $route,
         $scope.tabs.total($scope.data.length);
         $scope.tabs.reload();
     };
+
+    // Clear the search
+    $scope.clearSearch = function() {
+        $scope.searchparam = '';
+        $scope.filterPolicy();
+    };
+
     $scope.reloadPolicyList = function() {
         // Get the policies from the database
         var dvals = [];

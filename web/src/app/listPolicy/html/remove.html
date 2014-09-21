@@ -1,7 +1,5 @@
 <div data-ng-controller="removeCtrl">
-    <button data-ng-click="backToList()">Back to List Policies</button>
-    <br/>
-    <table>
+    <table id="tabremove">
         <thead>
             <tr>
                 <th>Name</th>
@@ -16,9 +14,9 @@
                 <td>Author</td>
                 <td>{{policy.author}}</td>
             </tr>
-             <tr>
-                 <td>Version</td>
-                 <td>{{policy.version}}</td>
+            <tr>
+                <td>Version</td>
+                <td>{{policy.version}}</td>
             </tr><tr>
                 <td>Community</td>
                 <td>{{policy.community}}</td>
@@ -63,5 +61,12 @@
             </tr>
         </tbody>
     </table>
-    <button data-ng-click="removePolicy()">Remove Policy?</button>
+    <div id="removebtn">
+        <button id="removeback" data-ng-click="backToList()">
+            Back to List Policies
+        </button>
+        <button id="remove" data-ng-click="removePolicy()">
+            Remove Policy?
+        </button>
+    </div>
 </div>

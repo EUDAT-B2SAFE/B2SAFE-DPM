@@ -1,8 +1,22 @@
 <div data-ng-controller="listCtrl">
-    <div id="logbuttons">
-    <input type=button data-ng-click="loadLogList()" value="List Logs">
+    <div id="listlog">
+    <input type=button id="listlogbutton" data-ng-click="loadLogList()" value="List Logs">
     </div>
-    <div id="checkboxes">
+    <div id="buttonspace1"></div>
+
+    <div id="listbuttons">
+        <input type="button" data-ng-click="showCheckbox()"
+            data-ng-show="!displayKeys" value="Show Keys">
+        <input type="button" data-ng-click="showCheckbox()"
+            data-ng-show="displayKeys" value="Hide Keys">
+        <div class="buttondiv1"></div>
+        Search:<input data-ng-model="searchparam" data-ng-change="filterPolicy()">
+        <div class="buttondiv0"></div>
+        <input type="button" data-ng-click="clearSearch()" value="Clear">
+        <div class="buttondiv1"></div>
+        <input type="button" data-ng-click="reloadPolicyList()" value="Reload List">
+    </div>
+    <div id="checkboxes" data-ng-show="displayKeys">
         <div class="checkbox" data-ng-repeat="policy_column in policy_columns">
             <input type="checkbox" data-ng-model="policy_key.name"
                 data-ng-change="updateKey(policy_column.idx)"
@@ -10,9 +24,7 @@
                 {{policy_column.name}}
         </div>
     </div>
-    Search: <input data-ng-model="searchparam" data-ng-change="filterPolicy()">
     <br/><br/>
-    <input type=button data-ng-click="reloadPolicyList()" value="Reload List">
 
     <table data-ng-table="tabs" show-filter="true" class="table ng-table-rowselected">
         <thead>

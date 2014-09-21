@@ -9,7 +9,7 @@ span#error {
 }
 div#actions {
     width: 50%;
-    height: 220px;
+    height: 230px;
     float: left;
     margin: auto;
     border: 1px dotted #3399FF;
@@ -22,13 +22,13 @@ div#sources {
 }
 div#targets {
     width: 50%;
-    height: 220px;
+    height: 230px;
     float: right;
     margin: auto;
     border: 1px dotted #3399FF;
 }
 div#button_space {
-    width: 1px;
+    width: 5px;
     height: 10px;
     margin: auto;
     float: left;
@@ -38,4 +38,93 @@ div#submit_space {
     height: 10px;
     margin: auto;
     float: left;
+}
+.personalinfo label {
+    float: left;
+    width: 120px;
+    margin-left: 2px;
+    margin-right: 3px;
+}
+.personalinfo input {
+    margin-right: 3px;
+}
+
+.datasets {
+    display: inline-block;
+    margin-bottom: 3px;
+}
+
+.datasets label {
+    float: left;
+    width: 120px;
+    margin-right: 3px;
+}
+.datasets select {
+    margin-right: 3px;
+}
+.datasets div#remove {
+    float: left;
+}
+
+div#collection {
+    float left;
+}
+
+.actions label {
+    float: left;
+    width: 80px;
+    margin-left: 2px;
+    margin-right: 3px;
+}
+
+.targets label {
+    float: left;
+    width: 120px;
+    margin-left: 2px;
+    margin-right: 3px;
+}
+div#pers {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px dotted #3399FF;
+}
+
+table#summary {
+    width: 50%;
+    background-color: whitesmoke;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div#regform {
+    width: 50%;
+    background-color: whitesmoke;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px dotted #3399FF;
+}
+.regform label {
+    width: 120px;
+    float: left;
+    margin-left: 2px;
+    margin-right: 3px;
+}
+
+div#hreg {
+    height: 7px;
+    width: auto;
+}
+
+div#clabel {
+    width: 120px;
+    height: 20px;
+    float: left;
+    margin-left: 2px;
+    margin-right: 3px;
+    display: block;
+}
+
+.regform input#reset {
+    margin-right: 40px;
 }
