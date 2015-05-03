@@ -29,7 +29,8 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
         policy.id = policy.uuid;
         $http.post("/cgi-bin/dpm/storePolicy.py", JSON.stringify(policy),
                 {headers: "Content-Type: application/x-www-form-urlencoded"})
-            .success(function(data, status, headers, config) {
+            .then(function(results) {
+                var data = results.data;
                 if (data.policy_exists) {
                     alert("The policy exists in the database");
                 } else {
@@ -42,10 +43,10 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
                 $scope.policy = new_policy;
                 // alert("scope is " + JSON.stringify($scope.policy));
                 $window.location.reload();
-            }).error(function(data, status, headers, config) {
+            },
+            function(data, status, headers, config) {
                 alert("error is " + data);
             });
-
     };
 
 }

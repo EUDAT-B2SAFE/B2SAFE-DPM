@@ -59,6 +59,9 @@ function listCtrl($scope, $sce, $http, $route,
         } else if (this.polselected.name === "Remove") {
             url = "template/remove.html";
             $scope.policy.saved_uuid = $scope.policy.uuid;
+        } else if (this.polselected.name === "Reactivate") {
+            url = "template/reactivate.html";
+            $scope.policy.saved_uuid = $scope.policy.uuid;
         }
         $scope.$parent.changeLoc(url);
     };
@@ -66,17 +69,17 @@ function listCtrl($scope, $sce, $http, $route,
     // Read in from the config file the database schema. These will
     // be our search fields
     $http({method: "GET",
-        url: "/cgi-bin/dpm/getKeys.py"}).success(function(data, status,
-                headers, config) {
-                    var i;
-                    var is_visible = false;
-                    for (i = 0; i < data.length; i++) {
-                        is_visible = (data[i][1] === 'true');
-                        keys.push({idx: i, name: data[i][0], visible: is_visible});
-                    }
-                    for (i = 0; i < keys.length; i++) {
-                        dkeys[keys[i].name] = keys[i].idx;
-                    }
+        url: "/cgi-bin/dpm/getKeys.py"}).then(function(results) {
+            var data = results.data;
+            var i;
+            var is_visible = false;
+            for (i = 0; i < data.length; i++) {
+                is_visible = (data[i][1] === 'true');
+                keys.push({idx: i, name: data[i][0], visible: is_visible});
+            }
+            for (i = 0; i < keys.length; i++) {
+                dkeys[keys[i].name] = keys[i].idx;
+            }
     });
     $scope.policy_columns = keys;
     $scope.updateKey = function(idx) {
@@ -113,49 +116,59 @@ function listCtrl($scope, $sce, $http, $route,
     // when the author is filled we need to make use of the promise
     userProfile.promise.then(function (response) {
         $http({method: "GET",
-            url: "/cgi-bin/dpm/getPolicyData.py"}).success(function(data, 
-                    status, headers, config) {
-                        // alert("data is " + JSON.stringify(data));
-                        var i;
-                        var j;
-                        uuids = clearArray(uuids);
-                        for (i = 0; i < data.length; i++) {
-                            var ddvals = [];
-                            var is_visible = false;
-                            for (j = 0; j < data[i].length; j++) {
-                                is_visible = (data[i][j][1] === 'true');
-                                ddvals.push({name: data[i][j][0], 
-                                    visible: is_visible});
-                            }
-                            // Capture also the flag to identify if the
-                            // policy has been removed
-                            var polrm = false;
-                            if (data[i][8][0] === 'true') {
-                                polrm = true;
-                            }
-                            dvals.push({pol_vals: ddvals, visible: true,
-                            removed: polrm});
-                            // Keep the uid for matching with the log files
-                            uuids.push(data[i][dkeys.policy_uniqueid][0]);
-                        }
-                        $scope.data = dvals;
-                        var totlen = 0;
-                        if ($scope.data.length > 0) {
-                            totlen = $scope.data.length;
-                        }
-                        // Also save a copy of the data for quicker access
-                        // when using filtering
-                        dataSave = dvals;
-                        $scope.tabs = new ngTableParams({
-                            page: 1,
-                            count: 10},
+            url: "/cgi-bin/dpm/getPolicyData.py"}).then(function(results) {
+                //console.log("data is " + JSON.stringify(data));
+                var i;
+                var j;
+                var data = results.data;
+                uuids = clearArray(uuids);
+                for (i = 0; i < data.length; i++) {
+                    var ddvals = [];
+                    var is_visible = false;
+                    for (j = 0; j < data[i].length; j++) {
+                        is_visible = (data[i][j][1] === 'true');
+                        ddvals.push({name: data[i][j][0], 
+                            visible: is_visible});
+                    }
+                    // Set flag indicating whether to show removed
+                    // policy to false by default.
+                    var polrm = false;
+
+                    dvals.push({pol_vals: ddvals, visible: true,
+                        removed: polrm});
+                    // Keep the uid for matching with the log files
+                    uuids.push(data[i][dkeys.policy_uniqueid][0]);
+                }
+ 
+                // For removed or deactivated policies we need to
+                // remove the option to remove the policy
+                var k;
+                for (k = 0; k < dvals.length; k++) {
+                    if (dvals[k].pol_vals[dkeys.policy_removed].name === "true") {
+                        listaction = [{"name": "Reactivate"}, 
+                            {"name": "Modify"}]; 
+                    }
+                    dvals[k].listaction = listaction;
+                }
+
+                $scope.data = dvals;
+                var totlen = 0;
+                if ($scope.data.length > 0) {
+                    totlen = $scope.data.length;
+                }
+
+                // Also save a copy of the data for quicker access
+                // when using filtering
+                dataSave = dvals;
+ 
+                $scope.tabs = new ngTableParams({page: 1, count: 10},
                         {
                             total: totlen,
                             getData: function($defer, params) {
                                 $defer.resolve($scope.data.slice((params.page() - 1) * params.count(), params.page() * params.count()));
                 
-                                }
-                            });
+                            }
+                        });
         });
     }
     );
@@ -207,12 +220,10 @@ function listCtrl($scope, $sce, $http, $route,
                                 ddvals.push({name: data[i][j][0], 
                                     visible: $scope.policy_columns[j].visible});
                             }
-                            // Capture also the flag to identify if the
-                            // policy has been removed
+                            // Set flag indicating whether to show removed
+                            // policy to false by default.
                             var polrm = false;
-                            if (data[i][8][0] === 'true') {
-                                polrm = true;
-                            }
+
                             dvals.push({pol_vals: ddvals, visible: true,
                             removed: polrm});
                             uuids.push(data[i][dkeys.policy_uniqueid][0]);
@@ -227,6 +238,55 @@ function listCtrl($scope, $sce, $http, $route,
 
             })
         );
+    };
+
+    // Show only the active policies
+    $scope.showActive = function() {
+        var i;
+        var j;
+        var count = 0;
+        // We need to reset the array and repopulate from the saved list
+        $scope.data = [];
+        uuids = clearArray(uuids);
+        for (i = 0; i < dataSave.length; i++) {
+            for (j = 0; j < dataSave[i].pol_vals.length; j++) {
+                if (dataSave[i].pol_vals[dkeys.policy_removed].name === "false") {
+                    $scope.data[count] = dataSave[i];
+                    uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
+                    count += 1;
+                    break;
+                }             
+            }
+        }
+
+        // We need to reset the page counter after filtering
+        $scope.tabs.total($scope.data.length);
+        $scope.tabs.reload();
+
+    };
+
+    // Show only the removed policies
+    $scope.showRemoved = function() {
+        var i;
+        var j;
+        var count = 0;
+        // We need to reset the array and repopulate from the saved list
+        $scope.data = [];
+        uuids = clearArray(uuids);
+        for (i = 0; i < dataSave.length; i++) {
+            for (j = 0; j < dataSave[i].pol_vals.length; j++) {
+                if (dataSave[i].pol_vals[dkeys.policy_removed].name === "true") {
+                    $scope.data[count] = dataSave[i];
+                    uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
+                    count += 1;
+                    break;
+                }             
+            }
+        }
+
+        // We need to reset the page counter after filtering
+        $scope.tabs.total($scope.data.length);
+        $scope.tabs.reload();
     };
 
     // Function to reset the highlight flags for rows
@@ -247,12 +307,12 @@ function listCtrl($scope, $sce, $http, $route,
         // corresponding to the uuid
         $http({method: "GET",
             url: "/cgi-bin/dpm/getPolicy.py",
-            params: {uuid: pol_data.pol_vals[dkeys.policy_uniqueid].name} }).success(function(data, 
-                status, headers, config) {
-                    uuids = clearArray(uuids);
-                    uuids.push(pol_data.pol_vals[dkeys.policy_uniqueid].name);
-                    $scope.policy_obj = JSON.parse(data); 
-                });
+            params: {uuid: pol_data.pol_vals[dkeys.policy_uniqueid].name} }).then(function(results) {
+                var data = results.data;
+                uuids = clearArray(uuids);
+                uuids.push(pol_data.pol_vals[dkeys.policy_uniqueid].name);
+                $scope.policy_obj = JSON.parse(data); 
+        });
     };
 
     // Function to display the log information

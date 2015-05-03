@@ -33,6 +33,8 @@ module.exports = function (grunt) {
                     'build/js/frontPageApp.js': [
                     'src/app/frontPage/js/frontPageApp.js',
                     'src/app/frontPage/js/FrontPageCtrl.js'],
+                    'build/js/errorUtils.js': [
+                    'src/app/createProfile/js/errorUtils.js']
                 },
             },
             // Build the config file - we have different locations for a
@@ -40,19 +42,21 @@ module.exports = function (grunt) {
             local_config: {
                files: {'build/cgi/dpm/config/policy_schema.cfg': 
                    ['src/app/common/config/policy_stub.cfg', 
-                    'src/app/common/config/policy_local.cfg'],
+                    'src/app/common/config/policy_local.cfg',
+                    'src/app/common/config/dpm_admin_local.cfg'],
                     'build/admin/policy_dbs.cfg': 
                     ['src/app/common/config/policy_local.cfg',
-                     'src/app/common/config/admin.cfg'],
+                     'src/app/common/config/admin_local.cfg'],
                },
             },
             prod_config: {
                 files: {'build/cgi/dpm/config/policy_schema.cfg':
                     ['src/app/common/config/policy_stub.cfg',
-                     'src/app/common/config/policy_prod.cfg'],
+                     'src/app/common/config/policy_prod.cfg',
+                     'src/app/common/config/dpm_admin_prod.cfg'],
                      'build/admin/policy_dbs.cfg':
                      ['src/app/common/config/policy_prod.cfg',
-                     'src/app/common/config/admin.cfg'],
+                     'src/app/common/config/admin_prod.cfg'],
                 },
             },
             // Build the css stylesheet
@@ -112,10 +116,25 @@ module.exports = function (grunt) {
                         dest: 'build/cgi/dpm/config', flatten: true},
                 ],
             },
+            local_txt: {
+                files: [{expand: true,
+                    src: ['src/app/common/config/dpm_admin_local.txt'],
+                    dest: 'build/cgi/dpm/config', flatten: true},
+                ],
+            },
+            prod_txt: {
+                files: [{expand: true,
+                    src: ['src/app/common/config/dpm_admin_prod.txt'],
+                    dest: 'build/cgi/dpm/config', flatten: true},
+                ],
+            },
             // Copy the html files
             html: {
                 files: [{expand: true,
-                            src: ['src/app/common/html/dpm.html'],
+                            src: ['src/app/common/html/dpm.html',
+                                'src/app/common/html/closed.html',
+                                'src/app/common/html/declined.html',
+                                'src/app/common/html/pending.html'],
                             dest: 'build', flatten: true},
                         {expand: true,
                             src: ['src/app/common/html/.htaccess'],
@@ -157,7 +176,7 @@ module.exports = function (grunt) {
                         {expand: true,
                             src: ['src/app/frontPage/html/frontpage.html'],
                             dest: 'build', flatten: 'true'},
-                        ],
+                       ],
             }
         }
     });
@@ -165,11 +184,13 @@ module.exports = function (grunt) {
     if (env === 'prod') {
         grunt.registerTask('build', ['jshint', 'concat:js', 
                 'concat:prod_config', 'concat:css', 'copy:python',
-                'copy:script', 'copy:html', 'copy:config']);
+                'copy:script', 'copy:html', 'copy:config', 
+                'copy:prod_txt']);
     } else {
         grunt.registerTask('build', ['jshint', 'concat:js',
                 'concat:local_config', 'concat:css', 'copy:python',
-                'copy:script', 'copy:html', 'copy:config']);
+                'copy:script', 'copy:html', 'copy:config',
+                'copy:local_txt']);
     }
     grunt.registerTask('default', 'jshint');
 

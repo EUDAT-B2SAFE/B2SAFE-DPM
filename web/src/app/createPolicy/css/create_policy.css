@@ -1,19 +1,13 @@
-div#datasets {
-    width: 50%;
+div#policydetails {
+    width: 70%;
     margin-left: auto;
     margin-right: auto;
-    border: 1px dotted #3399FF;
+  /*  border: 1px dotted #3399FF; */
 }
 span#error {
     background-color: yellow;
 }
-div#actions {
-    width: 50%;
-    height: 230px;
-    float: left;
-    margin: auto;
-    border: 1px dotted #3399FF;
-}
+/*
 div#sources {
     width: 50%;
     float: left;
@@ -27,6 +21,7 @@ div#targets {
     margin: auto;
     border: 1px dotted #3399FF;
 }
+
 div#button_space {
     width: 5px;
     height: 10px;
@@ -39,6 +34,21 @@ div#submit_space {
     margin: auto;
     float: left;
 }
+*/
+.dpm-form button#prevpage {
+    margin-right: 5%;
+    float: left;
+}
+
+.dpm-form button#nextpage {
+    margin-right: 3%;
+}
+
+.dpm-form button#submit {
+    margin-right: 5%;
+    float: left;
+}
+
 .personalinfo label {
     float: left;
     width: 120px;
@@ -51,7 +61,6 @@ div#submit_space {
 
 .datasets {
     display: inline-block;
-    margin-bottom: 3px;
 }
 
 .datasets label {
@@ -63,38 +72,51 @@ div#submit_space {
     margin-right: 3px;
 }
 .datasets div#remove {
-    float: left;
+    margin-top: 5%;
 }
 
 div#collection {
     float left;
 }
 
-.actions label {
-    float: left;
-    width: 80px;
-    margin-left: 2px;
-    margin-right: 3px;
-}
-
-.targets label {
-    float: left;
-    width: 120px;
-    margin-left: 2px;
-    margin-right: 3px;
-}
 div#pers {
     width: 50%;
+    margin-top: 5%;
     margin-left: auto;
     margin-right: auto;
-    border: 1px dotted #3399FF;
+/*    background-color: #F7F7F7; 
+    border: 1px solid #E5601E; */
 }
 
-table#summary {
-    width: 50%;
-    background-color: whitesmoke;
+div#summary {
+    margin-top: 2%;
+    width: 80%;
     margin-left: auto;
     margin-right: auto;
+    background-color: whitesmoke;
+}
+table#summary {
+    width: 100%;
+    border-collapse: collapse;
+    line-height: 1.5;
+    margin-top: 2%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+th {
+    text-align: center;
+	background:white;
+	border-bottom:3px solid #d4d3d4;
+	color:#be0a09;
+}
+
+td {
+	border-bottom:solid #be0a09 1px;
+	color:#6b6a6a;
+	text-align:center;
+	border-radius: 3px; -moz-border-radius:3px; -webkit-border-radius:3px;
+	width:10px;
 }
 
 div#regform {
@@ -127,4 +149,28 @@ div#clabel {
 
 .regform input#reset {
     margin-right: 40px;
+}
+
+input.text, select{
+    width: 250px;
+    height: 22px;
+    padding: 0px 6px;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+    margin-bottom: 0%;
+}
+
+select#period {
+    width: 8%;
+}
+
+button#previouspage {
+    margin-right: 1%;
+}
+button#nextpage {
+    margin-left: 1%;
+}
+button#addmore {
+    margin-left: 1%;
 }

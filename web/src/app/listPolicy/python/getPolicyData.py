@@ -7,6 +7,7 @@ import json
 import ConfigParser
 import kyotocabinet
 import sqlite3
+import csv
 import os
 import re
 
@@ -18,6 +19,18 @@ def usage():
     print "Options:"
     print "help=help                 Prints this help"
     print ""
+
+def getAdmins(config):
+    '''Function to load the DPM admin username
+    '''
+    dpm_admins = []
+    fh = file(config.get("DPM_ADMIN", "admin_file"), "r")
+    csv_obj = csv.reader(fh)
+    for dpm_admin in csv_obj:
+        username = dpm_admin[1].strip()
+        dpm_admins.append(username)
+    fh.close()
+    return dpm_admins
 
 def getData(config):
     '''Function to return the policies from the database
@@ -36,13 +49,8 @@ def getData(config):
     cur = conn.cursor()
     
     # If the user is a DPM admin then we need to be able to see all policies
-    cur.execute('''select roles.role_id from user_community, user, roles
-        where user.name = ? and user.user_id = user_community.user_id and
-        roles.name = 'dpm admin' and 
-        roles.role_id = user_community.role_id''',
-        (username,))
-    roles = cur.fetchall()
-    if (len(roles) > 0):
+    admins = getAdmins(config)
+    if (username in admins):
         dpmAdmin = True
 
     res = []

@@ -6,7 +6,23 @@ import sys
 import cgi
 import time
 import json
+import csv
 import smtplib
+
+def getAdmin(config):
+    '''Function to load the DPM admin users
+    '''
+    dpm_admins = []
+    fh = file(config.get("DPM_ADMIN", "admin_file"), "r")
+    csv_obj = csv.reader(fh)
+    for dpm_admin in csv_obj:
+        dpm_obj = {}
+        dpm_obj['name'] = dpm_admin[0].strip()
+        dpm_obj['username'] = dpm_admin[1].strip()
+        dpm_obj['email'] = dpm_admin[2].strip()
+        dpm_admins.append(dpm_obj)
+    fh.close()
+    return dpm_admins
 
 def submitRequest(config):
     '''Function to post the profile request to the database
@@ -23,13 +39,12 @@ def submitRequest(config):
         print "Exiting"
         sys.exit(1)
 
-    dpm_admin = "dpm admin"
     smtpObj = smtplib.SMTP("localhost")
     
     email_from = 'noreply@dmpadmin.localhost'
     email_msg = "From: %s \n" % email_from + "To: %s \n" + \
             "Subject: Request for Access to the Data Policy Manager \n" +\
-            "User '%s' has requested (request id %s) '%s' access to" +\
+            "User '%s' (request id %s) has requested '%s' access to " +\
             "the Data Policy Manager for the community '%s'.\n"
 
     reqRes = {}
@@ -100,19 +115,11 @@ def submitRequest(config):
                     (dataVals["role"].lower().strip(),))
             role_id = cur.fetchone()[0] 
 
-            # For the admin roles the URL is the front page that allows
-            # the user to choose between the admin and dpm pages
-            if (dataVals["role"].lower().strip() == "dpm admin" or
-                    dataVals["role"].lower().strip() == "community admin"):
-                cur.execute('''select dpm_id from dpm_page where 
-                    name = "frontpage" ''')
-                res = cur.fetchall()
-                dpm_id = res[0][0]
-            else:
-                cur.execute('''select dpm_id from dpm_page where
-                    name = "dpm" ''')
-                res = cur.fetchall()
-                dpm_id = res[0][0]
+            # Store the pending URL until the user has been approved
+            cur.execute('''select dpm_id from dpm_page where 
+                name = 'pending' ''')
+            res = cur.fetchall()
+            dpm_id = res[0][0]
 
             # Get the last used community id
             cur.execute('''select max(user_comm_id) from user_community''');
@@ -126,27 +133,27 @@ def submitRequest(config):
             
             conn.commit()
 
-            # Email the DPM admin ( we need to read the database for
-            # the dpm admin
+            # Email the DPM admin ( we need get the admins from the
+            # config database)
             #
-            cur = conn.cursor()
-            cur.execute('''select user.email from user, user_community, 
-                roles where user_community.role_id = roles.role_id and
-                roles.name = ? and 
-                user.user_id = user_community.user_id''',
-                (dpm_admin,))
-            res = cur.fetchone()
-            if (res is not None and res[0] is not None):
-                admin_email = res[0]
-                msg = email_msg % (admin_email, 
-                        dataVals["username"].strip(),
-                        next_user_comm,
-                        dataVals["role"], comm["name"])
-                try:
-                    smtpObj.sendmail(email_from, admin_email, msg)
-                except smtplib.SMTPException:
-                    print "There has been a problem sending email"
+            admins = getAdmin(config)
+            if (len(admins) == 0):
+                admin_email = admins[0]["email"]
+            else:
+                emails = []
+                for admin in admins:
+                    if (admin["email"] not in emails):
+                        emails.append(admin["email"])
+                admin_email = ",".join(emails)
+                email_from = emails
 
+            msg = email_msg % (admin_email, dataVals["username"].strip(),
+                    next_user_comm, dataVals["role"], comm["name"])
+            
+            try:
+                smtpObj.sendmail(email_from, emails, msg)
+            except smtplib.SMTPException:
+                print "There has been a problem sending email"
 
 if __name__ == '__main__':
     print "Content-Type: text/html"

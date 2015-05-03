@@ -4,6 +4,7 @@ import sys
 import cgi
 import json
 import os
+import csv
 import sqlite3
 import ConfigParser
 
@@ -22,10 +23,23 @@ def openDatabase(dbfile):
     conn = sqlite3.connect(dbfile)
     return conn
 
+def getAdmins(config):
+    '''Function to load the DPM admin username
+    '''
+    dpm_admins = []
+    fh = file(config.get("DPM_ADMIN", "admin_file"), "r")
+    csv_obj = csv.reader(fh)
+    for dpm_admin in csv_obj:
+        dpm_obj = {}
+        dpm_obj['username'] = dpm_admin[1].strip()
+        dpm_obj['email'] = dpm_admin[2].strip()
+        dpm_admins.append(dpm_obj)
+    fh.close()
+    return dpm_admins
+
 def queryProfile(conn, username):
     '''Function to return the user profile if it exists
     '''
-    dpmAdmin = False
     user_profile = {}
     u_comm = []
     u_comm_d = {}
@@ -36,32 +50,15 @@ def queryProfile(conn, username):
     cur.execute('''select email from user where name = ?''',
             (username,))
     u_email = cur.fetchone()[0]
-    # Check if the user is a dpm admin
-    cur.execute('''select roles.role_id from user_community, user, roles,
-        status  where user.name = ? and 
-        user.user_id = user_community.user_id and
-        roles.name = 'dpm admin' and status.status = 'approved' and
-        status.status_id = user_community.status_id and 
-        roles.role_id = user_community.role_id''',
-        (username,))
-    roles = cur.fetchall()
-    if (len(roles) > 0):
-        dpmAdmin = True
-
-    # If the dpm admin we fetch all the communities
-    if (dpmAdmin):
-        cur.execute('''select community.name from community 
-                where community.name <> 'all' ''')
-        communities = cur.fetchall()
-    else:
-        cur.execute('''select community.name from community, user, status, 
+    
+    cur.execute('''select community.name from community, user, status, 
             user_community where user.name = ? and 
             user.user_id = user_community.user_id and
             user_community.status_id = status.status_id and
             status.status = 'approved' and
             user_community.community_id = community.community_id''',
             (username,))
-        communities = cur.fetchall()
+    communities = cur.fetchall()
     conn.commit()
     u_comm = []
     u_comm_d = {}
@@ -81,6 +78,9 @@ def getProfile(config):
     print "Content-Type: application/json charset=utf-8"
     print ""
     
+    username = ''
+    dpmAdmin = False
+    user_profile = {}
     if (config.has_option("HTMLENV", "user")):
         username = config.get("HTMLENV", "user")
     else:
@@ -90,7 +90,24 @@ def getProfile(config):
 
     conn = openDatabase(dbfile)
     if (conn):
-        user_profile = queryProfile(conn, username)
+        admins = getAdmins(config)
+        for admin in admins:
+            if (admin['username'] == username.strip()):
+                dpmAdmin = True
+                user_profile['profile'] = [admin]
+                cur = conn.cursor()
+                cur.execute('''select community.name from community 
+                        where community.name <> 'all' ''')
+                results = cur.fetchall()
+                communities = []
+                for res in results:
+                    communities.append(res[0])
+ 
+                user_profile['profile'].append({'communities': communities})
+                break
+
+        if (not dpmAdmin):
+            user_profile = queryProfile(conn, username)
 
     print json.dumps(user_profile)
 

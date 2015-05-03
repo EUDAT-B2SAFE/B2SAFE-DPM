@@ -1,4 +1,5 @@
 function adminProfileCtrl($scope, $window, $http, reqAction, ngTableParams) {
+    $scope.selectDisabled = [];
     $scope.data = [];
     $scope.show_msg = false;
     $scope.profile_cols = [];
@@ -6,9 +7,12 @@ function adminProfileCtrl($scope, $window, $http, reqAction, ngTableParams) {
     var getprofiles = $http({method:"GET", 
         url: "/cgi-bin/dpm/getprofiles.py"});
     var reqList = getprofiles.then(function(result) {
-        // alert(angular.toJson(result));
         $scope.profile_cols = result.data.cols;
         $scope.data = result.data.rows;
+        var j;
+        for (j=0; j < $scope.data.length; j++) {
+            $scope.selectDisabled.push(true);
+        }
         $scope.profiles = new ngTableParams({
             page: 1,
             count: 10},
@@ -21,7 +25,24 @@ function adminProfileCtrl($scope, $window, $http, reqAction, ngTableParams) {
                 }
             });
     });
-    
+   
+    $scope.enableSelect = function(index) {
+        // First reset all flags to disabled since we want this to be
+        // modal
+        var k;
+        for (k = 0; k < $scope.selectDisabled.length; k++) {
+            if ($scope.selectDisabled[k] === false) {
+                $scope.selectDisabled[k] = true;
+                break;
+            }
+        }
+        $scope.selectDisabled[index]=false;
+    };
+
+    $scope.checkDisabled = function(index) {
+        return $scope.selectDisabled[index];
+    };
+
     $scope.disableOption = function(status_options) {
         disable = false;
         if (status_options.length === 0) {
@@ -54,6 +75,16 @@ function adminProfileCtrl($scope, $window, $http, reqAction, ngTableParams) {
             });
         };
     });
+
+    $scope.resetHighlight = function() {
+        var i;
+        for (i = 0; i < $scope.data.length; i++) {
+            if ($scope.data[i].$selected === true) {
+                $scope.data[i].$selected = false;
+                break;
+            }
+        }
+    };
 
     $scope.submitEmail = function() {
         // Check the length of the email strings

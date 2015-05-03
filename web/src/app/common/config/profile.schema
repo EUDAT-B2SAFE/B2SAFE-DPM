@@ -17,7 +17,11 @@ user_community=insert into user_community values(?, ?, ?, ?, ?, ?, ?)
 
 [QUERY]
 dpm_page=select dpm_id from dpm_page where name=?
-roles=select role_id from roles where role=?
+roles=select role_id from roles where name=?
 status=select status_id from status where status=?
 community=select community_id from community where name=?
 user=select user_id from user where name=?
+max_dpm_page=select dpm_id from dpm_page order by dpm_id desc limit 1
+max_roles=select role_id from roles order by role_id desc limit 1
+max_status=select status_id from status order by status_id desc limit 1
+max_community=select community_id from community order by community_id desc limit 1

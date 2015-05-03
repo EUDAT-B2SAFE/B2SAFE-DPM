@@ -3,6 +3,20 @@ import ConfigParser
 import sqlite3
 import os
 import json
+import csv
+
+def getAdmins(config):
+    '''Function to return the admin usernames
+    '''
+    dpm_admins = []
+    fh = file(config.get("DPM_ADMIN", "admin_file"), "r")
+    csv_obj = csv.reader(fh)
+    csv_obj = csv.reader(fh)
+    for dpm_admin in csv_obj:
+        username = dpm_admin[1].strip()
+        dpm_admins.append(username)
+    fh.close()
+    return dpm_admins
 
 def fetch_cm(conn, username, status_options, keys):
     '''Function to fetch the rows visible to a community manager
@@ -120,24 +134,24 @@ def getProfiles(config):
             "community", "submittime", "status"]
 
     # What type of user are we?
-    conn = sqlite3.connect(config.get("DATABASE", "profile_name"))
-    cur = conn.cursor()
-    cur.execute('''select roles.name from roles, user_community, user,
-        status where user.name = ? 
-        and user.user_id = user_community.user_id
-        and roles.role_id = user_community.role_id and 
-        user_community.status_id = status.status_id and
-        status.status = 'approved' ''',
-        (username,))
-    roles = cur.fetchall()
-    conn.commit()
+    # First we read in from the config file the list of administrators
+    # if we're not there check if we're a community admin
     dpm_admin = False
     cm_admin = False
-    for arole in roles:
-        if ("dpm admin" == arole[0]):
-            dpm_admin = True
-            break
-    if (not dpm_admin):
+    admins = getAdmins(config)
+    conn = sqlite3.connect(config.get("DATABASE", "profile_name"))
+    if (username in admins):
+        dpm_admin = True
+    else:
+        cur = conn.cursor()
+        cur.execute('''select roles.name from roles, user_community, user,
+            status where user.name = ? 
+            and user.user_id = user_community.user_id
+            and roles.role_id = user_community.role_id and 
+            user_community.status_id = status.status_id and
+            status.status = 'approved' ''', (username,))
+        roles = cur.fetchall()
+        conn.commit()
         for arole in roles:
             if ("community admin" == arole[0]):
                 cm_admin = True

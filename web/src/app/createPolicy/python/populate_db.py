@@ -48,6 +48,38 @@ def create_tables(conn, config, dbtype):
         cur.execute(config.get("CREATE", "dpm_date"))
     conn.commit()
 
+def get_next_profile_indexes(conn, config):
+    '''Function to get the ntext unused indexes for the profile tables
+    '''
+    cur = conn.cursor()
+    next_indexes = {}
+    next_indexes['dpm_page'] = 0
+    next_indexes['roles'] = 0
+    next_indexes['status'] = 0
+    next_indexes['community'] = 0
+
+    cur.execute(config.get("QUERY", "max_dpm_page"))
+    max_dpm_page = cur.fetchall()
+    if (len(max_dpm_page) > 0):
+        next_indexes["dpm_page"] = max_dpm_page[0][0] + 1
+
+    cur.execute(config.get("QUERY", "max_community"))
+    max_community = cur.fetchall()
+    if (len(max_community) > 0):
+        next_indexes["community"] = max_community[0][0] + 1
+
+    cur.execute(config.get("QUERY", "max_roles"))
+    max_role = cur.fetchall()
+    if (len(max_role) > 0):
+        next_indexes["roles"] = max_role[0][0] + 1
+
+    cur.execute(config.get("QUERY", "max_status"))
+    max_status = cur.fetchall()
+    if (len(max_status) > 0):
+        next_indexes["status"] = max_status[0][0] + 1
+
+    return next_indexes
+
 def get_next_actions_indexes(conn, config):
     '''Function to get the next unused indexes for the actions tables
     '''
@@ -138,7 +170,7 @@ def fill_resource(conn, config, next_indexes, data):
     system_count = 0
     storage_count = 0
     resource_count = 0
-    for row in data:
+    for row in file(data["resource_data"], "r"):
         system, site, store = row.split('|') 
         system = system.strip()
         site = site.strip()
@@ -190,8 +222,50 @@ def fill_table(cur, config, table, idx, val):
 
     return (insertOK, idx)
 
+def fill_profile(conn, config, next_indexes, data):
+    '''Fill the profile database
+    '''
+    cur = conn.cursor()
 
-def fill_action(conn, config, next_indexes, data, data_org):
+    # Fill the community
+    for row in file(data["profile_community"], "r"):
+        community = row.strip()
+        community_OK, community_count = fill_table(cur, config, 
+                "community", next_indexes["community"], community)
+        if (community_OK):
+            next_indexes["community"] = community_count
+
+    # Fill the dpm_page
+    for row in file(data["profile_page"], "r"):
+        dpm_page, name = row.split('|')
+        cur.execute(config.get("QUERY", "dpm_page"), 
+                (next_indexes["dpm_page"],))
+        vals = cur.fetchall()
+        if (len(vals) == 0):
+            cur.execute(config.get("INSERT", "dpm_page"), 
+                    (next_indexes["dpm_page"], dpm_page.strip(), 
+                        name.strip()))
+            next_indexes["dpm_page"] = next_indexes["dpm_page"] + 1
+ 
+    # Fill the status
+    for row in file(data["profile_status"], "r"):
+        status = row.strip()
+        status_OK, status_count = fill_table(cur, config, "status",
+                next_indexes["status"], status)
+        if (status_OK):
+            next_indexes["status"] = status_count
+
+    # Fill the roles
+    for row in file(data["profile_role"], "r"):
+        role = row.strip()
+        role_OK, role_count = fill_table(cur, config, "roles",
+                next_indexes["roles"], role)
+        if (role_OK):
+            next_indexes["roles"] = role_count
+
+    conn.commit()
+
+def fill_action(conn, config, next_indexes, data):
     '''Fill the action database
     '''
     cur = conn.cursor()
@@ -202,7 +276,7 @@ def fill_action(conn, config, next_indexes, data, data_org):
     action_count = 0
 
     # Fill the action tables from the ascii file
-    for row in data:
+    for row in file(data["action_action_data"], "r"):
         atype, atrigger, aoperation, alocation = row.split('|')
         atype = atype.strip()
         atrigger = atrigger.strip()
@@ -248,7 +322,7 @@ def fill_action(conn, config, next_indexes, data, data_org):
     cur = conn.cursor()
     org_count = 0
     pid_count = 0
-    for row in data_org:
+    for row in file(data["action_org_data"], "r"):
         org, pid = row.split('|')
         org = org.strip()
         pid = pid.strip()
@@ -264,7 +338,7 @@ def fill_action(conn, config, next_indexes, data, data_org):
  
     conn.commit()
  
-def populate(dbfile, dbschema, dbdata, dbdata_org, dbtype):
+def populate(dbfile, dbschema, dbdata, dbtype):
     '''Populate the database
     '''
     if (os.path.isfile(dbfile)):
@@ -282,17 +356,6 @@ def populate(dbfile, dbschema, dbdata, dbdata_org, dbtype):
     # Open the database
     conn = sqlite3.connect(dbfile)
     
-    # read in the data
-    fh = file(dbdata, 'r')
-    data = fh.readlines()
-    fh.close()
-    
-    data_org = ""
-    if (len(dbdata_org) > 0):
-        fh = file(dbdata_org, 'r')
-        data_org = fh.readlines()
-        fh.close()
-
     # read in the schema config
     config = ConfigParser.ConfigParser()
     config.read(dbschema)
@@ -306,15 +369,21 @@ def populate(dbfile, dbschema, dbdata, dbdata_org, dbtype):
         next_indexes = get_next_resources_indexes(conn, config)
     elif (dbtype == 'action'):
         next_indexes = get_next_actions_indexes(conn, config)
+    elif (dbtype == 'profile'):
+        next_indexes = get_next_profile_indexes(conn, config)
 
     # Fill the databases
     if (dbtype == 'resource'):
-        fill_resource(conn, config, next_indexes, data)
+        fill_resource(conn, config, next_indexes, dbdata)
     elif (dbtype == 'action'):
-        fill_action(conn, config, next_indexes, data, data_org)
+        fill_action(conn, config, next_indexes, dbdata)
+    elif (dbtype == 'profile'):
+        fill_profile(conn, config, next_indexes, dbdata)
 
 if __name__ == '__main__':
     verbose = 0
+    data_tag = []
+    dbdata = {}
     opts, args = getopt.getopt(sys.argv[1:], 'hv', ['help', 'verbose'])
     for opt, val in opts:
         if (opt == '-h' or opt == '--help'):
@@ -328,29 +397,30 @@ if __name__ == '__main__':
     config.read(cfgfile)
     
     if (len(sys.argv) == 2):
-        if (sys.argv[1] not in ('resource', 'action')):
+        if (sys.argv[1] not in ('resource', 'action', 'profile')):
             print 'Unrecognised database type %s' % sys.argv[1]
             print 'For help on the script run with the "-h" option'
             sys.exit(1)
         else:
             db_name_tag = "%s_name" % sys.argv[1].strip()
             db_schema_tag = "%s_schema" % sys.argv[1].strip()
-            data_tag = ""
-            data_tag_org = ""
-            dbdata_org = ""
             if (sys.argv[1] == 'action'):
-                data_tag = "%s_action_data" % sys.argv[1].strip()
-                data_tag_org = "%s_org_data" % sys.argv[1].strip()
+                data_tag.append("%s_action_data" % sys.argv[1].strip())
+                data_tag.append("%s_org_data" % sys.argv[1].strip())
+            elif (sys.argv[1] == 'profile'):
+                data_tag.append("%s_community" % sys.argv[1].strip())
+                data_tag.append("%s_page" % sys.argv[1].strip())
+                data_tag.append("%s_role" % sys.argv[1].strip())
+                data_tag.append("%s_status" % sys.argv[1].strip())
             else:
-                data_tag = "%s_data" % sys.argv[1].strip()
+                data_tag.append("%s_data" % sys.argv[1].strip())
 
             dbfile = config.get("DATABASE", db_name_tag)
             dbschema = config.get("DATABASE", db_schema_tag)
-            dbdata = config.get("DATABASE", data_tag)
-            if (len(data_tag_org) > 0):
-                dbdata_org = config.get("DATABASE", data_tag_org)
+            for tag in data_tag:
+                dbdata[tag] = config.get("DATABASE", tag)
 
-            populate(dbfile, dbschema, dbdata, dbdata_org, sys.argv[1])
+            populate(dbfile, dbschema, dbdata, sys.argv[1])
     else:
         print 'A database type must be supplied.'
         print 'use the "-h" option for help.'

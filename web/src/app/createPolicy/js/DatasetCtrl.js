@@ -8,20 +8,22 @@ function datasetCtrl($scope, $http, $injector, data_identifier, policy,
     $injector.invoke(dpmCtrl, this, {$scope: $scope});
     var identifier_obj = data_identifier.getIdentifiers();
     
-    // Read in the available identifier types
-    $http({method: "GET",
-        url: "/cgi-bin/dpm/query_actions.py",
-        params: {qtype: "identifiers"}}).success(function(data, status,
-                headers, config) {
-                    for (var idx = 0; idx < data.length; ++idx) {
-                        if (data[idx].length > 0) {
-                            identifier_obj.types = 
-                            storeData(identifier_obj.types,
-                                data[idx][0]);
-                        }
-                    }
-                $scope.identifier_types = identifier_obj.types;
-                data_identifier.setIdentifiers(identifier_obj);
+    // Read in the available identifier types using promises to avoid
+    // problems with asynch calls
+    var get_identifiers = $http({method: "GET", 
+                    url: "/cgi-bin/dpm/query_actions.py",
+                    params: {qtype: "identifiers"}});
+    
+    get_identifiers.then(function(results) {
+        var data = results.data;
+        for (var idx = 0; idx < data.length; ++idx) {
+            if (data[idx].length > 0) {
+                identifier_obj.types = storeData(identifier_obj.types,
+                    data[idx][0]);
+            }
+        }
+        $scope.identifier_types = identifier_obj.types;
+        data_identifier.setIdentifiers(identifier_obj);
     });
     
     $scope.currentPage = 0;

@@ -4,6 +4,7 @@ import sys
 import cgi
 import json
 import os
+import csv
 import sqlite3
 import ConfigParser
 
@@ -15,6 +16,20 @@ def usage():
     print "Options:"
     print "?help=help              Prints this help"
     print ""
+
+def getAdmins(config):
+    '''Function to load the DPM admin username
+    '''
+    dpm_admins = []
+    fh = file(config.get("DPM_ADMIN", "admin_file"), "r")
+    csv_obj = csv.reader(fh)
+    for dpm_admin in csv_obj:
+        dpm_obj = {}
+        dpm_obj['username'] = dpm_admin[1].strip()
+        dpm_obj['email'] = dpm_admin[2].strip()
+        dpm_admins.append(dpm_obj)
+    fh.close()
+    return dpm_admins
 
 def openDatabase(dbfile):
     '''Open the database file
@@ -53,7 +68,7 @@ def queryProfile(conn, username):
         u_comm.append(acommunity[0])
     u_comm_d["communities"] = u_comm
 
-    u_user["username"] = username
+    u_user["username"] = username.strip()
     u_user["email"] = u_email
     user_profile["profile"] = [u_user]
     user_profile["profile"].append(u_comm_d)
@@ -65,17 +80,28 @@ def getProfile(config):
     print "Content-Type: application/json charset=utf-8"
     print ""
 
-    username = '' 
+    username = ''
+    dpmAdmin = False
+
     if (config.has_option("HTMLENV", "user")):
         username = config.option("HTMLENV", "user")
     else:
         username = os.environ["REMOTE_USER"]
+    
+    admins = getAdmins(config)
+    for admin in admins:
+        if (admin['username'] == username.strip()):
+            dpmAdmin = True
+            user_profile['profile'] = [admin]
+            user_profile['profile'].append({'communites': 'all'})
+            break
 
     dbfile = config.get("DATABASE", "profile_name")
 
     conn = openDatabase(dbfile)
     if (conn):
-        user_profile = queryProfile(conn, username)
+        if (not dpmAdmin):
+            user_profile = queryProfile(conn, username)
 
     print json.dumps(user_profile)
 

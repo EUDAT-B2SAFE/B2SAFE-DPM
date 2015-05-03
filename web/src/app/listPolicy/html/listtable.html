@@ -1,9 +1,4 @@
 <div data-ng-controller="listCtrl">
-    <div id="listlog">
-    <input type=button id="listlogbutton" data-ng-click="loadLogList()" value="List Logs">
-    </div>
-    <div id="buttonspace1"></div>
-
     <div id="listbuttons">
         <input type="button" data-ng-click="showCheckbox()"
             data-ng-show="!displayKeys" value="Show Keys">
@@ -14,7 +9,12 @@
         <div class="buttondiv0"></div>
         <input type="button" data-ng-click="clearSearch()" value="Clear">
         <div class="buttondiv1"></div>
+        <input type="button" data-ng-click="showActive()" value="Show Active">
+        <div class="buttondiv1"></div>
+        <input type="button" data-ng-click="showRemoved()" value="Show Removed">
+        <div class="buttondiv1"></div>
         <input type="button" data-ng-click="reloadPolicyList()" value="Reload List">
+        <input type=button id="listlogbutton" data-ng-click="loadLogList()" value="List Logs">
     </div>
     <div id="checkboxes" data-ng-show="displayKeys">
         <div class="checkbox" data-ng-repeat="policy_column in policy_columns">
@@ -24,8 +24,7 @@
                 {{policy_column.name}}
         </div>
     </div>
-    <br/><br/>
-
+    <h3 class="field">Policy List</h3>
     <table data-ng-table="tabs" show-filter="true" class="table ng-table-rowselected">
         <thead>
             <tr>
@@ -50,7 +49,7 @@
                 <td>
                     <select data-ng-model="polselected"
                     data-ng-change="actionPolicy()"
-                    data-ng-options="laction.name for laction in listaction">
+                    data-ng-options="laction.name for laction in pol_data.listaction">
                     <option value=""> --- Select --- </option>
                     </select>
                 </td>

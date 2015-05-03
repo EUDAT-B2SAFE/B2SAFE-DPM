@@ -1,4 +1,4 @@
-function dpmCtrl($scope, $location, page, invalidFlag, submitFlag) {
+function dpmCtrl($scope, $window, $location, page, invalidFlag, submitFlag) {
     
     $scope.invalidFlag = invalidFlag;
 
@@ -68,5 +68,13 @@ function dpmCtrl($scope, $location, page, invalidFlag, submitFlag) {
             showC = true;
         }
         return showC;
+    };
+
+    // Reset the form, reset the javascript object and set the
+    // page to the list policy page
+    $scope.cancelPolicy = function() {
+        var newPolicy = resetPolicy($scope.policy);
+        $scope.policy = newPolicy;
+        $window.location.reload();
     };
 }

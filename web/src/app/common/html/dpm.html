@@ -43,17 +43,18 @@
                                     data-ng-controller="dpmCtrl">
                                     <div data-ng-view></div>
                                     <div id="buttons">
-                                        <button data-ng-click="prevPage()" 
+                                        <button
+                                            id="prevpage"
+                                            data-ng-click="prevPage()" 
                                             data-ng-show="firstPage()">
                                             Previous
                                         </button>
-                                        <div id="button_space"></div>
                                         <button
+                                            id="nextpag"
                                             data-ng-click="nextPage($event, dpmform.$invalid);"
                                             data-ng-show="lastPage()">
                                             Next
                                         </button>
-                                        <div id="submit_space"></div>
                                         <input type="submit" id="submit" 
                                             value="Submit"
                                             data-ng-click="setSubmitted(dpmform.datasetactions)"
@@ -61,6 +62,10 @@
                                         <input type="submit" id="submit" value="OK"
                                             data-ng-click="confirmOK()"
                                             data-ng-show="showConfirm()"/>
+                                        <button id="cancel"
+                                            data-ng-click="cancelPolicy()">
+                                            Cancel
+                                        </button>
                                     </div>
                                 </div>
                             </form>

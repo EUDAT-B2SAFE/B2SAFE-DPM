@@ -1,47 +1,47 @@
 <div data-ng-controller="modifyCtrl">
     <div id="modify" class="modify">
-        <label>Title:</label> 
+        <h3 class="field">Modify Policy</h3>
+        <p>Title</p> 
         <input type="text" data-ng-change="titleChange()" 
             data-ng-model="policy.name"><br>
-        <label>Author:</label> 
+        <p>Author</p> 
         <select data-ng-model="policy.author" 
             data-ng-change="authorChange()"
             data-ng-options="un for un in ulist">
         </select>
-        <br/>
-        <label>Community:</label> 
+        <p>Community</p> 
         <select data-ng-model="policy.community"
             data-ng-change="communityChange()"
             data-ng-options="co for co in comlist">
-        </select><br/>
+        </select>
         <div data-ng-repeat="col in policy.collections">
-            <label>Identifier type:</label> 
+            <p>Identifier Type</p> 
             <select data-ng-model="policy.collections[$index].type"
                 data-ng-change="identifierChange()"
                 data-ng-options="pid for pid in pidList">
             </select><br/>
-            <label>Collection:</label> 
+            <p>Collection</p> 
             <input type="text" data-ng-change="collectionChange()"
                 data-ng-model="col.name"></br>
         </div>
-        <label>Action:</label> 
+        <p>Action</p> 
         <select data-ng-model="policy.action.name" 
             data-ng-change="actionChange()"
             data-ng-options="act for act in actionList">
-        </select><br/>
-        <label>Type:</label> 
+        </select>
+        <p>Type</p> 
         <select data-ng-model="policy.type.name"
             data-ng-change="typeChange()"
             data-ng-options="ty for ty in typeList">
-        </select><br/>
-        <label>Trigger:</label> 
+        </select>
+        <p>Trigger</p> 
         <select data-ng-model="policy.trigger.name"
             data-ng-change="triggerChange()"
             data-ng-options="trg for trg in triggerList">
         </select>
     
         <div id="tdate" data-ng-show="showDate(policy.trigger.name)">
-            <label>Date:</label>
+            <p>Date</p>
             <input type="text" is-open="opened" 
                 data-datepicker-popup="dd-MM-yyyy"
                 data-ng-model="trigger_date"
@@ -54,6 +54,7 @@
         <div id="tperiod" data-ng-show="showPeriod(policy.trigger.name)">
             Day of Week: <select id="period" 
             data-ng-options="p.name for p in period.weekday"
+            data-ng-change="changePeriod()"
             data-ng-model="policy.trigger_period.weekday">
                 <option name="policy.trigger_period.weekday.name"
                     value="">{{policy.trigger_period.weekday.name}}
@@ -61,24 +62,28 @@
             </select>
             Month: <select id="period" 
                 data-ng-options="p.name for p in period.month"
+                data-ng-change="changePeriod()"
                 data-ng-model="policy.trigger_period.month">
                 <option name="policy.trigger_period.month.name"
                     value="">{{policy.trigger_period.month.name}}
                 </option>
             </select>
             Day of Month: <select data-ng-options="p.name for p in period.day"
+                    data-ng-change="changePeriod()"
                     id="period" data-ng-model="policy.trigger_period.day">
                 <option name="policy.trigger_period.day.name"
                     value="">{{policy.trigger_period.day.name}}
                 </option>
             </select>
             Hour: <select data-ng-options="p.name for p in period.hour"
+                    data-ng-change="changePeriod()"
                     id="period" data-ng-model="policy.trigger_period.hour">
                 <option name="policy.trigger_period.hour.name"
                     value="">{{policy.trigger_period.hour.name}}
                 </option>
             </select>
             Minute: <select data-ng-options="p.name for p in period.minute"
+                    data-ng-change="changePeriod()"
                     id="period" 
                     data-ng-model="policy.trigger_period.minute">
                 <option name="policy.trigger_period.minute.name"
@@ -87,34 +92,34 @@
             </select>
         </div>
         <br/>
-        <label>Organisation:</label> 
+        <p>Organisation</p> 
         <select data-ng-model="policy.target.organisation.name"
             data-ng-change="organisationChange()"
             data-ng-options="orgt for orgt in orgList">
-        </select><br/>
-        <label>Location Type:</label> 
+        </select>
+        <p>Location Type</p> 
         <select data-ng-model="policy.target.loctype.name"
             data-ng-change="locationChange()"
             data-ng-options="loct for loct in locTypes">
-        </select><br/>
-        <label>System:</label> 
+        </select>
+        <p>System</p> 
         <select data-ng-model="policy.target.system.name"
             data-ng-change="systemChange()"
             data-ng-options="tsys for tsys in sysList">
-        </select><br/>
-        <label>Site:</label> 
+        </select>
+        <p>Site</p> 
         <select data-ng-model="policy.target.site.name"
             data-ng-change="siteChange()"
             data-ng-options="tsite for tsite in siteList">
-        </select><br/>
-        <label>Path:</label> 
+        </select>
+        <p>Path</p> 
         <input type="text" data-ng-change="pathChange()"
             data-ng-model="policy.target.path"><br/>
-        <label>Resource:</label> 
+        <p>Resource</p> 
         <select data-ng-model="policy.target.resource.name"
             data-ng-change="resourceChange()"
             data-ng-options="tres for tres in resList">
-        </select><br/>
+        </select>
         <div id="modbutton" class="modbutton">
             <button id="backbtn" data-ng-click="backToList()">
                 Back to List Policies

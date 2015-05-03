@@ -25,7 +25,7 @@
           <hr style="margin: 0px 0px;">
       </div>
       <div id="page">
-          <h2 class="subtitle"></h2>
+          <h3 class="field">User Administration</h3>
           <div id="profiles" data-ng-controller="adminProfileCtrl">
               <table data-ng-table="profiles" show-filter="true" 
                   class="table ng-table-rowselected">
@@ -39,7 +39,9 @@
                       </tr>
                   </thead>
                   <tbody>
-                      <tr data-ng-repeat="profile_data in $data">
+                      <tr data-ng-repeat="profile_data in $data" 
+                          data-ng-click="resetHighlight(); profile_data.$selected = !profile_data.$selected;"
+                          data-ng-class="{'rowhighlight': profile_data.$selected, '': !profile_data.$selected}">
                           <td data-ng-repeat="profile_val in profile_data.values">
                               {{profile_val.name}}
                           </td>
@@ -47,6 +49,7 @@
                               <select name="approvereq" 
                                   data-ng-disabled="disableOption(profile_data.status_options)"
                                   data-ng-model="reqApproval"
+                                  data-ng-click="enableSelect($index)"
                                   data-ng-options="opt for opt in profile_data.status_options">
                                   <option value="">
                                       --- Choose ---
@@ -55,8 +58,8 @@
                           </td>
                           <td>
                               <input type="button" value="Select"
-                                  data-ng-disabled="disableOption(profile_data.status_options)"
-                                  data-ng-click="selectReq(profile_data)">
+                              data-ng-disabled="selectDisabled[$index]"
+                              data-ng-click="selectReq(profile_data)">
                           </td>
                       </tr>
                   </tbody>

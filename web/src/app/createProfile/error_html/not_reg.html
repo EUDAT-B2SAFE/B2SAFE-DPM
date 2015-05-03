@@ -3,10 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <title>Not Registered</title>
+    <link rel="stylesheet" type="text/css" href="../css/dpm.css" 
+    type="text/css" />
 </head>
 <body>
-    You are not registered as a community manager or community administrator
-    . You must be registered in order to use this service. 
-    <button onclick="window.location.href='../register.html'">Register</button>
+    <div id="header-wrapper">
+        <div id="header">
+            <img src="../img/logo.jpg" />
+            <h1 class="title">DPM Access Denied</h1>
+        </div>
+        <hr style="margin: 0px 0px;">
+    </div>
+    <div id="page">
+<!--
+        <h2 class="subtitle"></h2>
+        -->
+        <div id="errreg">
+            <div id="errtext">
+                You are not registered as a Community Manager or 
+                Community Administrator. You must be registered in order 
+                to use the Data Policy Manager service.
+            </div>
+            <div id="errbutton">
+                <button id="regbutton" 
+                    onclick="window.location.href='../register.html'">
+                    Register
+                </button>
+                <button id="reghelp" onclick="displayHelp('helptext')">
+                    Help
+                </button>
+            </div>
+        </div>
+        
+        <div id="helptext">
+            <div id="helptext2">
+                <p>
+                The Data Policy Manager service is used for managing a
+                communities data management policies. To use the service
+                you need to be registered as a Community Manager or a 
+                Community Administrator.
+                </p>
+                <p>
+                To register to use the service simply click the 'register'
+                button and complete the registration form.
+                </p>
+            </div>
+            <div id="helpclose">
+                <button id="closehelp" onclick="closeHelp('helptext')">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="../js/errorUtils.js"></script>
 </body>
 </html>

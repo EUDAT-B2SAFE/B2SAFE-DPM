@@ -1,3 +1,4 @@
+/*
 .ng-table {
     border: 1px solid #000;
 }
@@ -13,6 +14,7 @@ table.ng-table tbody td:not(:first-child) {
 table.ng-table tbody td:not(:last-child) {
     border-right: 1px solid #000;
 }
+*/
 div#mesg {
     width: 100px;
 }
