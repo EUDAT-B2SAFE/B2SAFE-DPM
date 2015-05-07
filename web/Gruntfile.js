@@ -59,6 +59,16 @@ module.exports = function (grunt) {
                      'src/app/common/config/admin_prod.cfg'],
                 },
             },
+            rzg_config: {
+                files: {'build/cgi/dpm/config/policy_schema.cfg':
+                    ['src/app/common/config/policy_stub.cfg',
+                     'src/app/common/config/policy_rzg.cfg',
+                     'src/app/common/config/dpm_admin_rzg.cfg'],
+                     'build/admin/policy_dbs.cfg':
+                     ['src/app/common/config/policy_rzg.cfg',
+                     'src/app/common/config/admin_prod.cfg'],
+                },
+            },
             // Build the css stylesheet
             css: {
                 files: {"build/css/dpm.css": ['src/app/*/css/*',
@@ -128,6 +138,12 @@ module.exports = function (grunt) {
                     dest: 'build/cgi/dpm/config', flatten: true},
                 ],
             },
+            rzg_txt: {
+                files: [{expand: true,
+                    src: ['src/app/common/config/dpm_admin_rzg.txt'],
+                    dest: 'build/cgi/dpm/config', flatten: true},
+                ],
+            },
             // Copy the html files
             html: {
                 files: [{expand: true,
@@ -186,6 +202,11 @@ module.exports = function (grunt) {
                 'concat:prod_config', 'concat:css', 'copy:python',
                 'copy:script', 'copy:html', 'copy:config', 
                 'copy:prod_txt']);
+    } else if (env === "rzg") {
+        grunt.registerTask('build', ['jshint', 'concat:js', 
+                'concat:rzg_config', 'concat:css', 'copy:python',
+                'copy:script', 'copy:html', 'copy:config', 
+                'copy:rzg_txt']);
     } else {
         grunt.registerTask('build', ['jshint', 'concat:js',
                 'concat:local_config', 'concat:css', 'copy:python',
