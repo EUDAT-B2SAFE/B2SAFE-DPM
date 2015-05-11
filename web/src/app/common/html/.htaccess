@@ -3,3 +3,7 @@ RewriteCond %{HTTP_REFERER} !^http://(www\.)?localhost [NC]
 RewriteCond %(HTTP_REFERER} !^http://(www\.)?localhost.*$ [NC]
 RewriteRule dpm.html - [F]
 DirectoryIndex index.html
+AuthName "restricted pages"
+AuthType Basic
+AuthUserFile /usr/local/etc/httpd/users
+require valid-user
