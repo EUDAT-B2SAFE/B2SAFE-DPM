@@ -66,7 +66,7 @@ module.exports = function (grunt) {
                      'src/app/common/config/dpm_admin_rzg.cfg'],
                      'build/admin/policy_dbs.cfg':
                      ['src/app/common/config/policy_rzg.cfg',
-                     'src/app/common/config/admin_prod.cfg'],
+                     'src/app/common/config/admin_rzg.cfg'],
                 },
             },
             // Build the css stylesheet
