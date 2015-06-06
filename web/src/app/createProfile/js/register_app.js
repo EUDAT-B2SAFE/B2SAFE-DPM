@@ -84,6 +84,7 @@ function regFormCtrl($scope, $http, $route, $location, cMgr, invalidFlags) {
                                     cMgr.lastname = '';
                                     cMgr.email = '';
                                     cMgr.role = '';
+                                    cMgr.username = '';
                                     cMgr.communities = [{name: ''}];
                                     $scope.cm = cMgr;
                                     $location.url("/acknowledge");

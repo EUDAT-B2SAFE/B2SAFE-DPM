@@ -29,8 +29,12 @@ def submitRequest(config):
     '''
     dataVals = json.load(sys.stdin)
     username = ''
+    # Currently, until we get the AAI working we need to usea
+    # a dummy setting for the HTMLENV variable and take the
+    # value from the dataVals
     if (config.has_option("HTMLENV", "user")):
-        username = config.get("HTMLENV", "user")
+        # username = config.get("HTMLENV", "user")
+        username = dataVals["username"].strip()
     else:
         username = os.environ["REMOTE_USER"]
     
