@@ -12,7 +12,7 @@ class PolicyRunner:
     def __init__(self, test=False, debug=False):
         self.test = test
         self.debug = debug
-        self.iruleCmd = '/srv/irods/iRODS-pre-production/clients/icommands/bin/irule'
+        self.iruleCmd = '/usr/bin/irule'
 
     def runPolicy(self, policy):
         """
@@ -66,11 +66,13 @@ class PolicyRunner:
             """
             print('Command: '),
             if not self.test:
-                try:
-                    output = subprocess.check_output([self.iruleCmd+' -F '+rulePath], shell=True)
-                except subprocess.CalledProcessError as ex:
-                    print "ret=%s" % ex.returncode
-                    print "msg=%s" % ex.message
+                proc = subprocess.Popen([self.iruleCmd+' -F'+rulePath], 
+                            stdout=subprocess.PIPE, shell=True)
+                output, err = proc.communicate()
+                rc = proc.poll()
+                if rc:
+                   print "ret=%s" % rc
+                   print "msg=%s" % output
 
                 print 'executed'
                 if self.debug:
@@ -106,7 +108,10 @@ class PolicyRunner:
         f.write('\tlogInfo(*destResource);\n')
         f.write('\tlogInfo(*policyId);\n')
         f.write('\tdelay("%s") {\n' % (delay))
-        f.write('\t\treplicate(*sourceNode,*destRootCollection,*destResource, *policyId);\n')
+        # For now we just run a replicate within the same zone and not
+        # across zones
+        # f.write('\t\treplicate(*sourceNode,*destRootCollection,*destResource, *policyId);\n')
+        f.write('\t\tmsiDataObjRsync(*sourceNode, "IRODS_TO_IRODS", *destResource, *destRootCollection, *rsyncStatus);')
         f.write('\twriteLine("serverLog","Generated replication for [*policyId]");\n')
         f.write('\t}\n')
         f.write('}\n')
