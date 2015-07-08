@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema elementFormDefault="qualified" attributeFormDefault="unqualified" 
+targetNamespace="http://eudat.eu/2013/iRODS-policy" xmlns:tns="http://eudat.eu/2013/iRODS-policy"
+xmlns:polns="http://eudat.eu/2013/policy" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+<xs:import namespace="http://eudat.eu/2013/policy" schemaLocation="policy.template.xsd"/>
+<!--
+It implements the abstract type locationType for iRODS.
+-->
+  <xs:complexType name="coordinates">
+    <xs:complexContent>
+      <xs:extension base="polns:locationType">
+		    <xs:sequence>
+			    <xs:element name="site">
+			      <xs:annotation>
+              <xs:documentation>
+                the site is a unique name associated to an iRODS instance.
+              </xs:documentation>
+            </xs:annotation>
+				    <xs:complexType>
+					    <xs:simpleContent>
+						    <xs:extension base="xs:string">
+							    <xs:attribute use="required" type="xs:string" name="type"/>
+						    </xs:extension>
+					    </xs:simpleContent>
+				    </xs:complexType>
+			    </xs:element>
+			    <xs:element name="path" type="xs:string">
+			      <xs:annotation>
+              <xs:documentation>
+                the path is an absolute object path associated to an iRODS object and related to a specific iRODS instance
+              </xs:documentation>
+            </xs:annotation>
+			    </xs:element>
+          <xs:element name="resource" minOccurs="0" type="xs:string">
+			      <xs:annotation>
+              <xs:documentation>
+                the resource is a name, unique within a site, associated to an iRODS resource.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+			    <xs:any minOccurs="0"/>
+		    </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  
+</xs:schema>
