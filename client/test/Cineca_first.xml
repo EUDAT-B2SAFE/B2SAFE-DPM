@@ -1,0 +1,31 @@
+<tns:policy xmlns:tns="http://eudat.eu/2013/policy" xmlns:irodsns="http://eudat.eu/2013/iRODS-policy" version="1.0" name="Cineca_first" uniqueid="5439064f-0d3e-4971-8cfe-5bde89d10f8b" author="claudio">
+    <tns:dataset xmlns:tns="http://eudat.eu/2013/policy">
+        <tns:collection xmlns:tns="http://eudat.eu/2013/policy" id="0">
+            <tns:persistentIdentifier xmlns:tns="http://eudat.eu/2013/policy" type="pid">/cinecaDMPZone/home/claudio/datum.txt</tns:persistentIdentifier>
+        </tns:collection>
+    </tns:dataset>
+    <tns:actions xmlns:tns="http://eudat.eu/2013/policy">
+        <tns:action xmlns:tns="http://eudat.eu/2013/policy" name="replication">
+            <tns:type xmlns:tns="http://eudat.eu/2013/policy">replicate</tns:type>
+            <tns:trigger xmlns:tns="http://eudat.eu/2013/policy">
+                <tns:time>08 * * * * 2015</tns:time>
+            </tns:trigger>
+            <tns:targets xmlns:tns="http://eudat.eu/2013/policy">
+                <tns:target xmlns:tns="http://eudat.eu/2013/policy">
+                    <tns:location xmlns:tns="http://eudat.eu/2013/policy" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="irodsns:coordinates">
+                        <irodsns:site type="EUDAT">CINECA</irodsns:site>
+                        <irodsns:path>/cinecaDMPZone/home/claudio/test_dir/datum2.txt</irodsns:path>
+                        <irodsns:resource>cinecaRes1</irodsns:resource>
+                    </tns:location>
+                </tns:target>
+                <tns:target xmlns:tns="http://eudat.eu/2013/policy">
+                    <tns:location xmlns:tns="http://eudat.eu/2013/policy" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="irodsns:coordinates">
+                        <irodsns:site type="EUDAT">RZG</irodsns:site>
+                        <irodsns:path>/devRZG/home/claudio#cinecaDMPZone/datum2.txt</irodsns:path>
+                        <irodsns:resource>demoResc</irodsns:resource>
+                    </tns:location>
+                </tns:target>
+            </tns:targets>
+        </tns:action>
+    </tns:actions>
+</tns:policy>
