@@ -104,11 +104,17 @@ class Action():
 
         self.name = element.get('name').strip()
         self.type = element.findall(ns+'type')[0].text.strip()
-        self.trigger = element.findall(ns+'trigger')[0].text.strip()
-        if not element.findall(ns+'trigger')[0].get('type') == None:
-            self.triggerType = element.findall(ns+'trigger')[0].get('type').strip()
-        else:
+        self.trigger = None
+        if len(element.findall(ns+'trigger/'+ns+'action')) > 0:
+            self.trigger = element.findall(ns+'trigger/'+ns+'action')[0].text.strip()
+            self.triggerType = 'action'
+        elif len(element.findall(ns+'trigger/'+ns+'time')) > 0:
+            self.trigger = element.findall(ns+'trigger/'+ns+'time')[0].text.strip()
+            self.triggerType = 'time'
+        elif len(element.findall(ns+'trigger/'+ns+'runonce')) > 0:
             self.triggerType = 'runonce'
+        else:
+            print("Unkown trigger")
 
         #Process sources
         for source in element.findall(ns+'sources/'+ns+'source'):

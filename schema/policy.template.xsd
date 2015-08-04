@@ -192,6 +192,9 @@ elementFormDefault="qualified" targetNamespace="http://eudat.eu/2013/policy">
       <xs:choice>
         <xs:element name="action" type="tns:triggerActionType"/>
         <xs:element name="time" type="tns:triggerTimeType"/>
+        <xs:element name="runonce">
+          <xs:complexType/>
+        </xs:element>
       </xs:choice>
       <xs:element maxOccurs="1" minOccurs="0" name="repeat-counter">
         <xs:complexType>
