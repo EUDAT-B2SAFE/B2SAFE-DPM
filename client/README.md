@@ -25,28 +25,32 @@ Required Python Modules:
 
 ## Configuration ##
 
-The DPM client scripts will be controlled via iRODS, by using the msiExecCmd iRODS command. We typically install the DPM
-scripts in a subdirectory under the iRODS/service/bin/cmd directory and use shell scripts to invoke the correct DPM client
-script.
+The DPM client scripts will be controlled via iRODS, by using the msiExecCmd
+iRODS command. We typically install the DPM scripts in a subdirectory under the
+`/opt/eudat/b2safe-dpm-client` and use a link in the `iRODS/service/bin/cmd`
+directory to point to the scripts.
 
 Such a organization would look something like this:
+```
+ iRODS/server/bin/cmd/runPolicyManager.py -> /opt/eudat/b2safe-dpm-client/lib/PolicyManager.py
+ iRODS/server/bin/cmd/uploadPolicyState.py -> /opt/eudat/b2safe-dpm-client/lib/Upload.py
+   
+ /opt/eudat/b2safe-dpm-client/conf
+ /opt/eudat/b2safe-dpm-client/lib
+ /opt/eudat/b2safe-dpm-client/packaging
+```
 
-    iRODS/server/bin/cmd/
-        dpm-v1/
-        dpm-current/ -> dpm-v1/
-        runPolicyManager.sh
-        uploadPolicyState.sh
-
-Inside the dpm-current/ directory is a file called 'config.ini'. This file holds center specific properties and should be
+Inside the `/opt/eudat/b2safe-dpm-client/conf` directory is a file called
+`config.ini`. This file holds center specific properties and should be
 configured for each center.
 
 ## PolicyManager.py ##
 
 ### Using the script ###
 
-to get help on how to use the script run "./policy_manager.py -h":
-
-    usage: policy_manager.py [-h] -T {periodic,hook} [-t] [-v] (-su SCHEMAURL | -sp SCHEMAPATH) {http,file} ...
+to get help on how to use the script run `./runPolicyManager.py -h`:
+```
+    usage: runPolicyManager.py [-h] -T {periodic,hook} [-t] [-v] (-su SCHEMAURL | -sp SCHEMAPATH) {http,file} ...
 
     EUDAT Data Policy Manager (DPM) client
 
@@ -65,7 +69,7 @@ to get help on how to use the script run "./policy_manager.py -h":
       -v, --verbose         Run the DPM client in verbose mode
       -su --schemaurl	    fetch policy schema over http
       -sp --schemapath	    fetch policy schema from a file
-
+```
 Required parameters:
 
 the -T parameter is used to specify what is invoking the script. Is it an iRODS
@@ -91,27 +95,27 @@ iRODS policy is not started.
 
 ### Examples ###
 
-`./policy_manager.py -t -v -T cli -su http://eudat.eu/policy.template.xsd http -u https://dpm-eudat.norstore.uio.no/DPM1/DataPolicyMgr/data/output-1379580840.xml`
+`./runPolicyManager.py -t -v -T cli -su http://eudat.eu/policy.template.xsd http -u https://dpm-eudat.norstore.uio.no/DPM1/DataPolicyMgr/data/output-1379580840.xml`
 
-`./policy_manager.py -t -v -T cli -sp policy.template.xsd file -p ./policy_test.xml`
+`./runPolicyManager.py -t -v -T cli -sp policy.template.xsd file -p ./policy_test.xml`
 
 ### Running the DPM client inside iRODS ###
 
 The following rule can be run in order to execute the DPM script every 5 minutes inside the iRODS rule engine.
+```
+startPolicyManager {
+    *Cmd="runPolicyManager.py"
+    *Arg="-T cli -sp /opt/eudat/b2safe-dpm-client/conf/policy.template.xsd http -c /opt/eudat/b2safe-dpm-client/conf/config.ini"
 
-    startPolicyManager {
-        *Cmd="runPolicyManager.sh"
-        *Arg="-T cli -sp /srv/irods/iRODS-pre-production/server/bin/cmd/policy.template.xsd http -c /srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
-
-        delay("<EF>5m</EF>") {
-            msiExecCmd(*Cmd,*Arg,"null","null","null",*Result);
-            msiGetStdoutInExecCmdOut(*Result,*Out);
-            writeLine("serverLog","Policy manager executed [*Out]");
-        }
+    delay("<EF>5m</EF>") {
+        msiExecCmd(*Cmd,*Arg,"null","null","null",*Result);
+        msiGetStdoutInExecCmdOut(*Result,*Out);
+        writeLine("serverLog","Policy manager executed [*Out]");
     }
-    INPUT null
-    OUTPUT ruleExecOut
-
+}
+INPUT null
+OUTPUT ruleExecOut
+```
 If this rule is stored in a file called 'queuePolicyManager.r', you can start this rule with the 'irule -vF queuePolicyManager.r' command
 and check it status via 'iqstat -l'.
 
@@ -120,35 +124,35 @@ and check it status via 'iqstat -l'.
 iRODS api hooks, configured on core.re.
 
 Update policy state during replication policy execution:
+```
+acPostProcForPut {
+    ON($objPath like "\*.replicate") {
+        #Set replication policy state when queing the policy
+        *config = "/opt/eudat/b2safe-dpm-client/conf/config.ini"
+        msiExecCmd("uploadPolicyState.py", "-c *config -d $objPath -S QUEUED", "null", "null", "null", *out);
 
-    acPostProcForPut {
-        ON($objPath like "\*.replicate") {
-            #Set replication policy state when queing the policy
-            *config = "/srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
-            msiExecCmd("uploadPolicyState.sh", "-c *config -d $objPath -S QUEUED", "null", "null", "null", *out);
-
-            delay("<PLUSET>1m</PLUSET>") {
-                    #Set replication policy state when starting policy execution
-                    *config = "/srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
-                    msiExecCmd("uploadPolicyState.sh", "-c *config -d $objPath -S RUNNING", "null", "null", "null", *out);
-                    processReplicationCommandFile($objPath);
-            }
+        delay("<PLUSET>1m</PLUSET>") {
+                #Set replication policy state when starting policy execution
+                *config = "/opt/eudat/b2safe-dpm-client/conf/config.ini"
+                msiExecCmd("uploadPolicyState.py", "-c *config -d $objPath -S RUNNING", "null", "null", "null", *out);
+                processReplicationCommandFile($objPath);
         }
     }
-
+}
+```
 Update policy state after a replication policy is finished:
-
-    acPostProcForObjRename(*sourceObject,*destObject) {
-            ON($objPath like "\*.replicate\*") {
-                    *config = "/srv/irods/iRODS-pre-production/server/bin/cmd/dpm-current/config.ini"
-                    msiExecCmd("uploadPolicyState.sh", "-c *config -s *sourceObject -d *destObject", "null", "null", "null", *out);
-            }
+```
+acPostProcForObjRename(*sourceObject,*destObject) {
+    ON($objPath like "\*.replicate\*") {
+            *config = "/opt/eudat/b2safe-dpm-client/conf/config.ini"
+            msiExecCmd("uploadPolicyState.py", "-c *config -s *sourceObject -d *destObject", "null", "null", "null", *out);
     }
-
+}
+```
 ### Data send to the DPM server ###
 
 Data uploads to the server HTTP API endpoint have the following format and will be send as form-www/encoded name,value pairs:
-
+```
     {
         'id': policyId,                 policy uid, extracted from .replicate file
         'state': args.state,            policy state, extracted from .replicate file (RUNNING, FINISHED, FAILED)
@@ -156,4 +160,4 @@ Data uploads to the server HTTP API endpoint have the following format and will 
         'center': args.center,          center id
         'community': args.community     community id
     }
-
+```
