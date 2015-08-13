@@ -31,7 +31,7 @@ echo "The user that built this is %{_whoami}"
 # create string where git repo is started..
 workingdir=`pwd`
 cd %{_b2safehomepackaging}
-cd ..
+cd ../..
 b2safehome=`pwd`
 cd $workingdir
 # empty source directory and copy new files
@@ -48,11 +48,12 @@ exit 0
 rm -rf %{buildroot}
 mkdir -p $RPM_BUILD_ROOT%{_irodsPackage}/conf
 mkdir -p $RPM_BUILD_ROOT%{_irodsPackage}/lib
-mkdir -p $RPM_BUILD_ROOT%{_irodsPackage}/packaging
 
-cp $RPM_SOURCE_DIR/conf/* $RPM_BUILD_ROOT%{_irodsPackage}/conf
-cp $RPM_SOURCE_DIR/lib/* $RPM_BUILD_ROOT%{_irodsPackage}/lib
-cp $RPM_SOURCE_DIR/packaging/install.sh $RPM_BUILD_ROOT%{_irodsPackage}/packaging
+cp $RPM_SOURCE_DIR/client/conf/* $RPM_BUILD_ROOT%{_irodsPackage}/conf
+cp $RPM_SOURCE_DIR/client/lib/* $RPM_BUILD_ROOT%{_irodsPackage}/lib
+cp $RPM_SOURCE_DIR/schema/*.xsd $RPM_BUILD_ROOT%{_irodsPackage}/conf
+
+ 
 
 # cleanup
 %clean
@@ -66,30 +67,47 @@ rm -rf %{buildroot}
 # files
 %{_irodsPackage}/lib
 %{_irodsPackage}/conf
-%{_irodsPackage}/packaging
 # attributes on files and directory's
 %attr(-,%{_irodsUID},%{_irodsGID})   %{_irodsPackage}
 %attr(600,%{_irodsUID},%{_irodsGID}) %{_irodsPackage}/conf/*.ini
+%attr(600,%{_irodsUID},%{_irodsGID}) %{_irodsPackage}/conf/*.xsd
 %attr(700,%{_irodsUID},%{_irodsGID}) %{_irodsPackage}/lib/*.py
-%attr(700,%{_irodsUID},%{_irodsGID}) %{_irodsPackage}/packaging/*.sh
 %doc
+# config files
+%config(noreplace) %{_irodsPackage}/conf/config.ini
 
 %post
-
+# symbolic link creation
+if [ -e "/var/lib/irods/iRODS/server/bin/cmd" ]
+then
+    ln -sf %{_irodsPackage}/lib/PolicyManager.py /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
+    ln -sf %{_irodsPackage}/lib/Upload.py /var/lib/irods/iRODS/server/bin/cmd/uploadPolicyState.py
+fi
+# only show info on first installation
+if [ "$1" = "1" ]
+then 
 # show actions to do after installation
 cat << EOF
 
-The package b2safe has been installed in %{_irodsPackage}.
-To install/configure it in iRODS do following as the user %{_irodsUID} : 
+To install/configure b2safe dpm client in iRODS do following as the user %{_irodsUID} : 
 
 su - %{_irodsUID}
 cd %{_irodsPackage}/conf
 # update config.ini with correct parameters with your favorite editor
-cd %{_irodsPackage}/packaging
-./install.sh
 
 EOF
+fi
 
+%postun
+# symbolic link deletion after last rpm deletion
+if [ "$1" = "0" ]
+then 
+    if [ -e "/var/lib/irods/iRODS/server/bin/cmd" -a "$1" -eq "0"  ]
+    then
+        rm -f /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
+        rm -f /var/lib/irods/iRODS/server/bin/cmd/uploadPolicyState.py
+    fi
+fi
 %changelog
 * Wed Aug 12 2015  Robert Verkerk <robert.verkerk@surfsara.nl> 1.0
 - Initial version of b2safe dpm client package

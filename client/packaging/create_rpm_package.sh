@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 USERNAME=`whoami`
-INSTALL_CONFIG=./version.sh
+VERS_CONFIG=./version.sh
 
 if [ "$USERNAME" = "root" ]
 then
@@ -20,11 +20,11 @@ then
 	exit 1
 fi 
 
-if [ -e $INSTALL_CONFIG ]
+if [ -e $VERS_CONFIG ]
 then
-	. $INSTALL_CONFIG
+	. $VERS_CONFIG
 else
-	echo "ERROR: $INSTALL_CONFIG not present!"
+	echo "ERROR: $VERS_CONFIG not present!"
 	exit 1
 fi
 
