@@ -1,5 +1,8 @@
-__author__ = 'Willem Elbers, MPI-TLA, willem.elbers@mpi.nl'
+__author__ = 'Willem Elbers (MPI-TLA) <willem.elbers@mpi.nl> \
+              Claudio Cacciari (Cineca) <c.cacciari@cineca.it>'
 
+import logging
+import logging.handlers
 from cProfile import run
 import subprocess
 import sys
@@ -10,8 +13,18 @@ import time
 
 class PolicyRunner:
 
+    def __init__(self, usermap, test=False, loggerParentName=None, debug=False):
 
-    def __init__(self, test=False, debug=False):
+        if loggerParentName: loggerName = loggerParentName + ".PolicyRunner"
+        else: loggerName = "PolicyRunner"
+        self.logger = logging.getLogger(loggerName)
+
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
+
+        self.usermap = usermap
         self.test = test
         self.debug = debug
         self.iruleCmd = '/usr/bin/irule'
@@ -22,11 +35,11 @@ class PolicyRunner:
         """
         Run a policy
         """
-        if self.debug:
-            print policy.toString()
+        self.logger.info('Start to schedule the policy: ' + policy.policyId)
+        self.logger.debug(policy.toString())
 
         path = sys.path[0]
-        author = policy.author
+        author = self.usermap[policy.author]
         policyId = policy.policyId
         a_id = 0
         for action in policy.actions:
@@ -60,7 +73,7 @@ class PolicyRunner:
         elif not os.path.isfile(rulePath):
             return True
         else:
-            print "Skipped: Reason = runonce with existing rule file [%s]" % (rulePath)
+            self.logger.info("Skipped: Reason = runonce with existing rule file [%s]", rulePath)
             return False
 
 
@@ -68,15 +81,14 @@ class PolicyRunner:
         """
         Create a rule file and run it
         """     
-        print('Generating rule: '),
+        self.logger.info('Generating rule')
         self.generateRule(rulePath, collection.value, target.location.path, target.location.resource, policyId)
-        print('done\n'),
 
         if action.triggerType == 'runonce':
-            print 'Executing the rule just one time'
+            self.logger.info('Executing the rule just one time')
             self.executeRule(author, rulePath)
         elif action.triggerType == 'time':
-            print 'Scheduling the rule execution via system crontab'
+            self.logger.info('Scheduling the rule execution via system crontab')
             cronJob_iter = self.crontab.find_comment(jobId)
             if sum(1 for _ in cronJob_iter) == 0:
                 cmd = 'export clientUserName=' + author + '; ' + self.iruleCmd + ' -F ' + rulePath
@@ -85,9 +97,10 @@ class PolicyRunner:
                 cronJob.enable()
                 self.crontab.write_to_user(user=True)
             else:
-                print 'Skipping rule execution, policy already scheduled [id=%s]' % (policyId)
+                self.logger.info('Skipping rule execution, policy already '
+                               + 'scheduled [id=%s]', policyId)
         else:
-            print 'Unkown trigger type [%s]' % (action.triggerType)
+            self.logger.error('Unkown trigger type [%s]', action.triggerType)
 
 
     def executeRule(self, author, rulePath):
@@ -95,7 +108,7 @@ class PolicyRunner:
             Create the shell command to be executed
             Using shell=True here, sanitize input or find alternative
         """
-        print('Command: '),
+        self.logger.info('Executing command: ' + self.iruleCmd + ' -F' + rulePath)
         if not self.test:
             d = dict(os.environ)
             d['clientUserName'] = author
@@ -103,13 +116,11 @@ class PolicyRunner:
             output, err = proc.communicate()
             rc = proc.poll()
             if rc:
-                print "ret=%s" % rc
-                print "msg=%s" % output
-                print 'executed'
-                if self.debug:
-                    print 'output: [\n'+output+']'
-            else:
-                print 'skipped in test mode'      
+                self.logger.debug("ret=%s", rc)
+                self.logger.debug("msg=%s", output)
+                self.logger.info('Command executed')
+        else:
+            self.logger.info('skipped in test mode')
         
 
     def generateRule(self, ruleFilePath, collection, path, resource, id):

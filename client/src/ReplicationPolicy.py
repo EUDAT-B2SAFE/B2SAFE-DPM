@@ -1,15 +1,34 @@
-__author__ = 'Willem Elbers, MPI-TLA, willem.elbers@mpi.nl'
+__authors__ = 'Willem Elbers (MPI-TLA) <willem.elbers@mpi.nl>, \
+               Claudio Cacciari (Cineca) <c.cacciari@cineca.it>'
 
+import logging
+import logging.handlers
 from lxml import etree
 from Policy import Policy
 
+"""
+ ReplicationPolicy Class 
+ see https://github.com/EUDAT-B2SAFE/B2SAFE-DPM/tree/master/schema
+"""
 class ReplicationPolicy(Policy):
-    def __init__(self, element, ns):
-        Policy.__init__(self, element, ns);
+
+    def __init__(self, element, ns, loggerParentName=None, debug=False):
+
+        if loggerParentName: loggerName = loggerParentName + ".ReplicationPolicy"
+        else: loggerName = "ReplicationPolicy"
+        self.logger = logging.getLogger(loggerName)
+
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)        
+
+        Policy.__init__(self, element, ns, loggerName, debug)
         self.dataset = None
         self.actions = []
 
     def toString(self):
+
         str = 'Policy:'
         str += Policy.toString(self);
         str += self.dataset.toString('\t')
@@ -19,11 +38,14 @@ class ReplicationPolicy(Policy):
         return str
 
     def parse(self):
+
         Policy.parse(self)
         self.parseDataSets(self.root.findall(self.ns+'dataset'))
         self.parseActions(self.root.findall(self.ns+'actions'))
 
     def parseDataSets(self, datasets):
+  
+        self.logger.debug('Parsing the policy datasets')
         if datasets == None:
             print('No datasets found')
         else:
@@ -31,6 +53,8 @@ class ReplicationPolicy(Policy):
                 self.dataset = Dataset(dataset, self.ns)
 
     def parseActions(self, actions):
+
+        self.logger.debug('Parsing the policy actions')
         if actions == None:
             print('No actions found')
         elif not len(actions) == 1:
@@ -39,66 +63,90 @@ class ReplicationPolicy(Policy):
             for action in actions[0].findall(self.ns+'action'):
                 self.actions.append(Action(action, self.ns))
 
+
+"""
+ Dataset Class 
+ Parses the list of data sets
+"""
 class Dataset():
-    """
-        <dataset>
-            <collection id="0">
-                <persistentIdentifier type="PID"> 11100/6c8ac19e-c982-11e2-b3cb-e41f13eb41b2</persistentIdentifier>
-            </collection>
-            ...
-        </dataset>
-    """
-    def __init__(self, element, ns):
+
+    def __init__(self, element, ns, loggerParentName=None, debug=False):
+
+        if loggerParentName: loggerName = loggerParentName + ".Dataset"
+        else: loggerName = "Dataset"
+        self.logger = logging.getLogger(loggerName)
+
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
+
+        self.logger.debug('Parsing the data set')
         self.collections = []
         for collectionElement in element.findall(ns+'collection'):
             self.collections.append(Collection(collectionElement, ns))
 
     def toString(self, prefix=''):
+
         str = '%sCollections:\n' % (prefix)
         for collection in self.collections:
             str += '%s\t%s\n' % (prefix, collection.toString())
         return str
 
+
+"""
+ Collection Class 
+ Parses a single collection location
+"""
 class Collection():
-    """
-    Class defining all collection properties
-    """
-    def __init__(self, element, ns):
+
+    def __init__(self, element, ns, loggerParentName=None, debug=False):
+
+        if loggerParentName: loggerName = loggerParentName + ".Collection"
+        else: loggerName = "Collection"
+        self.logger = logging.getLogger(loggerName)
+
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)        
+
         self.id = element.get('id').strip()
         #process persistent identifier
         pid = element.findall(ns+'persistentIdentifier')
         if pid:
             self.type = pid[0].get('type').strip()
             self.value = pid[0].text.strip()
+            self.logger.debug('Got pid type %s and value %s', self.type, 
+                                                              self.value)
         #process location
         location = element.findall(ns+'location')
         if location:
             loc = location[0].text.strip()
+            self.logger.debug('Got location %s', loc)
 
     def toString(self):
+
         str = '%s [%s] %s' % (self.type, self.id,self.value)
         return str
 
+"""
+ Class parsing and defining all action properties
+"""
 class Action():
-    """
-    Class parsing and defining all action properties
 
-    <action name="replication onchange">
-      <type>replication</type>
-      <trigger type="action">onchange</trigger>
-      <sources>
-        <source>...</source>
-        ...
-        <source>...</source>
-      </sources>
-      <targets>
-        <target>...</target>
-        ...
-        <target>...</target>
-      </targets>
-    </action>
-    """
-    def __init__(self, element, ns):
+    def __init__(self, element, ns, loggerParentName=None, debug=False):
+        """Initialize the class"""
+
+        if loggerParentName: loggerName = loggerParentName + ".Action"
+        else: loggerName = "Action"
+        self.logger = logging.getLogger(loggerName)
+
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
+
         self.targets = []
         self.sources = []
 
@@ -114,7 +162,7 @@ class Action():
         elif len(element.findall(ns+'trigger/'+ns+'runonce')) > 0:
             self.triggerType = 'runonce'
         else:
-            print("Unkown trigger")
+            logger.error('Unkown trigger')        
 
         #Process sources
         for source in element.findall(ns+'sources/'+ns+'source'):
@@ -124,7 +172,10 @@ class Action():
         for target in element.findall(ns+'targets/'+ns+'target'):
             self.targets.append(Location(target, ns))
 
+        self.logger.debug('Got ' + self.toString())
+
     def toString(self, prefix='\t'):
+
         str = '%sAction: %s [%s] running %s\n' % (prefix, self.name, self.type, self.trigger)
         str += '%s\tSources:\n' % (prefix)
         for source in self.sources:
@@ -134,32 +185,54 @@ class Action():
             str += '%s\t\tlocation [%s, %s, %s]\n' % (prefix, target.location.site, target.location.path, target.location.resource)
         return str;
 
+
+"""
+ Class parsing the location element
+"""
 class Location():
-    """
-    Class defining all target properties
-    """
-    def __init__(self, element, ns):
+
+    def __init__(self, element, ns, loggerParentName=None, debug=False):
+
+        if loggerParentName: loggerName = loggerParentName + ".Location"
+        else: loggerName = "Location"
+        self.logger = logging.getLogger(loggerName)
+
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
+
         self.id = element.get('id')
         for location in element.findall(ns+'location'):
             self.location = self.parseLocationType(location)
 
+
     def parseLocationType(self, location):
+
         type = location.get('{http://www.w3.org/2001/XMLSchema-instance}type')
         if type == 'irodsns:coordinates':
             return IrodsLocation(location)
         else:
-            print("Unkown location type")
+            self.logger.errror('Unkown location type')
             return None
 
+
+"""
+ Class parsing the specific iRODS location properties
+"""
 class IrodsLocation:
-    """
-        <location xsi:type="irodsns:coordinates">
-            <irodsns:site type="EUDAT">CINECA</irodsns:site>
-            <irodsns:path>/path/to/destination</irodsns:path>
-            <irodsns:resource>defaultResc</irodsns:resource>
-        </location>
-    """
-    def __init__(self, element):
+
+    def __init__(self, element, loggerParentName=None, debug=False):
+
+        if loggerParentName: loggerName = loggerParentName + ".IrodsLocation"
+        else: loggerName = "IrodsLocation"
+        self.logger = logging.getLogger(loggerName)
+
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)        
+
         self.dpmIrodsns = '{http://eudat.eu/2013/iRODS-policy}'
         self.site = element.findall(self.dpmIrodsns+'site')[0].text.strip()
         if not element.findall(self.dpmIrodsns+'path')[0].text == None:
@@ -171,4 +244,7 @@ class IrodsLocation:
             self.resource = None
         else:
             self.resource = resElements[0].text.strip()
+
+        self.logger.debug('Got iRODS path %s and resource %s', self.path, 
+                                                               self.resource)
 
