@@ -4,7 +4,7 @@ import cgitb
 import getopt
 import sys
 import ConfigParser
-import kyotocabinet
+import sqlite3
 
 def usage():
     '''Function describing the script usage
@@ -47,14 +47,18 @@ def fetchPolicy():
     policy_object_id = formData.getvalue(policy_object_key, "")
     
     # Open the database
-    db = kyotocabinet.DB()
-    if (not db.open(config.get("DATABASE", "name").strip(), 
-        kyotocabinet.DB.OREADER)):
-        print "Unable to open the database " + str(db.error())
-        sys.exit(10)
+    dbfile = config.get("DATABASE", "name").strip()
+    if (not os.path.isfile(dbfile)):
+        sys.stderr.write("Unable to open the database %s" % dbfile)
+        sys.exit(-100)
+
+    conn = sqlite3.connect(dbfile)
+    cur = conn.cursor()
 
     # Extract the policy from the database and return as a string
-    policy = db.get(policy_object_id)
+    cur.execute("select value from policies where key = ?",
+            (policy_object_id,))
+    policy = cur.fetchone()
     if (policy):
         sys.stdout.write(policy)
     else:

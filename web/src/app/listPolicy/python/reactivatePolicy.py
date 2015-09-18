@@ -6,23 +6,7 @@ import StringIO
 import hashlib
 import time
 import os
-
-import kyotocabinet
-
-class VisitUUID(kyotocabinet.Visitor):
-    def __init__(self, config, uuid):
-        self.uuid_idx = ''
-        self.uuid = uuid
-        self.config = config
-
-    def visit_full(self, key, value):
-        if (self.uuid.strip() == value.strip()):
-            self.uuid_idx = key.split(self.config.get("POLICY_SCHEMA",
-                "uniqueid"))[-1]
-        return self.NOP
-    
-    def visit_empty(self, key):
-        return self.NOP
+import sqlite3
 
 def reactivatePol(config):
     '''Function to reactivate the policy
@@ -33,25 +17,28 @@ def reactivatePol(config):
     data = json.load(sys.stdin)
     # Open the database
     dbfile = config.get("DATABASE", "name").strip()
-    db = kyotocabinet.DB()
-    if (not db.open(dbfile, 
-        kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)):
-        sys.stderr.write("open error: " + str(db.error()))
+    if (not os.path.isfile(dbfile)):
+        sys.stderr.write("Unable to open the database: %s" % dbfile)
+        sys.exit(-100)
     
     # Find the key for the uuid
-    uuid_keys = db.match_prefix(config.get("POLICY_SCHEMA", "uniqueid"))
-    visit_uuid = VisitUUID(config, data['uuid'])
-    db.accept_bulk(uuid_keys, visit_uuid, False)
+    conn = sqlite3.connect(dbfile)
+    cur = conn.cursor()
+    uuid_key = "%s%%" % config.get("POLICY_SCHEMA", "uniqueid")
+    cur.execute("select key from policies where key like ? and value=?",
+            (uuid_key, data['uuid']))
+    result = cur.fetchone()
+    uuid_idx = -1
+    if (len(result) > 0):
+        uuid_idx = result[0].split("_")[-1]
 
     # Construct the remove key
-    pol_rm = "%s%s" % (config.get("POLICY_SCHEMA", "removed"),
-            visit_uuid.uuid_idx)
+    pol_rm = "%s_%s" % (config.get("POLICY_SCHEMA", "removed"), uuid_idx)
 
     # Set the removed key to false - this means the policy is reactivated
-    db.set(pol_rm, 'false')
-
-    # Close the database
-    db.close()
+    cur.execute("update policies set value=? where key=?",
+            ('false', pol_rm))
+    conn.commit()
 
 if __name__ == '__main__':
     cfgfile = 'config/policy_schema.cfg'

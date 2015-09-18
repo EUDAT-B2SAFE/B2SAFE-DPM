@@ -5,7 +5,6 @@ import sys
 import cgi
 import json
 import ConfigParser
-import kyotocabinet
 import sqlite3
 import csv
 import os
@@ -31,6 +30,11 @@ def getAdmins(config):
         dpm_admins.append(username)
     fh.close()
     return dpm_admins
+
+def match_multi(expr, item):
+    '''Match the expression'''
+    res = re.match(expr, item)
+    return res is not None
 
 def getData(config):
     '''Function to return the policies from the database
@@ -87,20 +91,30 @@ def getData(config):
             else:
                 columns.append((val, "false"))
 
-    # Open the database
-    db = kyotocabinet.DB()
+    # Open the database (first time around it's not really an error the db
+    # doesn't exist)
     dbfile = config.get("DATABASE", "name").strip()
-    if (not db.open(dbfile, 
-        kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)):
-        sys.stderr.write("open error: " + str(db.error()))
+    if (not os.path.isfile(dbfile)):
+        sys.stderr.write("Warning: Database %s does not exist\n" % dbfile)
+        sys.exit(-100)
+
+    conn = sqlite3.connect(dbfile)
+    cur = conn.cursor()
 
     data = []
-    last_idx = db.get(config.get("DATABASE", "last_index"))
+    last_idx = None
+
+    cur.execute("select value from policies where key = 'last_index'")
+    result = cur.fetchone()
+    if (result != None and len(result) > 0):
+        last_idx = result[0]
+
     if (last_idx is not None):
         last_index = int(last_idx)
     else:
-        last_index = -1
-
+        last_index = 0
+    
+    # print "last_index is ", last_index
     for idx in range(0, last_index+1):
         col_names = []
         col_multi = []
@@ -122,17 +136,35 @@ def getData(config):
                 col_multi.append("%s_[0-9]+_%s" % (acol[0], idx))
             else:
                 col_names.append("%s_%s" % (acol[0], idx))
-       
+
+        #print "col_multi ", col_multi
+        #print "col_names ", col_names
+        
         # Get the keys from the database for the multi-elements
         mcolls = []
+        conn.create_function("regexp", 2, match_multi)
+        cursor = conn.cursor()
         for mcol in col_multi:
-            tcol = db.match_regex(mcol)
+            cur.execute('''select key from policies where 
+                key regexp ?''', (mcol,))
+            tcol = [x[0] for x in cur.fetchall()]
             tcol.sort(key=lambda x: int(x.split('_')[-2]))
             mcolls = mcolls + tcol
         # Get the data from the database
-        vals = db.get_bulk(col_names)
-        mvals = db.get_bulk(mcolls)
-        
+        vals = {}
+        for col_name in col_names:
+            cur.execute("select value from policies where key = ?", 
+                    (col_name,))
+            vals[col_name] = cur.fetchall()[0][0]
+        mvals = {}
+        for mcoll in mcolls:
+            cur.execute("select value from policies where key = ?", 
+                    (mcoll,))
+            mvals[mcoll] = cur.fetchall()[0][0]
+
+        #print "vals ", vals
+        #print "mvals ", mvals
+
         # Check if the user belongs to the policy community
         # if not skip the policy
         if (vals.has_key(community_key)):

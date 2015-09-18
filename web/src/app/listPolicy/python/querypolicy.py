@@ -8,7 +8,7 @@ import calendar
 import time
 import hashlib
 import os
-import kyotocabinet
+import sqlite3
 import ConfigParser
 
 def usage():
@@ -25,8 +25,8 @@ def usage():
     print "end_date=<date>             The upper limit for the creation date."
     print ""
 
-class FilterPolicy(kyotocabinet.Visitor):
-    '''Class implementing the visitor pattern to filter the database
+class FilterPolicy():
+    '''Filter the policies
     '''
     def __init__(self, config, btime=-1, etime=-1, comid='', site=''):
         self.btime = btime
@@ -40,47 +40,61 @@ class FilterPolicy(kyotocabinet.Visitor):
         self.remove_str = config.get("POLICY_SCHEMA", "removed").strip()
         self.ids = []
         self.removed_ids = []
-        super(FilterPolicy, self).__init__()
 
-    def visit_full(self, key, val):
+    def _get_ids(results):
+        '''Filter the ids according to the deleted key'''
+        for row in results:
+            p_id = row[0].split("_")[-1]
+            remove_str = "%s_%s" % (self.remove_str, p_id)
+            cur.execute("select value from policies where key =?",
+                        (remove_str))
+            val = cur.fetchone()
+            if (val[0] == "true"):
+                self.removed_ids.append(p_id)
+            else:
+                self.ids.append(p_id)
+ 
+    def query(self):
         '''Method to filter the results according to the date
         or the site or the community
         '''
         
-        # Avoid deleted policies
-        if (self.remove_str in key):
-            if (val == "true"):
-                r_id = key.split("%s_" % self.remove_str)[1]
-                self.removed_ids.append(r_id)
-            
-        if (self.btime > 0):
-            if (self.ctime_str in key):
-                if (int(val) > int(self.btime)):
-                    ctime_id = key.split("%s_" % self.ctime_str)[1]
-                    if (ctime_id not in self.ids):
-                        self.ids.append(ctime_id)
-        elif (self.etime > 0):
-            if (self.ctime_str in key):
-                if (int(val) < int(self.etime)):
-                    ctime_id = key.split("%s_" % self.ctime_str)[1]
-                    if (ctime_id not in self.ids):
-                        self.ids.append(ctime_id)
-        elif (len(self.comid) > 0):
-            if (self.comm_str in key and val == self.comid):
-                comm_id = key.split("%s_" % self.comm_str)[1]
-                if (comm_id not in self.ids):
-                    self.ids.append(comm_id)
-        elif (len(self.site) > 0):
-            if (self.site_str in key and val == self.site):
-                site_id = key.split("%s_" % self.site_str)[1]
-                if (site_id not in self.ids):
-                    self.ids.append(site_id)
-        return self.NOP
+        # Open the database
+        dbfile = config.get("DATABASE", "name").strip()
+        if (not os.path.isfile(dbfile)):
+            sys.write.error("Unable to open the database %s" % dbfile)
+            sys.exit(-100)
 
-    def visit_empty(self, key):
-        '''Method to return nothng if the key doesn't exist
-        '''
-        return self.NOP
+        conn = sqlite3.connect(dbfile)
+        cur = conn.cursor()
+
+        if (self.btime > 0 and self.etime == -1):
+            ctime = "%s%%" % self.ctime_str
+            cur.execute('''select key from policies where value > ?
+                    and key like ?''', (self.btime, ctime))
+            results = cur.fetchall()
+            self._get_ids(results)
+            
+        if (self.etime > 0 and self.btime == -1):
+            ctime = "%s%%" % self.ctime_str
+            cur.execute('''select key from policies where value < ?
+                and key like ?''', (self.etime, ctime))
+            results = cur.fetchall()
+            self._get_ids(results)
+        
+        if (len(self.comid) > 0):
+            comid = "%s%%" % self.comm_str
+            cur.execute('''select key from policies where value = ?
+                    and key like ?''', (self.comid, comid))
+            results = cur.fetchall()
+            self._get_ids(results)
+
+        if (len(self.site) > 0):
+            site = "%s%%" % self.site_str
+            cur.execute('''select key from policies where value = ?
+                and key like ?''', (self.site, site))
+            results = cur.fetchall()
+            self._get_ids(results)
 
 def transformDate(b_date, e_date):
     '''Function to transform the date into a unix timestamp in GMT
@@ -99,22 +113,15 @@ def getPoliciesFromDB(config, community_id, site, b_date, e_date):
     '''
     sb_date, se_date = transformDate(b_date, e_date)
 
-    # Open the database
-    db = kyotocabinet.DB()
-    if (not db.open(config.get("DATABASE", "name").strip(), 
-        kyotocabinet.DB.OREADER)):
-        print "Unable to open the database " + str(db.error())
-        sys.exit(10)
-
     # Loop over the database and get the ids
-    filter_obj = FilterPolicy(config, sb_date, se_date, community_id, site)
-    db.iterate(filter_obj, False)
+    policy_obj = PolicyQuery(config, sb_date, se_date, community_id, site)
+    policy_obj.query()
     
     # Now loop over the policy ids and extract the md5, and create time
     # skip the removed policies
     policies = []
-    for aid in filter_obj.ids:
-        if (aid in filter_obj.removed_ids):
+    for aid in policy_obj.ids:
+        if (aid in policy_obj.removed_ids):
             continue
         ctime_key = "%s_%s" % (config.get("POLICY_SCHEMA", "ctime").strip(),
                 aid)

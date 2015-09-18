@@ -6,6 +6,8 @@ import sys
 import os
 import ConfigParser
 import sqlite3
+import subprocess
+import xml.etree.ElementTree
 
 def usage():
     '''Function describing the script usage
@@ -162,16 +164,96 @@ def get_next_resources_indexes(conn, config):
 
     return next_indexes
 
+def get_goc_info(data):
+    '''Get the resource information from the GOCDB'''
+    
+    out_data = []
+
+    # get the data and put the information into a xml object
+    command = ["curl", data["resource_data"]]
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE)
+    output, error = proc.communicate()
+    rc = proc.poll()
+    if rc:
+        print "Error: Unable to wget information from the gocdb %s" %\
+                (data["resource_data"])
+        print "return code: ", rc
+        if (len(output) > 0):
+            print "Message: \n"
+            print output
+        if (len(error) > 0):
+            print "Error: \n"
+            print error
+    else:
+        goc_root = xml.etree.ElementTree.fromstring(output)
+        for spoint in goc_root.getchildren():
+            irods_path = ""
+            irods_zone = ""
+            irods_resc = ""
+            host = ""
+            for elem in spoint.getchildren():
+                if (elem.tag == "HOSTNAME"):
+                    print "host ", elem.text
+                    host = elem.text
+                if (elem.tag == "EXTENSIONS"):
+                    irods_details = elem.getchildren()
+                    if (len(irods_details) > 0):
+                        for irods_elem  in irods_details:
+                            t_irods_path = get_irods_elem(irods_elem, 
+                                    "irods_path")
+                            if (len(t_irods_path) > 0):
+                                irods_path = t_irods_path
+                        
+                            t_irods_zone = get_irods_elem(irods_elem,
+                                    "irods_zone")
+                            
+                            if (len(t_irods_zone) > 0):
+                                irods_zone = t_irods_zone
+                            
+                            t_irods_resc = get_irods_elem(irods_elem,
+                                    "irods_resource")
+                            if (len(t_irods_resc) > 0):
+                                irods_resc = t_irods_resc
+                            
+                        print "irods_path %s irods_zone %s irods_resc %s" %\
+                                 (irods_path, irods_zone, irods_resc)
+                        #TODO: we need to store these values in an array
+                        # that is recognisable by the loading script
+                        # ie it should simply be type|host|resource|path
+                        # we should try to add the path at a not to mucn
+                        # later point
+                        if (len(irods_resc) > 0 and len(irods_zone) > 0):
+                            data_str = "iRODS|%s|%s|%s|%s" % \
+                                    (host,irods_resc,irods_zone,irods_path)
+                        out_data.append(data_str)
+    return out_data
+
+def get_irods_elem(root_elem, key):
+    '''return the value for the root element'''
+    elem_ok = False
+    elem_value = ""
+    for elem in root_elem.getchildren():
+        if (elem.tag == "KEY" and elem.text == key):
+            elem_ok = True
+        if (elem.tag == "VALUE" and elem_ok):
+            elem_value = elem.text
+    return elem_value
+
 def fill_resource(conn, config, next_indexes, data):
     '''Fill the resource database
     '''
-    cur = conn.cursor() 
+
+    # Get the resource data from the GOCDB
+    data = get_goc_info(data)
+
     site_count = 0
     system_count = 0
     storage_count = 0
     resource_count = 0
-    for row in file(data["resource_data"], "r"):
-        system, site, store = row.split('|') 
+    cur = conn.cursor() 
+    for row in data:
+        system, site, store, zone, path = row.split('|') 
         system = system.strip()
         site = site.strip()
         store = store.strip()
@@ -353,6 +435,8 @@ def populate(dbfile, dbschema, dbdata, dbtype):
     else:
         print 'Uploading data to the %s database' % dbtype
 
+    # Get the resource information from the GOCDB
+
     # Open the database
     conn = sqlite3.connect(dbfile)
     
@@ -412,7 +496,7 @@ if __name__ == '__main__':
                 data_tag.append("%s_page" % sys.argv[1].strip())
                 data_tag.append("%s_role" % sys.argv[1].strip())
                 data_tag.append("%s_status" % sys.argv[1].strip())
-            else:
+            elif (sys.argv[1] == 'resource'):
                 data_tag.append("%s_data" % sys.argv[1].strip())
 
             dbfile = config.get("DATABASE", db_name_tag)

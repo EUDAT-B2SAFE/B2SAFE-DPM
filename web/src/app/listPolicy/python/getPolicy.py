@@ -2,10 +2,11 @@
 
 import getopt
 import sys
+import os
 import cgi
 import json
 import ConfigParser
-import kyotocabinet
+import sqlite3
 
 def usage():
     '''Function describing the script usage
@@ -16,23 +17,6 @@ def usage():
     print "help=help                 Prints this help"
     print ""
 
-class VisitPolicy(kyotocabinet.Visitor):
-    '''Visitor class to get the index for the key
-    '''
-    def __init__(self, uuid, uuid_key):
-        self.uuid = uuid
-        self.uuid_key = uuid_key
-        self.index = 0
-        super(VisitPolicy, self).__init__()
-
-    def visit_full(self, key, value):
-        if (self.uuid == value and self.uuid_key in key):
-            self.index = key.split("_")[-1]
-        return self.NOP
-
-    def visit_empty(self, key):
-        return self.NOP
-
 def getData(config, uuid):
     '''Function to get the policy from the database
     '''
@@ -42,19 +26,23 @@ def getData(config, uuid):
     policy_key = config.get("POLICY_SCHEMA", "object")
 
     # Open the database
-    db = kyotocabinet.DB()
     dbfile = config.get("DATABASE", "name").strip()
-    if (not db.open(dbfile, 
-        kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)):
-        sys.stderr.write("open error: " + str(db.error()))
+    if (not os.path.isfile(dbfile)):
+        sys.stderr.write("Problem opening the database: %s" % dbfile)
     
     # Get the uuid key corresponding to the uuid and construct
     # the policy key
-    visit_obj = VisitPolicy(uuid, uuid_key)
-    db.iterate(visit_obj, False)
-    
-    policy_key = "%s_%s" % (policy_key, visit_obj.index)
-    policy = db.get(policy_key)
+    conn = sqlite3.connect(dbfile)
+    cur = conn.cursor()
+    cur.execute("select key from policies where key like ? and value = ?",
+            ("%s%%" % uuid_key, uuid))
+    result = cur.fetchone()
+    pol_index = result[0].split("_")[-1]
+    policy_key = "%s_%s" % (policy_key, pol_index)
+    cur.execute("select value from policies where key = ?",
+            (policy_key,))
+    policy = cur.fetchone()[0]
+
     # policy = policy.replace("\n", "<br/>")
     print "Content-Type: application/json charset=utf-8"
     print ""

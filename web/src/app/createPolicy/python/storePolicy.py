@@ -6,8 +6,7 @@ import StringIO
 import hashlib
 import time
 import os
-
-import kyotocabinet
+import sqlite3
 
 sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])))
 import policy_irods_sub
@@ -25,6 +24,12 @@ class Policy():
         self.periodicType = 'period'
         self.irodsSystem = 'iRODS'
         self.irodsNamespace = "irodsns:coordinates"
+        # Check the database exists - if not create it
+        conn = sqlite3.connect(config.get("DATABASE", "name").strip())
+        cur = conn.cursor()
+        cur.execute('''create table if not exists policies (key text, value
+                text)''')
+        conn.commit()
 
     def processForm(self, formdata):
         '''process the form data and fill the obect attributes
@@ -243,54 +248,69 @@ def policyExists(pol, config):
 
     polmd5 = pol[config.get("POLICY_SCHEMA", "md5")]
     dbfile = config.get("DATABASE", "name").strip()
-    db = kyotocabinet.DB()
- 
-    # Open the database
-    if (not db.open(dbfile, 
-        kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)):
-        sys.stderr.write("open error: " + str(db.error()))
 
-    cur = db.cursor()
-    cur.jump()
-    while True:
-        rec = cur.get(True)
-        if not rec:
-            break
-        if ("md5" in rec[0] and rec[1] == polmd5):
-            exists = True
-            break
+    # Open the database
+    if (not os.path.isfile(dbfile)):
+        sys.stderr.write("Database %s does not exist" % dbfile)
+        sys.exit(-100)
+
+    conn = sqlite3.connect(dbfile)
+    cur = conn.cursor()
+    
+    # Check if the md5 exists in the database
+    cur.execute('''select key from policies where value = ?''',
+            (polmd5,))
+    results = cur.fetchall()
+    conn.commit()
+    if (len(results) > 0):
+        exists = True
     return exists
             
 def dumpToKVDb(pol, config):
     '''Function to dump the policy to a key-value pair database
     '''
     dbfile = config.get("DATABASE", "name").strip()
-    db = kyotocabinet.DB()
-
     # Open the database
-    if (not db.open(dbfile, 
-        kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)):
-        sys.stderr.write("open error: " + str(db.error()))
+    if (not os.path.isfile(dbfile)):
+        sys.stderr.write("Database %s does not exist" % dbfile)
+        sys.exit(-100)
+
+    conn = sqlite3.connect(dbfile)
+    cur = conn.cursor()
     
     # get the last index from the database
     last_index = config.get("DATABASE", "last_index").strip()
-    result = db.get(last_index)
-    if result:
-        next_index = int(result) + 1
+    cur.execute('''select value from policies where key = ?''', (last_index,))
+    results = cur.fetchall()
+    if (len(results) > 0):
+        next_index = int(results[0][0]) + 1
     else:
         next_index = 0
 
     # Write the key-value pairs to the db
     for akey in pol.keys():
         key = "%s_%s" %(akey, next_index)
-        if (not db.set(key, pol[akey])):
-                sys.stderr.write("unable to write to db: " + str(db.error()))
+        try:
+            cur.execute('''insert into policies (key, value) values (?, ?)''',
+                    (key, pol[akey]))
+        except sqlite3.DatabaseError as er:
+            sys.stderr.write("unable to write to db: ", er.message)
     # update the last index
-    if (not db.set("last_index", next_index)):
-        sys.stderr.write("unable to write last index to db: " + str(db.error()))
-    # Close the db
-    if (not db.close()):
-        sys.stderr.write("unable to close the db: " + str(db.error()))
+    try:
+        cur.execute("select value from policies where key = ?", 
+                ("last_index",))
+        res = cur.fetchall()
+        if (len(res) == 0):
+            cur.execute('''insert into policies (key, value)
+                values (?,?)''', ("last_index", next_index))
+        else:
+            cur.execute('''update policies set value = ? where key = ?''',
+                    (next_index, "last_index"))
+
+    except sqlite3.DatabaseError as er:
+        sys.stderr.write("unable to write last index to db: ", er.message)
+
+    conn.commit()
 
 def runStore():
     # Get the schema used for the key-value pair database
@@ -322,10 +342,7 @@ def runStore():
         # Write the policy to a database
         dumpToKVDb(aPolicy.policy, config)
 
-    #print "Input:"
-    # print aform
     print ""
-    #print aPolicy.policy["policy_object"]
     print json.dumps({'policy_exists': policy_exists})
 
 if __name__ == '__main__':

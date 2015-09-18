@@ -4,7 +4,7 @@ import getopt
 import sys
 import cgi
 import ConfigParser
-import kyotocabinet
+import sqlite3
 import hashlib
 import re
 
@@ -107,11 +107,11 @@ def loadData(config):
     md5sum = md5.hexdigest()
 
     # Open the database
-    db = kyotocabinet.DB()
-    if (not db.open(config.get("DATABASE", "name").strip(),
-        kyotocabinet.DB.OWRITER)):
-        print "Unable to open database " + str(db.error())
-        sys.exit(10)
+    dbfile = config.get("DATABASE", "name").strip()
+    if (not os.path.isfile(dbfile)):
+        sys.stderr.write("Database %s does not exist" % dbfile)
+        sys.exit(-100)
+    conn = sqlite3.connect(dbfile)
     
     # Get the key corresponding to the id and make sure that the
     # message doesn't already exist in the store

@@ -6,41 +6,15 @@ import StringIO
 import hashlib
 import time
 import os
-
-import kyotocabinet
+import sqlite3
 
 sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])))
 import policy_irods_sub
 import policy_irods_lib
 import policy_lib
 
-class VisitUUID(kyotocabinet.Visitor):
-    def __init__(self, uuid):
-        self.keys = []
-        self.uuid = uuid
-    def visit_full(self, key, value):
-        if (value == self.uuid):
-            uuid_val = key.split('_')[-1].strip()
-            version = "policy_version_%s" % uuid_val
-            self.keys.append(version)
-        return self.NOP
-    def visit_empty(self, key):
-        return self.NOP
-
-
-class VisitVersion(kyotocabinet.Visitor):
-    def __init__(self, version):
-        self.values = []
-        self.version_len = len(version.split('.'))
-
-    def visit_full(self, key, value):
-        # We only want to consider versions at the same level (eg
-        # A.B with C.D and not A.B with A.B.C)
-        if (len(value.split('.')) == self.version_len):
-            self.values.append(value)
-        return self.NOP
-    def visit_empty(self, key):
-        return self.NOP
+# We only want to consider versions at the same level (eg
+# A.B with C.D and not A.B with A.B.C)
 
 def highVer(versions):
     '''Find the highest version
@@ -49,9 +23,9 @@ def highVer(versions):
     fversions = {}
     if (len(versions) > 0):
         for aver in versions:
-            vals = aver.split('.')
+            vals = aver[0].split('.')
             fval = ''.join(vals)
-            fversions[fval] = aver
+            fversions[fval] = aver[0]
 
         keys = fversions.keys()
         keys.sort()
@@ -65,22 +39,20 @@ def nextVersion(config, uid, version):
     '''
     vers = 0.0
     dbfile = config.get("DATABASE", "name").strip()
-    db = kyotocabinet.DB()
+    if (not os.path.isfile(dbfile)):
+        sys.stderr.write("Cannot open the database: %s" % dbfile)
 
     # Open the database
-    if (not db.open(dbfile, 
-        kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)):
-        sys.stderr.write("open error: " + str(db.error()))
+    conn = sqlite3.connect(dbfile)
+    cur = conn.cursor()
 
     # Get the keys for all policies containing this uuid
-    uid_keys = db.match_prefix("policy_id")
-    uidObj = VisitUUID(uid)
-    versionObj = VisitVersion(version)
-    db.accept_bulk(uid_keys, uidObj)
-    db.accept_bulk(uidObj.keys, versionObj)
+    cur.execute("select key from policies where key like ? and value = ?",
+            ('policy_id%', uid))
+    results = cur.fetchall()
     
     # What is the highest version number we have
-    highver = highVer(versionObj.values)
+    highver = highVer(results)
 
     # If we are at the highest version number we need to just
     # bump the version number otherwise we need to go a level
@@ -95,15 +67,18 @@ def nextVersion(config, uid, version):
         vers = '.'.join(vcpts)
     else:
         newVersion = "%s.1" % (version)
-        versionObj = VisitVersion(newVersion)
-        db.accept_bulk(uidObj.keys, versionObj)
+        ver_str = "%s%%" % config.get("POLICY_SCHEMA", "version")
+        cur.execute("select value from policies where key like ? and value=?",
+                (ver_str, newVersion))
+        results = cur.fetchall()
+
         intval = 1
         # No versions exist at this level so we are at the highest
         # and set the version accordingly
-        if (len(versionObj.values) == 0):
+        if (len(results) == 0):
             vers = newVersion
         else:
-            highver = highVer(versionObj.values)
+            highver = highVer(results)
             if (highver > 0):
                 vcpts = highver.split('.')
                 lvers = int(vcpts[-1]) + int(intval)
@@ -346,54 +321,59 @@ def policyExists(pol, config):
 
     polmd5 = pol[config.get("POLICY_SCHEMA", "md5")]
     dbfile = config.get("DATABASE", "name").strip()
-    db = kyotocabinet.DB()
- 
-    # Open the database
-    if (not db.open(dbfile, 
-        kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)):
-        sys.stderr.write("open error: " + str(db.error()))
 
-    cur = db.cursor()
-    cur.jump()
-    while True:
-        rec = cur.get(True)
-        if not rec:
-            break
-        if ("md5" in rec[0] and rec[1] == polmd5):
-            exists = True
-            break
+    if (not os.path.isfile(dbfile)):
+        sys.stderr.write("Unable to open the database: %s" % dbfile)
+        sys.exit(-100)
+
+    # Open the database
+    conn = sqlite3.connect(dbfile)
+    cur = conn.cursor()
+    md5_str = "%s%%" % (config.get("POLICY_SCHEMA", "md5"))
+    cur.execute("select key from policies where key like ? and value=?",
+            (md5_str, polmd5))
+    results = cur.fetchall()
+    if (len(results) > 0):
+        exists = True
     return exists
             
 def dumpToKVDb(pol, config):
     '''Function to dump the policy to a key-value pair database
     '''
     dbfile = config.get("DATABASE", "name").strip()
-    db = kyotocabinet.DB()
+    if (not os.path.isfile(dbfile)):
+        sys.stderr.write("Unable to open the database: %s" % dbfile)
+        sys.exit(-100)
 
     # Open the database
-    if (not db.open(dbfile, 
-        kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)):
-        sys.stderr.write("open error: " + str(db.error()))
-    
+    conn = sqlite3.connect(dbfile)
+    cur = conn.cursor()
+
     # get the last index from the database
     last_index = config.get("DATABASE", "last_index").strip()
-    result = db.get(last_index)
+    cur.execute("select value from policies where key = ?",
+            (last_index,))
+    result = cur.fetchone()
+    next_index = 0
     if result:
-        next_index = int(result) + 1
+        next_index = int(result[0]) + 1
     else:
-        next_index = 0
+        next_index = 1
 
     # Write the key-value pairs to the db
     for akey in pol.keys():
         key = "%s_%s" %(akey, next_index)
-        if (not db.set(key, pol[akey])):
-                sys.stderr.write("unable to write to db: " + str(db.error()))
+        cur.execute("insert into policies (key, value) values (?,?)",
+                (key, pol[akey]))
+    
     # update the last index
-    if (not db.set("last_index", next_index)):
-        sys.stderr.write("unable to write last index to db: " + str(db.error()))
-    # Close the db
-    if (not db.close()):
-        sys.stderr.write("unable to close the db: " + str(db.error()))
+    if (next_index == 1):
+        cur.execute("insert into policies (key, value) values (?,?)",
+                ('last_index', next_index))
+    else:
+        cur.execute("update policies set value=? where key=?",
+                (next_index, 'last_index'))
+    conn.commit()
 
 def runStore():
     # Get the schema used for the key-value pair database
