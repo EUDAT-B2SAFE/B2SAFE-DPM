@@ -113,7 +113,7 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
     // Read the available identifier types
     pidList = [];
     $http({method: "GET",
-        url: "/cgi-bin/dpm/query_actions.py",
+        url: "${CGI_URL}/query_actions.py",
         params: {qtype: "identifiers"}}).then(function(results) {
             var data = results.data;
             for (var idx = 0; idx < data.length; ++idx) {
@@ -126,7 +126,7 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
 
     // Read the list of actions
     $http({method: "GET",
-        url: "/cgi-bin/dpm/query_actions.py",
+        url: "${CGI_URL}/query_actions.py",
         params: {qtype: "operations"}}).then(function(results) {
             var data = results.data;
             var opList = [];
@@ -414,7 +414,7 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
         if (polChangedObj.changed) { 
             if (polChangedObj.invalid.length === 0) {
                 policy.uuid = createGuid(); 
-                $http.post("/cgi-bin/dpm/storeModifiedPolicy.py", 
+                $http.post("${CGI_URL}/storeModifiedPolicy.py", 
                         JSON.stringify(policy),
                         {headers: "Content-Type: application/x-www-form-urlencoded"}).success(function(data, status, headers, config) 
                             {

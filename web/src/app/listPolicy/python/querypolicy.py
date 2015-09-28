@@ -206,7 +206,7 @@ def runQuery():
     '''
     # get the database configs
     config = ConfigParser.ConfigParser()
-    config.read("config/policy_schema.cfg")
+    config.read("config/policy.cfg")
 
     community_id_key = "community_id"
     b_date_key = "begin_date"

@@ -23,7 +23,7 @@ def fetchPolicy():
 
     # Read the configurations
     config = ConfigParser.ConfigParser()
-    config.read("config/policy_schema.cfg")
+    config.read("config/policy.cfg")
 
     print "Content-Type: application/json charset=utf-8"
     print ""

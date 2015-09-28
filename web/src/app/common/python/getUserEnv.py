@@ -13,7 +13,7 @@ def getUEnv():
     else:
         # Just for testing put a dummy username in case the REMOTE_USER
         # env variable doesn't exist
-        cfgfile = './config/policy_schema.cfg'
+        cfgfile = './config/policy.cfg'
         config = ConfigParser.ConfigParser()
         config.read(cfgfile)
         username = config.get("HTMLENV", "user").strip()

@@ -172,7 +172,7 @@ def loadData(config):
 
 if __name__ == '__main__':
     # The config file
-    cfgfile = './config/policy_schema.cfg'
+    cfgfile = './config/policy.cfg'
     
     # Read the configs
     config = ConfigParser.ConfigParser()

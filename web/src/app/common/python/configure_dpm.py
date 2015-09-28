@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Script to populate the resources database
+# Script to configure the DPM
 #
 import getopt
 import sys
@@ -7,20 +7,17 @@ import os
 import ConfigParser
 import sqlite3
 import subprocess
+import string
 import xml.etree.ElementTree
 
 def usage():
     '''Function describing the script usage
     '''
-    print 'Script to populate the configuration databases needed'
-    print 'for creating policies.'
-    print 'Usage: populate_db.py [-h][-v] <type>'
-    print ''
-    print 'The <type> can be: "resource", "profile" or "action"'
+    print 'Configure the Data Policy Manager.'
+    print 'Usage: configure_dpm.py [-h]'
     print ''
     print 'Options:'
     print '-h, --help              Print this help'
-    print '-v, --verbose           Prints verbose output'
     print ''
 
 def create_tables(conn, config, dbtype):
@@ -438,6 +435,7 @@ def populate(dbfile, dbschema, dbdata, dbtype):
     # Get the resource information from the GOCDB
 
     # Open the database
+    print "database ",dbfile
     conn = sqlite3.connect(dbfile)
     
     # read in the schema config
@@ -464,48 +462,187 @@ def populate(dbfile, dbschema, dbdata, dbtype):
     elif (dbtype == 'profile'):
         fill_profile(conn, config, next_indexes, dbdata)
 
+def configure_files(cfgfile_tmpl, cfgfile, adminfile):
+    '''Configure the config, admin and javascript files'''
+    cgi_url = ""
+    admin_user = ""
+    auth_type = ""
+    lines = []
+    jsfiles = ["dpm_app.js.template", "frontPageApp.js.template",
+    "register_app.js.template", "errorUtils.js.template",
+    "admin_profile_app.js.template"]
+
+    print "Configuring the policy config file. Enter 'q' to quit."
+
+    while (1):
+        print "Base URI for the CGI scripts:"
+        cgi_url = raw_input()
+        if (cgi_url == 'q'):
+            sys.exit()
+        elif (len(cgi_url) == 0):
+            print "You must supply a path or 'q' to quit."
+        else:
+            break
+
+    while (1):
+        print "Authentication method type: 1=AAI, 2=Standalone [1]:"
+        auth_type = raw_input()
+        if (auth_type == "" or auth_type == "1"):
+            auth_type = "AAI"
+            break
+        elif (auth_type == "2"):
+            auth_type = "STANDALONE"
+            break
+        elif (auth_type == "q"):
+            sys.exit()
+        else:
+            print "You must supply a valid authentication type or 'q' to quit."
+    
+    while (1):
+        print "Admin name (firstname lastname):"
+        admin_name = raw_input()
+        if (len(admin_name) == 0):
+            print "You must supply a name or 'q' to quit."
+        else:
+            break
+
+    print "Admin username [dpmadmin]:"
+    admin_user = raw_input()
+    if (len(admin_user) == 0):
+        admin_user = "dpmadmin"
+    elif (admin_user == "q"):
+        sys.exit()
+
+    while (1):
+        print "Admin email address:"
+        admin_email = raw_input()
+        if (len(admin_email) == 0):
+            print "You must supply an email address"
+        else:
+            break
+
+    # Update the config file
+    with file(cfgfile_tmpl, "r") as fin:
+        lines = fin.readlines()
+        fin.close()
+    with file(cfgfile, "w") as fout:
+        for line in lines:
+            if ("CGI_URL" in line):
+                can = string.Template(line)
+                line = can.substitute(CGI_URL=cgi_url)
+            elif ("HTMLUSER" in line):
+                can = string.Template(line)
+                line = can.substitute(HTMLUSER=admin_user)
+            elif ("AUTHENTICATION" in line):
+                can = string.Template(line)
+                line = can.substitute(AUTHENTICATION=auth_type)
+            fout.write("%s" % line)
+        fout.close()
+
+        # Update the admin file
+        with file(adminfile,"w") as fout:
+            fout.write('"%s", %s, %s' % (admin_name, admin_user, admin_email))
+            fout.close()
+
+        # Update the javascript files
+        for afile in jsfiles:
+            jfile = afile.split(".template")[0]
+            jsfile = os.path.abspath(os.path.join(os.path.dirname(__file__), afile))
+            with file(jsfile, "r") as fin:
+                lines = fin.readlines()
+                fin.close()
+            jsout = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                "../html/dpm/js/%s" % jfile))
+            if (not os.path.isdir(os.path.dirname(jsout))):
+                os.mkdir(os.path.dirname(jsout))
+            with file(jsout, "w") as fout:
+                for line in lines:
+                    if ("CGI_URL" in line):
+                        can = string.Template(line)
+                        line = can.safe_substitute(CGI_URL=cgi_url)
+                    fout.write(line)
+                fout.close()
+
+def configure_dbase(config):
+    '''Configure the pages database file before loading'''
+
+    lines = []
+    root_url = ""
+
+    print "Configuring the page URLs. Enter 'q' to quit."
+    while (1):
+        print "Root path for DPM web pages:"
+        root_url = raw_input()
+        if (len(root_url) == 0):
+            print "You must supply a path or 'q' to quit."
+        else:
+            break
+
+    dbfile_template = os.path.abspath(os.path.join(os.path.dirname(__file__),
+        config.get("DATABASE_LOADING", "profile_page_template")))
+    dbfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
+        config.get("DATABASE_LOADING", "profile_page")))
+
+    with file(dbfile_template, "r") as fin:
+        lines = fin.readlines()
+        fin.close()
+
+    with file(dbfile, "w") as fout:
+        for line in lines:
+            if ("ROOT_URL" in line):
+                can = string.Template(line)
+                line = can.substitute(ROOT_URL=root_url)
+            fout.write(line)
+        fout.close()
+
 if __name__ == '__main__':
-    verbose = 0
+    dbase_types = ["resource", "action", "profile"]
     data_tag = []
     dbdata = {}
-    opts, args = getopt.getopt(sys.argv[1:], 'hv', ['help', 'verbose'])
+    opts, args = getopt.getopt(sys.argv[1:], 'h', ['help'])
     for opt, val in opts:
         if (opt == '-h' or opt == '--help'):
             usage()
             sys.exit(0)
-        if (opt == '-v' or opt == '--verbose'):
-            verbose = 1
 
-    cfgfile = './policy_dbs.cfg'
+    cfgfile_tmpl = os.path.abspath(os.path.join(os.path.dirname(__file__),
+        '../cgi/dpm/config/policy.cfg.template'))
+    
+    cfgfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
+        '../cgi/dpm/config/policy.cfg'))
+    adminfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
+        '../cgi/dpm/config/dpm_admin.txt'))
+    
+    configure_files(cfgfile_tmpl, cfgfile, adminfile)
+
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
-    
-    if (len(sys.argv) == 2):
-        if (sys.argv[1] not in ('resource', 'action', 'profile')):
-            print 'Unrecognised database type %s' % sys.argv[1]
-            print 'For help on the script run with the "-h" option'
-            sys.exit(1)
-        else:
-            db_name_tag = "%s_name" % sys.argv[1].strip()
-            db_schema_tag = "%s_schema" % sys.argv[1].strip()
-            if (sys.argv[1] == 'action'):
-                data_tag.append("%s_action_data" % sys.argv[1].strip())
-                data_tag.append("%s_org_data" % sys.argv[1].strip())
-            elif (sys.argv[1] == 'profile'):
-                data_tag.append("%s_community" % sys.argv[1].strip())
-                data_tag.append("%s_page" % sys.argv[1].strip())
-                data_tag.append("%s_role" % sys.argv[1].strip())
-                data_tag.append("%s_status" % sys.argv[1].strip())
-            elif (sys.argv[1] == 'resource'):
-                data_tag.append("%s_data" % sys.argv[1].strip())
 
-            dbfile = config.get("DATABASE", db_name_tag)
-            dbschema = config.get("DATABASE", db_schema_tag)
-            for tag in data_tag:
-                dbdata[tag] = config.get("DATABASE", tag)
+    configure_dbase(config)
 
-            populate(dbfile, dbschema, dbdata, sys.argv[1])
-    else:
-        print 'A database type must be supplied.'
-        print 'use the "-h" option for help.'
-        sys.exit(1)
+    # Loop over the database types and fill the databases
+    for dbase in dbase_types:
+        db_name_tag = "%s_name" % dbase.strip()
+        db_schema_tag = "%s_schema" % dbase.strip()
+ 
+        if (dbase == 'action'):
+            data_tag.append("%s_action_data" % dbase.strip())
+            data_tag.append("%s_org_data" % dbase.strip())
+        elif (dbase == 'profile'):
+            data_tag.append("%s_community" % dbase.strip())
+            data_tag.append("%s_page" % dbase.strip())
+            data_tag.append("%s_role" % dbase.strip())
+            data_tag.append("%s_status" % dbase.strip())
+        elif (dbase == 'resource'):
+            data_tag.append("%s_data" % dbase.strip())
+
+        dbfile = os.path.abspath(os.path.join(os.path.join(os.path.dirname(__file__),
+                "../cgi/dpm/%s" % config.get("DATABASE", db_name_tag))))
+        if (not os.path.isdir(os.path.dirname(dbfile))):
+            os.makedirs(os.path.dirname(dbfile))
+
+        dbschema = config.get("DATABASE_LOADING", db_schema_tag)
+        for tag in data_tag:
+            dbdata[tag] = config.get("DATABASE_LOADING", tag)
+
+        populate(dbfile, dbschema, dbdata, dbase)

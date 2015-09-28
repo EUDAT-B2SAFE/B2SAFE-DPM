@@ -1,6 +1,6 @@
 function getActionType($http, param) {
     var getObj = $http({method: "GET",
-            url: "/cgi-bin/dpm/query_actions.py",
+            url: "${CGI_URL}/query_actions.py",
             params: {qtype: "types",
                 operation: param}
         });

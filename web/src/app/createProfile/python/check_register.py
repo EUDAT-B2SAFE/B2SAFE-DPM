@@ -118,7 +118,7 @@ if __name__ == '__main__':
     print ""
 
     username = ''
-    cfgfile = "./config/policy_schema.cfg"
+    cfgfile = "./config/policy.cfg"
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
     

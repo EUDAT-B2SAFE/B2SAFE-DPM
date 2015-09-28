@@ -315,7 +315,7 @@ def dumpToKVDb(pol, config):
 def runStore():
     # Get the schema used for the key-value pair database
     config = ConfigParser.ConfigParser()
-    config.read("./config/policy_schema.cfg")
+    config.read("./config/policy.cfg")
     policy_exists = False
 
     # Read in the form data

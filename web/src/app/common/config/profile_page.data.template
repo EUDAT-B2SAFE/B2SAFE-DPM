@@ -1,0 +1,6 @@
+${ROOT_URL}/dpm.html|dpm
+${ROOT_URL}/frontpage.html|frontpage
+${ROOT_URL}/admin_profile.html|admin
+${ROOT_URL}/pending.html|pending
+${ROOT_URL}/declined.html|declined
+${ROOT_URL}/closed.html|closed

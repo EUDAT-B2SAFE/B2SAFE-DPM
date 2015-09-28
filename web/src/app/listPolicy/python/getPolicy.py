@@ -49,7 +49,7 @@ def getData(config, uuid):
     print json.dumps(policy)
 
 if __name__ == '__main__':
-    cfgfile = "./config/policy_schema.cfg"
+    cfgfile = "./config/policy.cfg"
     
     fields = cgi.FieldStorage()
 

@@ -27,7 +27,7 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
         // We can now set the id for the policy before sending to the
         // database
         policy.id = policy.uuid;
-        $http.post("/cgi-bin/dpm/storePolicy.py", JSON.stringify(policy),
+        $http.post("${CGI_URL}/storePolicy.py", JSON.stringify(policy),
                 {headers: "Content-Type: application/x-www-form-urlencoded"})
             .then(function(results) {
                 var data = results.data;

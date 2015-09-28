@@ -199,7 +199,7 @@ def getData(config):
     print json.dumps(data)
 
 if __name__ == '__main__':
-    cfgfile = "./config/policy_schema.cfg"
+    cfgfile = "./config/policy.cfg"
     
     fields = cgi.FieldStorage()
 

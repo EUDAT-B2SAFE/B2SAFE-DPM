@@ -17,7 +17,7 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
    
     // Read in the available actions using promises
     var actions = $http({method: "GET", 
-        url: "/cgi-bin/dpm/query_actions.py",
+        url: "${CGI_URL}/query_actions.py",
         params: {qtype: "operations"}});
 
     actions.then(function (result) {
@@ -73,7 +73,7 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
     // function to enable the action type option
     $scope.changeType = function() {
         var get_types = $http({method: "GET", 
-            url: "/cgi-bin/dpm/query_actions.py", params: {qtype: "types",
+            url: "${CGI_URL}/query_actions.py", params: {qtype: "types",
                 operation: $scope.policy.action.name} });
         get_types.then(function(results) {
             var data = results.data;
@@ -98,7 +98,7 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
     // function to enable the trigger option
     $scope.changeTrigger = function() {
         var get_triggers = $http({method: "GET", 
-            url: "/cgi-bin/dpm/query_actions.py", 
+            url: "${CGI_URL}/query_actions.py", 
             params: {qtype: "triggers",
                 operation: $scope.policy.action.name, 
             type: $scope.policy.type.name}
@@ -125,7 +125,7 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
     // Read from the database the available locations
     $scope.changeOrganisation = function() {
         var get_organisations = $http({method: "GET", 
-            url: "/cgi-bin/dpm/query_actions.py", 
+            url: "${CGI_URL}/query_actions.py", 
             params: {qtype: "organisations"}});
         
         get_organisations.then(function(results) {

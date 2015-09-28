@@ -18,35 +18,30 @@ module.exports = function (grunt) {
             // then everything else
             js: {
                 files: {
-                    'build/js/dpm_app.js': ['src/app/createPolicy/js/createUtils.js',
+                    'build/admin/dpm_app.js.template': ['src/app/createPolicy/js/createUtils.js',
                                             'src/app/common/js/common_utils.js',
                                             'src/app/*/js/*.js', 
                                             '!src/app/admin/js/*.js',
                                             '!src/app/createProfile/js/*.js'],
-                    'build/js/register_app.js': [
+                    'build/admin/register_app.js.template': [
                     'src/app/createProfile/js/register_app.js',
                     'src/app/common/js/common_utils.js',
                     'src/app/createProfile/js/*.js'],
-                    'build/js/admin_profile_app.js': [
+                    'build/admin/admin_profile_app.js.template': [
                     'src/app/admin/js/admin_profile_app.js',
                     'src/app/admin/js/*.js'],
-                    'build/js/frontPageApp.js': [
+                    'build/admin/frontPageApp.js.template': [
                     'src/app/frontPage/js/frontPageApp.js',
                     'src/app/frontPage/js/FrontPageCtrl.js'],
-                    'build/js/errorUtils.js': [
+                    'build/admin/errorUtils.js.template': [
                     'src/app/createProfile/js/errorUtils.js']
                 },
             },
             // Build the config file - we have different locations for a
             // local installation and a production installation
             local_config: {
-               files: {'build/cgi/dpm/config/policy_schema.cfg': 
-                   ['src/app/common/config/policy_stub.cfg', 
-                    'src/app/common/config/policy_local.cfg',
-                    'src/app/common/config/dpm_admin_local.cfg'],
-                    'build/admin/policy_dbs.cfg': 
-                    ['src/app/common/config/policy_local.cfg',
-                     'src/app/common/config/admin_local.cfg'],
+               files: {'build/cgi/dpm/config/policy.cfg.template': 
+                    ['src/app/common/config/policy.cfg.template'],
                },
             },
             prod_config: {
@@ -71,11 +66,11 @@ module.exports = function (grunt) {
             },
             // Build the css stylesheet
             css: {
-                files: {"build/css/dpm.css": ['src/app/*/css/*',
+                files: {"build/html/dpm/css/dpm.css": ['src/app/*/css/*',
                         '!/src/app/admin/css/*',
                         '!src/app/frontPage/css/*'],
-                        "build/css/admin.css": ['src/app/admin/css/*'],
-                        "build/css/frontpage.css":[
+                        "build/html/dpm/css/admin.css": ['src/app/admin/css/*'],
+                        "build/html/dpm/css/frontpage.css":[
                         "src/app/frontPage/css/*"],
                 },
             },
@@ -83,10 +78,10 @@ module.exports = function (grunt) {
         copy: {
             python: {
                 files: [{expand: true, src: ['src/app/*/python/*.py', 
-                                             '!src/app/*/python/populate_db.py'],
+                                             '!src/app/*/python/configure_dpm.py'],
                                 dest: 'build/cgi/dpm', flatten: true},
-                    {src: 'src/app/createPolicy/python/populate_db.py',
-                    dest: 'build/admin/populate_db.py'},
+                    {src: 'src/app/common/python/configure_dpm.py',
+                    dest: 'build/admin/configure_dpm.py'},
                     {expand: true, 
                     src: ['src/app/createPolicy/python/generateDS-2.12b/**'], 
                                 dest: 'build/cgi/dpm/generateDS-2.12b', 
@@ -99,25 +94,28 @@ module.exports = function (grunt) {
             script: {
                 files: [{expand: true, cwd: 'src/script/bootstrap',
                     src: ['dist/**'],
-                    dest: 'build/script/bootstrap'},
+                    dest: 'build/html/dpm/script/bootstrap'},
                     {expand: true, cwd: 'src/script/bootstrap',
                     src: ['bootstrap-gh-pages/**'],
-                    dest: 'build/script/bootstrap'},
+                    dest: 'build/html/dpm/script/bootstrap'},
                     {expand: true, cwd: 'src/script/ng-table-master',
                     src: ['**'],
-                    dest: 'build/script/ng-table-master'},
+                    dest: 'build/html/dpm/script/ng-table-master'},
                     {expand: true, cwd: 'src/script/jquery',
                     src: ['**'],
-                    dest: 'build/script/jquery'},
+                    dest: 'build/html/dpm/script/jquery'},
                     {expand: true, cwd: 'src/script/angular',
                     src: ['**'],
-                    dest: 'build/script/angular'}],
+                    dest: 'build/html/dpm//script/angular'}],
             },
             // Copy config files (only those not processed before)
             config: {
                 files: [{expand: true,
                     src: ['src/app/common/config/*.data'],
                     dest: 'build/admin', flatten: true},
+                    {expand: true,
+                        src: ['src/app/common/config/*.template'],
+                        dest: 'build/admin', flatten: true},
                     {expand: true,
                         src: ['src/app/common/config/*.schema'],
                         dest: 'build/admin', flatten: true},
@@ -151,47 +149,47 @@ module.exports = function (grunt) {
                                 'src/app/common/html/closed.html',
                                 'src/app/common/html/declined.html',
                                 'src/app/common/html/pending.html'],
-                            dest: 'build', flatten: true},
+                            dest: 'build/html/dpm', flatten: true},
                         {expand: true,
                             src: ['src/app/common/html/.htaccess'],
-                            dest: 'build', flatten: true},
+                            dest: 'build/html/dpm', flatten: true},
                         {expand: true,
                             src: ['src/app/createProfile/index.html'],
-                            dest: 'build', flatten: true},
+                            dest: 'build/html/dpm', flatten: true},
                         {expand: true,
                             cwd: 'src/app/createPolicy/html',
                             src: ['**', '!index.html'],
-                            dest: 'build/template'},
+                            dest: 'build/html/dpm/template'},
                         {expand: true,
                             cwd: 'src/app/createProfile/html',
                             src: ['**', '!acknowledge.html', '!reg_tpl.html'],
-                            dest: 'build'},
+                            dest: 'build/html/dpm'},
                         {expand: true,
                             cwd: 'src/app/createProfile/error_html',
                             src: ['**'],
-                            dest: 'build/errors'},
+                            dest: 'build/html/dpm/errors'},
                         {expand: true,
                             cwd: 'src/app/createProfile/html',
                             src: ['acknowledge.html', 'reg_tpl.html'],
-                            dest: 'build/template'},
+                            dest: 'build/html/dpm/template'},
                         {expand: true,
                             cwd: 'src/app/displayLog/html',
                             src: ['**'],
-                            dest: 'build/template'},
+                            dest: 'build/html/dpm/template'},
                         {expand: true,
                             cwd: 'src/app/listPolicy/html',
                             src: ['**'],
-                            dest: 'build/template'},
+                            dest: 'build/html/dpm/template'},
                         {expand: true,
                             cwd: 'src/app/common/img',
                             src: ['**'],
-                            dest: 'build/img'},
+                            dest: 'build/html/dpm/img'},
                         {expand: true,
                             src: ['src/app/admin/html/admin_profile.html'],
-                            dest: 'build', flatten: 'true'},
+                            dest: 'build/html/dpm', flatten: 'true'},
                         {expand: true,
                             src: ['src/app/frontPage/html/frontpage.html'],
-                            dest: 'build', flatten: 'true'},
+                            dest: 'build/html/dpm', flatten: 'true'},
                        ],
             }
         }

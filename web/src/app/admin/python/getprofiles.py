@@ -101,7 +101,8 @@ def fetch_all(conn, username, status_options, keys):
             if (count == 3):
                 db_name = result[count]
  
-            # Deal with the status here
+            # Deal with the status here. Avoid the case where the user is the
+            # same as the administrator - shouldn't administer our own account
             if (count == 8):
                 if (db_name != username):
                     datum["status_options"] = status_options[result[count]]
@@ -120,8 +121,11 @@ def fetch_all(conn, username, status_options, keys):
 def getProfiles(config):
     '''Function to get the profiles from the database
     '''
-    if (config.has_option("HTMLENV", "user")):
-        username = config.get("HTMLENV", "user").strip()
+    if (config.get("AUTHENTICATION", "type") == "STANDALONE"):
+        if (config.has_option("HTMLENV", "user")):
+            username = config.get("HTMLENV", "user").strip()
+    elif (config.get("AUTHENTICATION", "type") == "AAI"):
+        username = os.environ[""]
     else:
         username = os.environ["REMOTE_USER"].strip()
     
@@ -163,7 +167,7 @@ def getProfiles(config):
         fetch_cm(conn, username, status_options, keys)
 
 if __name__ == '__main__':
-    cfgfile = './config/policy_schema.cfg'
+    cfgfile = './config/policy.cfg'
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
     print "Content-Type: application/json charset=utf-8"

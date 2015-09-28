@@ -118,7 +118,7 @@ def runQuery(config):
             print "No Log Entries"
 
 if __name__ == '__main__':
-    cfgfile = './config/policy_schema.cfg'
+    cfgfile = './config/policy.cfg'
 
     # Read the configurations
     config = ConfigParser.ConfigParser()

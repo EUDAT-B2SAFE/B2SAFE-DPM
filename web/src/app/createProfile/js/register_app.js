@@ -26,7 +26,7 @@ function regFormCtrl($scope, $http, $route, $location, cMgr, invalidFlags) {
     });
     
     // Get the communities and roles
-    getCommunities = $http({method:"GET", url: "/cgi-bin/dpm/getCommunities.py"}); 
+    getCommunities = $http({method:"GET", url: "${CGI_URL}/getCommunities.py"}); 
     getCommunities.then(function(result) {
         $scope.comm_types = result.data;
         $scope.comm_roles = result.data.roles;
@@ -69,7 +69,7 @@ function regFormCtrl($scope, $http, $route, $location, cMgr, invalidFlags) {
     $scope.submitForm = function() {
         if ($scope.register_submitted) {
             if (! $scope.register.$invalid) {
-                $http.post("/cgi-bin/dpm/submitProfile.py", 
+                $http.post("${CGI_URL}/submitProfile.py", 
                         angular.toJson($scope.cm),
                         {headers: "Content-Type: application/x-www-form-urlencoded; charset=UTF-8;"}).then(
                             function(result){

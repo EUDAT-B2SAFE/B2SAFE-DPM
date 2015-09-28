@@ -11,7 +11,7 @@ function reactivateCtrl($scope, $http, $window, policy) {
         var resp = confirm("Are you sure?");
         if (resp === true) {
             var reactivatepolicy = $http({method: "POST", 
-                url: "/cgi-bin/dpm/reactivatePolicy.py",
+                url: "${CGI_URL}/reactivatePolicy.py",
                 data: angular.toJson({uuid: $scope.policy.saved_uuid})});
             reactivatepolicy.then(function(response) {
                 alert("The policy has been reactivated");

@@ -22,7 +22,7 @@ def geturl(config):
         turl = res[0][0]
 
 if __name__ == '__main__':
-    cfgfile = './config/policy_schema.cfg'
+    cfgfile = './config/policy.cfg'
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
     geturl(config)

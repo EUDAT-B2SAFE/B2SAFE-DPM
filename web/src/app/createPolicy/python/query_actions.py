@@ -82,7 +82,7 @@ def returnResults(results):
 if __name__ == '__main__':
     # The database containing the resources
     config = ConfigParser.ConfigParser()
-    config.read('./config/policy_schema.cfg')
+    config.read('./config/policy.cfg')
     dbase = config.get("DATABASE", "action_name").strip()
     results = querydb(dbase)
     returnResults(results)

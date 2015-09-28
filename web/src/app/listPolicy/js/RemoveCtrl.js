@@ -10,7 +10,7 @@ function removeCtrl($scope, $http, $window, policy) {
         var resp = confirm("Are you sure?");
         if (resp === true) {
             var rmpolicy = $http({method: "POST", 
-                url: "/cgi-bin/dpm/removePolicy.py",
+                url: "${CGI_URL}/removePolicy.py",
                 data: angular.toJson({uuid: $scope.policy.saved_uuid})});
             rmpolicy.then(function(response) {
                 alert("Policy has been removed");

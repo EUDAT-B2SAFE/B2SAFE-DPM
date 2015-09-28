@@ -113,7 +113,7 @@ def getLogs(config, username):
     print json.dumps(policy_logs)
 
 if __name__ == '__main__':
-    cfgfile = './config/policy_schema.cfg'
+    cfgfile = './config/policy.cfg'
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
     

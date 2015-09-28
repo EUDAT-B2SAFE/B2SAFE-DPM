@@ -1,6 +1,6 @@
 dpmApp.factory("userProfileService", function($http) {
     $http({method: "GET",
-        url: "/cgi-bin/dpm/getProfile.py"}).then(function(results) {
+        url: "${CGI_URL}/getProfile.py"}).then(function(results) {
             var data = results.data;
             userProfile.username = data.profile[0].username;
             userProfile.email = data.profile[0].email;

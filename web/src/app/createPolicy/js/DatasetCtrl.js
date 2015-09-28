@@ -11,7 +11,7 @@ function datasetCtrl($scope, $http, $injector, data_identifier, policy,
     // Read in the available identifier types using promises to avoid
     // problems with asynch calls
     var get_identifiers = $http({method: "GET", 
-                    url: "/cgi-bin/dpm/query_actions.py",
+                    url: "${CGI_URL}/query_actions.py",
                     params: {qtype: "identifiers"}});
     
     get_identifiers.then(function(results) {

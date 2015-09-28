@@ -83,10 +83,11 @@ def getProfile(config):
     username = ''
     dpmAdmin = False
 
-    if (config.has_option("HTMLENV", "user")):
+    # Check the auth type and act accordingly
+    if (config.getopt("AUTHENTICATION", "type") == "AAI"):
+        username = ""
+    elif (config.getopt("AUTHENTICATION", "type") == "STANDALONE"):
         username = config.option("HTMLENV", "user")
-    else:
-        username = os.environ["REMOTE_USER"]
     
     admins = getAdmins(config)
     for admin in admins:
@@ -106,7 +107,7 @@ def getProfile(config):
     print json.dumps(user_profile)
 
 if __name__ == '__main__':
-    cfgfile = "./config/policy_schema.cfg"
+    cfgfile = "./config/policy.cfg"
 
     fields = cgi.FieldStorage();
     if (fields.has_key("help")):

@@ -21,7 +21,7 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
     // Read from the database the available locations
     $scope.changeLocation = function() {
         var get_locations = $http({method: "GET", 
-            url: "/cgi-bin/dpm/query_actions.py", 
+            url: "${CGI_URL}/query_actions.py", 
             params: {qtype: "locations",
                  operation: $scope.policy.action.name,
                  type: $scope.policy.type.name,
@@ -50,7 +50,7 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
     // Read from the database the available systems
     $scope.changeSystem = function() {
         var get_systems = $http({method: "GET", 
-            url: "/cgi-bin/dpm/query_resource.py", 
+            url: "${CGI_URL}/query_resource.py", 
             params: {qtype: "systems"}});
         
         get_systems.then(function(results) {
@@ -80,7 +80,7 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
     // source
     $scope.changeSrcSite = function() {
         var get_sites = $http({method: "GET", 
-            url: "/cgi-bin/dpm/query_resource.py", 
+            url: "${CGI_URL}/query_resource.py", 
             params: {qtype: "sites", 
                 system: $scope.policy.source.system.name}});
         
@@ -105,7 +105,7 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
     // Once the system has been selected populate the sites list
     $scope.changeTgtSite = function() {
         var get_tgtsites = $http({method: "GET", 
-            url: "/cgi-bin/dpm/query_resource.py", 
+            url: "${CGI_URL}/query_resource.py", 
             params: {qtype: "sites", 
                 system: $scope.policy.target.system.name} });
         get_tgtsites.then(function(results) {
@@ -128,7 +128,7 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
     // Once the site has been selected populate the source resources list
     $scope.changeSrcResource = function() {
         var get_resources = $http({method: "GET",
-            url: "/cgi-bin/dpm/query_resource.py",
+            url: "${CGI_URL}/query_resource.py",
             params: {qtype: "resources",
                 system: $scope.policy.source.system.name,
                 site: $scope.policy.source.site.name} });
@@ -151,7 +151,7 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
     // Once the site has been selected populate the resources list
     $scope.changeTgtResource = function() {
         var get_tgtresources = $http({method: "GET",
-            url: "/cgi-bin/dpm/query_resource.py",
+            url: "${CGI_URL}/query_resource.py",
             params: {qtype: "resources",
             system: $scope.policy.target.system.name,
             site: $scope.policy.target.site.name} });

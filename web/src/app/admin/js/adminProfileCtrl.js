@@ -5,7 +5,7 @@ function adminProfileCtrl($scope, $window, $http, reqAction, ngTableParams) {
     $scope.profile_cols = [];
     $scope.reqAction = reqAction;
     var getprofiles = $http({method:"GET", 
-        url: "/cgi-bin/dpm/getprofiles.py"});
+        url: "${CGI_URL}/getprofiles.py"});
     var reqList = getprofiles.then(function(result) {
         $scope.profile_cols = result.data.cols;
         $scope.data = result.data.rows;
@@ -64,7 +64,7 @@ function adminProfileCtrl($scope, $window, $http, reqAction, ngTableParams) {
                 community: this.profile_data.values[6].name,
                 approval: this.reqApproval};
             var getMessage = $http({method: "POST", 
-                            url: "/cgi-bin/dpm/getMessage.py",
+                            url: "${CGI_URL}/getMessage.py",
                             data: angular.toJson(userInfo)
                             });
             getMessage.then(function(response){
@@ -100,7 +100,7 @@ function adminProfileCtrl($scope, $window, $http, reqAction, ngTableParams) {
         $scope.userInfo.e_subject = $scope.e_subject;
         // Email the user and update the database
         var update_email = $http({method: "POST",
-            url: "/cgi-bin/dpm/updateAndEmail.py",
+            url: "${CGI_URL}/updateAndEmail.py",
             data: angular.toJson($scope.userInfo)
         });
         update_email.then(function(response) {

@@ -69,7 +69,7 @@ function listCtrl($scope, $sce, $http, $route,
     // Read in from the config file the database schema. These will
     // be our search fields
     $http({method: "GET",
-        url: "/cgi-bin/dpm/getKeys.py"}).then(function(results) {
+        url: "${CGI_URL}/getKeys.py"}).then(function(results) {
             var data = results.data;
             var i;
             var is_visible = false;
@@ -116,7 +116,7 @@ function listCtrl($scope, $sce, $http, $route,
     // when the author is filled we need to make use of the promise
     userProfile.promise.then(function (response) {
         $http({method: "GET",
-            url: "/cgi-bin/dpm/getPolicyData.py"}).then(function(results) {
+            url: "${CGI_URL}/getPolicyData.py"}).then(function(results) {
                 //console.log("data is " + JSON.stringify(data));
                 var i;
                 var j;
@@ -208,7 +208,7 @@ function listCtrl($scope, $sce, $http, $route,
         $scope.data = [];
         userProfile.promise.then(
             $http({method: "GET",
-                url: "/cgi-bin/dpm/getPolicyData.py",
+                url: "${CGI_URL}/getPolicyData.py",
                 params: {username: policy.author} }).success(function(data, 
                     status, headers, config) {
                         var i;
@@ -306,7 +306,7 @@ function listCtrl($scope, $sce, $http, $route,
         // The 4th element is the id. Query the database to get the policy
         // corresponding to the uuid
         $http({method: "GET",
-            url: "/cgi-bin/dpm/getPolicy.py",
+            url: "${CGI_URL}/getPolicy.py",
             params: {uuid: pol_data.pol_vals[dkeys.policy_uniqueid].name} }).then(function(results) {
                 var data = results.data;
                 uuids = clearArray(uuids);

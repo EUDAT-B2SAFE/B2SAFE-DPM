@@ -40,7 +40,7 @@ def getMessage(config):
     print json.dumps(email)
 
 if __name__ == '__main__':
-    cfgfile = './config/policy_schema.cfg'
+    cfgfile = './config/policy.cfg'
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
     getMessage(config)

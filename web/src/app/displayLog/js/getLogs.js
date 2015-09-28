@@ -1,7 +1,7 @@
 function getLogs($scope, ngTableParams, $http, showLog, 
         author, uuids) {
     var get_author = $http({method: "GET", 
-        url: "/cgi-bin/dpm/getPolicyLog.py",
+        url: "${CGI_URL}/getPolicyLog.py",
         params: {username: author} }).then(function(results) {
             var data = results.data;
             var loglen = 0;

@@ -41,7 +41,7 @@ def getCommunity(config):
 if __name__ == '__main__':
     print 'Content-Type: application/json; charset=utf-8'
     print ''
-    cfgfile = './config/policy_schema.cfg'
+    cfgfile = './config/policy.cfg'
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
     getCommunity(config)
