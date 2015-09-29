@@ -125,7 +125,7 @@ def getProfiles(config):
         if (config.has_option("HTMLENV", "user")):
             username = config.get("HTMLENV", "user").strip()
     elif (config.get("AUTHENTICATION", "type") == "AAI"):
-        username = os.environ[""]
+        username = os.environ["REMOTE_USER"].strip()
     else:
         username = os.environ["REMOTE_USER"].strip()
     
