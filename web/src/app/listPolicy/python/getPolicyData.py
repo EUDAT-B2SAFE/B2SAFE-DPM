@@ -43,10 +43,11 @@ def getData(config):
 
     # Get the username from the env
     username = ''
-    if (config.has_option("HTMLENV", "user")):
-        username = config.get("HTMLENV", "user")
-    else:
+    if (config.get("AUTHENTICATION", "type") == "AAI"):
         username = os.environ["REMOTE_USER"]
+    elif (config.get("AUTHENTICATION", "type") == "STANDALONE"):
+        if (config.has_option("HTMLENV", "user")):
+            username = config.get("HTMLENV", "user")
     
     # Get the communities for the user from the database
     conn = sqlite3.connect(config.get("DATABASE", "profile_name"))

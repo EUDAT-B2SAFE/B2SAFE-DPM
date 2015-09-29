@@ -29,14 +29,11 @@ def submitRequest(config):
     '''
     dataVals = json.load(sys.stdin)
     username = ''
-    # Currently, until we get the AAI working we need to usea
-    # a dummy setting for the HTMLENV variable and take the
-    # value from the dataVals
-    if (config.has_option("HTMLENV", "user")):
-        # username = config.get("HTMLENV", "user")
-        username = dataVals["username"].strip()
-    else:
+    if (config.get("AUTHENTICATION", "type") == "AAI"):
         username = os.environ["REMOTE_USER"]
+    elif (config.get("AUTHENTICATION", "type") == "STANDALONE"):
+        if (config.has_option("HTMLENV", "user")):
+            username = config.get("HTMLENV", "user")
     
     if (username.strip() != dataVals["username"].strip()):
         print "Error: username mismatch!"

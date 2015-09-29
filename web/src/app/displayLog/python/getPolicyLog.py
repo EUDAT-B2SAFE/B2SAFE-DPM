@@ -123,10 +123,11 @@ if __name__ == '__main__':
         sys.exit()
    
     username = ''
-    if (config.has_option("HTMLENV", "user")):
-        username = config.get("HTMLENV", "user")
-    else:
+    if (config.get("AUTHENTICATION", "type") == "AAI"):
         username = os.environ["REMOTE_USER"]
+    elif (config.get("AUTHENTICATION", "type") == "STANDALONE"):
+        if (config.has_option("HTMLENV", "user")):
+            username = config.get("HTMLENV", "user")
 
     getLogs(config, username)
 
