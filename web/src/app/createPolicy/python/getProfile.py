@@ -81,10 +81,11 @@ def getProfile(config):
     username = ''
     dpmAdmin = False
     user_profile = {}
-    if (config.has_option("HTMLENV", "user")):
-        username = config.get("HTMLENV", "user")
-    else:
+    if (config.get("AUTHENTICATION", "type") == "AAI"):
         username = os.environ["REMOTE_USER"]
+    elif (config.get("AUTHENTICATION", "type") == "STANDALONE"):
+        if (config.has_option("HTMLENV", "user")):
+            username = config.get("HTMLENV", "user")
 
     dbfile = config.get("DATABASE", "profile_name")
 
