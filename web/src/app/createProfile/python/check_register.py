@@ -122,9 +122,12 @@ if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
     
-    if (config.has_option("HTMLENV", "user")):
+    if (config.get("AUTHENTICATION", "type") == "AAI"):
+        if (os.environ.has_key("REMOTE_USER")):
+            username = os.environ["REMOTE_USER"]
+        elif (os.environ.has_key("persistent_id")):
+            username = os.environ["persistent_id"]
+    elif (config.get("AUTHENTICATION", "type") == "STANDALONE"):
         username = config.get("HTMLENV", "user")
-    else:
-        username = os.environ["REMOTE_USER"]
 
     check_register(config, username)

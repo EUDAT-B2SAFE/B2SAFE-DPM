@@ -533,9 +533,9 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile):
             elif ("HTMLUSER" in line):
                 can = string.Template(line)
                 line = can.substitute(HTMLUSER=admin_user)
-            elif ("AUTHENTICATION" in line):
+            elif ("AUTHTYPE" in line):
                 can = string.Template(line)
-                line = can.substitute(AUTHENTICATION=auth_type)
+                line = can.substitute(AUTHTYPE=auth_type)
             fout.write("%s" % line)
         fout.close()
 
