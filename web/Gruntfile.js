@@ -20,7 +20,7 @@ module.exports = function (grunt) {
                 files: {
                     'build/admin/dpm_app.js.template': ['src/app/createPolicy/js/createUtils.js',
                                             'src/app/common/js/common_utils.js',
-                                            'src/app/*/js/*.js', 
+                                            'src/app/*/js/*.js',
                                             '!src/app/admin/js/*.js',
                                             '!src/app/createProfile/js/*.js'],
                     'build/admin/register_app.js.template': [
@@ -40,12 +40,12 @@ module.exports = function (grunt) {
             // Build the config file - we have different locations for a
             // local installation and a production installation
             local_config: {
-               files: {'build/cgi/dpm/config/policy.cfg.template': 
+               files: {'build/cgi/deploy/config/policy.cfg.template':
                     ['src/app/common/config/policy.cfg.template'],
                },
             },
             prod_config: {
-                files: {'build/cgi/dpm/config/policy_schema.cfg':
+                files: {'build/cgi/deploy/config/policy_schema.cfg':
                     ['src/app/common/config/policy_stub.cfg',
                      'src/app/common/config/policy_prod.cfg',
                      'src/app/common/config/dpm_admin_prod.cfg'],
@@ -55,7 +55,7 @@ module.exports = function (grunt) {
                 },
             },
             rzg_config: {
-                files: {'build/cgi/dpm/config/policy_schema.cfg':
+                files: {'build/cgi/deploy/config/policy_schema.cfg':
                     ['src/app/common/config/policy_stub.cfg',
                      'src/app/common/config/policy_rzg.cfg',
                      'src/app/common/config/dpm_admin_rzg.cfg'],
@@ -66,25 +66,25 @@ module.exports = function (grunt) {
             },
             // Build the css stylesheet
             css: {
-                files: {"build/html/dpm/css/dpm.css": ['src/app/*/css/*',
+                files: {"build/html/deploy/css/dpm.css": ['src/app/*/css/*',
                         '!/src/app/admin/css/*',
                         '!src/app/frontPage/css/*'],
-                        "build/html/dpm/css/admin.css": ['src/app/admin/css/*'],
-                        "build/html/dpm/css/frontpage.css":[
+                        "build/html/deploy/css/admin.css": ['src/app/admin/css/*'],
+                        "build/html/deploy/css/frontpage.css":[
                         "src/app/frontPage/css/*"],
                 },
             },
         },
         copy: {
             python: {
-                files: [{expand: true, src: ['src/app/*/python/*.py', 
+                files: [{expand: true, src: ['src/app/*/python/*.py',
                                              '!src/app/*/python/configure_dpm.py'],
-                                dest: 'build/cgi/dpm', flatten: true},
+                                dest: 'build/cgi/deploy', flatten: true},
                     {src: 'src/app/common/python/configure_dpm.py',
                     dest: 'build/admin/configure_dpm.py'},
-                    {expand: true, 
-                    src: ['src/app/createPolicy/python/generateDS-2.12b/**'], 
-                                dest: 'build/cgi/dpm/generateDS-2.12b', 
+                    {expand: true,
+                    src: ['src/app/createPolicy/python/generateDS-2.12b/**'],
+                                dest: 'build/cgi/deploy/generateDS-2.12b',
                                 flatten: true}],
             },
             options: {
@@ -94,19 +94,19 @@ module.exports = function (grunt) {
             script: {
                 files: [{expand: true, cwd: 'src/script/bootstrap',
                     src: ['dist/**'],
-                    dest: 'build/html/dpm/script/bootstrap'},
+                    dest: 'build/html/deploy/script/bootstrap'},
                     {expand: true, cwd: 'src/script/bootstrap',
                     src: ['bootstrap-gh-pages/**'],
-                    dest: 'build/html/dpm/script/bootstrap'},
+                    dest: 'build/html/deploy/script/bootstrap'},
                     {expand: true, cwd: 'src/script/ng-table-master',
                     src: ['**'],
-                    dest: 'build/html/dpm/script/ng-table-master'},
+                    dest: 'build/html/deploy/script/ng-table-master'},
                     {expand: true, cwd: 'src/script/jquery',
                     src: ['**'],
-                    dest: 'build/html/dpm/script/jquery'},
+                    dest: 'build/html/deploy/script/jquery'},
                     {expand: true, cwd: 'src/script/angular',
                     src: ['**'],
-                    dest: 'build/html/dpm//script/angular'}],
+                    dest: 'build/html/deploy/script/angular'}],
             },
             // Copy config files (only those not processed before)
             config: {
@@ -121,25 +121,25 @@ module.exports = function (grunt) {
                         dest: 'build/admin', flatten: true},
                     {expand: true,
                         src: ['src/app/admin/config/*.txt'],
-                        dest: 'build/cgi/dpm/config', flatten: true},
+                        dest: 'build/cgi/deploy/config', flatten: true},
                 ],
             },
             local_txt: {
                 files: [{expand: true,
                     src: ['src/app/common/config/dpm_admin_local.txt'],
-                    dest: 'build/cgi/dpm/config', flatten: true},
+                    dest: 'build/cgi/deploy/config', flatten: true},
                 ],
             },
             prod_txt: {
                 files: [{expand: true,
                     src: ['src/app/common/config/dpm_admin_prod.txt'],
-                    dest: 'build/cgi/dpm/config', flatten: true},
+                    dest: 'build/cgi/deploy/config', flatten: true},
                 ],
             },
             rzg_txt: {
                 files: [{expand: true,
                     src: ['src/app/common/config/dpm_admin_rzg.txt'],
-                    dest: 'build/cgi/dpm/config', flatten: true},
+                    dest: 'build/cgi/deploy/config', flatten: true},
                 ],
             },
             // Copy the html files
@@ -149,68 +149,55 @@ module.exports = function (grunt) {
                                 'src/app/common/html/closed.html',
                                 'src/app/common/html/declined.html',
                                 'src/app/common/html/pending.html'],
-                            dest: 'build/html/dpm', flatten: true},
+                            dest: 'build/html/deploy', flatten: true},
                         {expand: true,
                             src: ['src/app/common/html/.htaccess'],
-                            dest: 'build/html/dpm', flatten: true},
+                            dest: 'build/html/deploy', flatten: true},
                         {expand: true,
                             src: ['src/app/createProfile/index.html'],
-                            dest: 'build/html/dpm', flatten: true},
+                            dest: 'build/html/deploy', flatten: true},
                         {expand: true,
                             cwd: 'src/app/createPolicy/html',
                             src: ['**', '!index.html'],
-                            dest: 'build/html/dpm/template'},
+                            dest: 'build/html/deploy/template'},
                         {expand: true,
                             cwd: 'src/app/createProfile/html',
                             src: ['**', '!acknowledge.html', '!reg_tpl.html'],
-                            dest: 'build/html/dpm'},
+                            dest: 'build/html/deploy'},
                         {expand: true,
                             cwd: 'src/app/createProfile/error_html',
                             src: ['**'],
-                            dest: 'build/html/dpm/errors'},
+                            dest: 'build/html/deploy/errors'},
                         {expand: true,
                             cwd: 'src/app/createProfile/html',
                             src: ['acknowledge.html', 'reg_tpl.html'],
-                            dest: 'build/html/dpm/template'},
+                            dest: 'build/html/deploy/template'},
                         {expand: true,
                             cwd: 'src/app/displayLog/html',
                             src: ['**'],
-                            dest: 'build/html/dpm/template'},
+                            dest: 'build/html/deploy/template'},
                         {expand: true,
                             cwd: 'src/app/listPolicy/html',
                             src: ['**'],
-                            dest: 'build/html/dpm/template'},
+                            dest: 'build/html/deploy/template'},
                         {expand: true,
                             cwd: 'src/app/common/img',
                             src: ['**'],
-                            dest: 'build/html/dpm/img'},
+                            dest: 'build/html/deploy/img'},
                         {expand: true,
                             src: ['src/app/admin/html/admin_profile.html'],
-                            dest: 'build/html/dpm', flatten: 'true'},
+                            dest: 'build/html/deploy', flatten: 'true'},
                         {expand: true,
                             src: ['src/app/frontPage/html/frontpage.html'],
-                            dest: 'build/html/dpm', flatten: 'true'},
+                            dest: 'build/html/deploy', flatten: 'true'},
                        ],
             }
         }
     });
-    var env = grunt.option('env') || 'dev';
-    if (env === 'prod') {
-        grunt.registerTask('build', ['jshint', 'concat:js', 
-                'concat:prod_config', 'concat:css', 'copy:python',
-                'copy:script', 'copy:html', 'copy:config', 
-                'copy:prod_txt']);
-    } else if (env === "rzg") {
-        grunt.registerTask('build', ['jshint', 'concat:js', 
-                'concat:rzg_config', 'concat:css', 'copy:python',
-                'copy:script', 'copy:html', 'copy:config', 
-                'copy:rzg_txt']);
-    } else {
-        grunt.registerTask('build', ['jshint', 'concat:js',
+
+    grunt.registerTask('build', ['jshint', 'concat:js',
                 'concat:local_config', 'concat:css', 'copy:python',
                 'copy:script', 'copy:html', 'copy:config',
                 'copy:local_txt']);
-    }
     grunt.registerTask('default', 'jshint');
-
 };

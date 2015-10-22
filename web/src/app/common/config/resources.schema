@@ -1,13 +1,13 @@
 [CREATE]
 systems=create table if not exists systems(id int, system text)
 resources=create table if not exists resources (id int, site_id int, store_id int, system_id int)
-storage=create table if not exists storage (id int, store text)
+storage=create table if not exists storage (id int, store text, path text)
 sites=create table if not exists sites(id int, site text)
 
 [INSERT]
 resources=insert into resources values(?, ?, ?, ?)
 sites=insert into sites values(?, ?)
-storage=insert into storage values(?, ?)
+storage=insert into storage values(?, ?, ?)
 systems=insert into systems values(?, ?)
 
 [QUERY]

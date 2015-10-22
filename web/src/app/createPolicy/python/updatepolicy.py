@@ -1,67 +1,85 @@
 #!/usr/bin/env python
 
-import getopt
 import sys
 import cgi
 import ConfigParser
 import sqlite3
 import hashlib
 import re
+import os
+
 
 def usage():
     '''Function describing the script usage
     '''
     print "Script to upload log messages to the database"
-    print "Usage: updatepolicy.py?id=<id>&state=<state>&center=<center>&timestamp=<timestamp>&community=<community>"
+    print "Usage: updatepolicy.py?id=<id>&state=<state>&center=<center>&" \
+        + "timestamp=<timestamp>&community=<community>"
     print "Options:"
     print "help=help               Prints this help"
-    print "state=state             The log message. Allowed states are: QUEUED, RUNNING, FINISHED, FAILED" 
+    print "state=state             The log message. Allowed states are: " \
+        " QUEUED, RUNNING, FINISHED, FAILED"
     print "community=<community>   The community identifier"
     print "timestamp=<timestamp>   The timestamp for the message"
     print "center=<center>         The data center origin of the log message"
     print "id=<id>                 The uuid for the policy"
     print ""
 
-class FilterPolicy(kyotocabinet.Visitor):
-    '''Class implementing the visitor pattern to filter the database
+
+def policy_exists(policy_id, conn):
+    '''Check if the policy exists'''
+    policy_found = False
+    cur = conn.cursor()
+    cur.execute('''select value from policies where
+        key like 'policy_uniqueid_%' and value = ?''', (policy_id,))
+    results = cur.fetchall()
+    if (len(results) == 1):
+        policy_found = True
+    return policy_found
+
+
+def get_log(policy_id, conn):
+    '''Get the index for the log for this policy'''
+    index = -1
+    cur = conn.cursor()
+    cur.execute('''select key from policies where key like
+        'log_policy_uuid_%' and value = ?''', (policy_id,))
+    keys = cur.fetchall()
+    if (len(keys) > 0):
+        indices = []
+        for akey in keys:
+            indices.append(int(akey[0].split("_")[-1]))
+        indices.sort()
+        index = indices[-1]
+
+    return index
+
+
+def log_exists(conn, md5key, md5val):
+    '''Check if the log message already exists
     '''
-    def __init__(self, config, uid, md5sum):
-        self.uid = uid
-        self.md5 = md5sum
-        self.uid_index = -1
-        self.duplicate = False
-        self.md5_key = config.get("LOG_SCHEMA", "log_hash")
-        self.uid_key = config.get("POLICY_SCHEMA", "uniqueid")
-        super(FilterPolicy, self).__init__()
+    exists = True
+    key = "%s_%%" % (md5key)
+    cur = conn.cursor()
+    cur.execute('''select key from policies where key like ? and value = ?''',
+                (key, md5val))
+    keys = cur.fetchall()
+    if (len(keys) == 0):
+        exists = False
+    return exists
 
-    def visit_full(self, key, val):
-        '''Method to filter the results according to the uid
-        '''
-        if (val == self.uid and self.uid_key in key):
-            # we want to just have the index number not the whole key
-            self.uid_index = key.split("_")[-1]
-        # Check to see if the hash exists if so set the index
-        if (val == self.md5 and self.md5_key in key):
-            self.duplicate = True
-        return self.NOP
-
-    def visit_empty(self, key):
-        '''Method to return nothing of the key doesn't exist
-        '''
-        return self.NOP
 
 def loadData(config):
     '''Function to load the log info into the database
     '''
-    store_vals = {}
-    next_entry = 0
 
-    allowed_states = [x.strip() for x in config.get("LOG_KEYS", "allowed_states").split(",")]
+    allowed_states = [x.strip() for x in
+                      config.get("LOG_KEYS", "allowed_states").split(",")]
     valid_keys = set([config.get("LOG_KEYS", "id"),
-        config.get("LOG_KEYS", "state"), 
-        config.get("LOG_KEYS", "timestamp"),
-        config.get("LOG_KEYS", "center"), 
-        config.get("LOG_KEYS", "community")])
+                      config.get("LOG_KEYS", "state"),
+                      config.get("LOG_KEYS", "timestamp"),
+                      config.get("LOG_KEYS", "center"),
+                      config.get("LOG_KEYS", "community")])
 
     print "Content-Type: application-json; charset=utf-8"
     print ""
@@ -71,7 +89,7 @@ def loadData(config):
     # check the keys are valid
     keys = formData.keys()
 
-    if (formData.has_key(config.get("LOG_KEYS", "help"))):
+    if (config.get("LOG_KEYS", "help") in formData):
         usage()
         sys.exit(0)
 
@@ -83,28 +101,33 @@ def loadData(config):
     # Check that the log message is acceptable
     if (formData.getvalue(config.get("LOG_KEYS", "state")) not in
             allowed_states):
-        print "Error: unrecognised state. Allowed values are: RUNNING, FINISHED, FAILED"
+        print "Error: unrecognised state. Allowed values are: RUNNING, " \
+            + "FINISHED, FAILED"
         sys.exit(40)
-    
+
     # Check the timestamp is a unix timestamp
     alph_str = re.compile("[a-zA-Z]+")
     if (alph_str.search(formData.getvalue(config.get("LOG_KEYS",
-        "timestamp")))):
-        print "Error: the timestamp should be the number of seconds since the unix epoch"
+                                          "timestamp")))):
+        print "Error: the timestamp should be the number of seconds " \
+            + "since the unix epoch"
         sys.exit(50)
+
+    log = {"id": formData.getvalue(config.get("LOG_KEYS", "id"), ""),
+           "state": formData.getvalue(config.get("LOG_KEYS", "state"), ""),
+           "timestamp":
+           formData.getvalue(config.get("LOG_KEYS", "timestamp"), ""),
+           "center": formData.getvalue(config.get("LOG_KEYS", "center"), ""),
+           "community":
+           formData.getvalue(config.get("LOG_KEYS", "community"), "")}
 
     # Compute the hash for the message
     hash_string = "%s%s%s%s%s" % \
-            (formData.getvalue(config.get("LOG_KEYS", "id"), ""),
-                    formData.getvalue(config.get("LOG_KEYS", "state"), ""),
-                    formData.getvalue(config.get("LOG_KEYS", "timestamp"),
-                        ""),
-                    formData.getvalue(config.get("LOG_KEYS", "center"), ""),
-                    formData.getvalue(config.get("LOG_KEYS", "community"),
-                        ""))
+        (log["id"], log["state"], log["timestamp"], log["center"],
+         log["community"])
     md5 = hashlib.md5()
     md5.update(hash_string)
-    md5sum = md5.hexdigest()
+    log["hash"] = md5.hexdigest()
 
     # Open the database
     dbfile = config.get("DATABASE", "name").strip()
@@ -112,68 +135,34 @@ def loadData(config):
         sys.stderr.write("Database %s does not exist" % dbfile)
         sys.exit(-100)
     conn = sqlite3.connect(dbfile)
-    
-    # Get the key corresponding to the id and make sure that the
-    # message doesn't already exist in the store
-    filter_obj = FilterPolicy(config, 
-            formData.getvalue(config.get("LOG_KEYS", "id"), ""), md5sum)
-    db.iterate(filter_obj, False)
-    
-    # How many log entries are there for this id (we need to add one
-    # for the new log entry)
-    if (filter_obj.uid_index >= 0 and not filter_obj.duplicate):
-        log_key = "%s_%s" % (config.get("LOG_SCHEMA", "log_entries"), 
-                filter_obj.uid_index)
-        # Check if the log entry exists
-        if db.check(log_key) > 0:
-            next_entry = int(db.get(log_key)) + 1
-    elif (filter_obj.duplicate):
-        print "Message already exists in database"
-        sys.exit(0)
-    else:
-        print "Error: cannot find database entry for UID: %s" %\
-                formData.getvalue(config.get("LOG_KEYS", "id"), "")
-        sys.exit(40)
 
-    store_vals[log_key] = next_entry
-    
-    log_hash_key = "%s_%s_%d" % (config.get("LOG_SCHEMA", "log_hash"),
-            filter_obj.uid_index, next_entry)
-    store_vals[log_hash_key] = md5sum
+    # Check that a policy exists with this uuid
+    if (not policy_exists(log["id"], conn)):
+        print "Error: policy with id %s does not exist" % \
+            formData.getvalue(config.get("LOG_KEYS", "id"), "")
+        sys.exit(2)
 
-    # increase the index and append the indices to the keys
-    log_state_key = "%s_%s_%d" % (config.get("LOG_SCHEMA", 
-        "log_state"), filter_obj.uid_index, next_entry)
-    store_vals[log_state_key] = \
-            formData.getvalue(config.get("LOG_KEYS", "state"), "")
+    # Check if the policy has existing log entries
+    log_id = get_log(log["id"], conn)
 
-    log_timestamp_key = "%s_%s_%d" % (config.get("LOG_SCHEMA", 
-        "log_timestamp"), filter_obj.uid_index, next_entry)
-    store_vals[log_timestamp_key] = \
-            formData.getvalue(config.get("LOG_KEYS", 
-        "timestamp"), "")
+    if (log_id >= 0):
+        if (log_exists(conn, config.get("LOG_SCHEMA", "hash"), log["hash"])):
+            print "Error: log message already recorded"
+            sys.exit(3)
 
-    log_center_key = "%s_%s_%d" % (config.get("LOG_SCHEMA", 
-        "log_center"), filter_obj.uid_index, next_entry)
-    store_vals[log_center_key] = \
-            formData.getvalue(config.get("LOG_KEYS",
-        "center"), "")
+    cur = conn.cursor()
+    log_id = log_id + 1
+    for key in log.keys():
+        tkey = "%s_%s" % (config.get("LOG_SCHEMA", key), log_id)
+        cur.execute('''insert into policies (key, value) values (?, ?)''',
+                    (tkey, log[key]))
+    conn.commit()
 
-    # Store the key-value pairs in the database
-    for key, val in store_vals.items():
-        if not db.set(key, val):
-            print "Error: unable to store %s %s\n" % (key, val)
-            print str(db.error())
-            sys.exit(20)
-
-    if not db.close():
-        print "Error: unable to close the database ", str(db.error())
-        sys.exit(30)
 
 if __name__ == '__main__':
     # The config file
     cfgfile = './config/policy.cfg'
-    
+
     # Read the configs
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)

@@ -1,6 +1,6 @@
 [POLICY_SCHEMA]
 object=policy_object
-name=policy_name 
+name=policy_name
 version=policy_version
 author=policy_author
 uniqueid=policy_uniqueid
@@ -11,11 +11,12 @@ community=policy_community
 removed=policy_removed
 
 [LOG_SCHEMA]
-log_state=log_state
-log_timestamp=log_timestamp
-log_center=log_center
-log_entries=log_entries
-log_hash=log_hash
+state=log_state
+timestamp=log_timestamp
+center=log_center
+hash=log_hash
+id=log_policy_uuid
+community=log_community
 
 [DATASETS_SCHEMA]
 pid=collection_persistentIdentifier
@@ -29,8 +30,8 @@ trigger_type=action_trigger_type
 
 [TARGETS_SCHEMA]
 site_type=location_site_type
-site=location_site 
-path=location_path 
+site=location_site
+path=location_path
 resource=location_resource
 type=location_type
 loctype=loctype
@@ -90,4 +91,3 @@ profile_page=profile_page.data
 profile_role=profile_roles.data
 profile_status=profile_status.data
 profile_schema=profile.schema
-

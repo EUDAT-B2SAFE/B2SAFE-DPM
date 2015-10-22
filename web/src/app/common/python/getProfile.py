@@ -8,6 +8,7 @@ import csv
 import sqlite3
 import ConfigParser
 
+
 def usage():
     '''Function describing the script usage
     '''
@@ -16,6 +17,7 @@ def usage():
     print "Options:"
     print "?help=help              Prints this help"
     print ""
+
 
 def getAdmins(config):
     '''Function to load the DPM admin username
@@ -31,6 +33,7 @@ def getAdmins(config):
     fh.close()
     return dpm_admins
 
+
 def openDatabase(dbfile):
     '''Open the database file
     '''
@@ -42,6 +45,7 @@ def openDatabase(dbfile):
         conn = sqlite3.connect(dbfile)
     return conn
 
+
 def queryProfile(conn, username):
     '''Function to return the user profile if it exists
     '''
@@ -52,14 +56,13 @@ def queryProfile(conn, username):
 
     cur = conn.cursor()
     cur.execute('''select email from user where name = ?''',
-            (username,))
+                (username,))
     u_email = cur.fetchone()[0]
 
-    cur.execute('''select community.name from community, user, 
-        user_community where user.name = ? and 
-        user.user_id = user_community.user_id and 
-        user_community.community_id = community.community_id''',
-        (username,))
+    cur.execute('''select community.name from community, user,
+        user_community where user.name = ? and
+        user.user_id = user_community.user_id and
+        user_community.community_id = community.community_id''', (username,))
     communities = cur.fetchall()
     conn.commit()
     u_comm = []
@@ -74,6 +77,7 @@ def queryProfile(conn, username):
     user_profile["profile"].append(u_comm_d)
     return user_profile
 
+
 def getProfile(config):
     '''Function to return the username
     '''
@@ -81,6 +85,7 @@ def getProfile(config):
     print ""
 
     username = ''
+    user_profile = {}
     dpmAdmin = False
 
     # Check the auth type and act accordingly
@@ -88,7 +93,7 @@ def getProfile(config):
         username = ""
     elif (config.getopt("AUTHENTICATION", "type") == "STANDALONE"):
         username = config.option("HTMLENV", "user")
-    
+
     admins = getAdmins(config)
     for admin in admins:
         if (admin['username'] == username.strip()):
@@ -109,13 +114,12 @@ def getProfile(config):
 if __name__ == '__main__':
     cfgfile = "./config/policy.cfg"
 
-    fields = cgi.FieldStorage();
-    if (fields.has_key("help")):
+    fields = cgi.FieldStorage()
+    if ("help" in fields):
         usage()
         sys.exit()
-    
+
     # Read the config file
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
     getProfile(config)
-

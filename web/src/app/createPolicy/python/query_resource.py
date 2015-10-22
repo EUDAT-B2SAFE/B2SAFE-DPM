@@ -6,9 +6,9 @@
 import cgi
 import sqlite3
 import os
-import sys
 import json
 import ConfigParser
+
 
 def querydb(dbase):
     '''Function to query the database
@@ -23,18 +23,18 @@ def querydb(dbase):
         conn = sqlite3.connect(dbase)
     else:
         return "error"
-    
+
     fields = cgi.FieldStorage()
 
     # Get the type of parameter to query
     qtype = fields["qtype"].value
 
-    if (fields.has_key("system")):
+    if ("system" in fields):
         system = fields["system"].value
 
-    if (fields.has_key("site")):
+    if ("site" in fields):
         site = fields["site"].value
-    
+
     # Query the database and get the results
     cur = conn.cursor()
     if (qtype == "systems"):
@@ -46,15 +46,15 @@ def querydb(dbase):
         resources.site_id = sites.id''', (system,))
         results = cur.fetchall()
     elif (qtype == "resources"):
-        cur.execute('''select distinct storage.store from storage, 
-        resources, systems, sites where systems.system = ? and 
-        systems.id = resources.system_id and 
+        cur.execute('''select storage.store, storage.path from storage,
+        resources, systems, sites where systems.system = ? and
+        systems.id = resources.system_id and
         sites.site = ? and sites.id = resources.site_id and
-        resources.store_id = storage.id''',
-                (system, site))
+        resources.store_id = storage.id''', (system, site))
         results = cur.fetchall()
 
     return results
+
 
 def returnResults(results):
     '''Function to return the results'''
@@ -69,4 +69,3 @@ if __name__ == '__main__':
     dbase = config.get("DATABASE", "resource_name").strip()
     results = querydb(dbase)
     returnResults(results)
-

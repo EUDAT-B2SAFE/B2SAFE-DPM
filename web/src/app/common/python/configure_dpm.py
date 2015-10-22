@@ -10,6 +10,7 @@ import subprocess
 import string
 import xml.etree.ElementTree
 
+
 def usage():
     '''Function describing the script usage
     '''
@@ -19,6 +20,7 @@ def usage():
     print 'Options:'
     print '-h, --help              Print this help'
     print ''
+
 
 def create_tables(conn, config, dbtype):
     '''Function to create the db tables
@@ -46,6 +48,7 @@ def create_tables(conn, config, dbtype):
         cur.execute(config.get("CREATE", "user_community"))
         cur.execute(config.get("CREATE", "dpm_date"))
     conn.commit()
+
 
 def get_next_profile_indexes(conn, config):
     '''Function to get the ntext unused indexes for the profile tables
@@ -78,6 +81,7 @@ def get_next_profile_indexes(conn, config):
         next_indexes["status"] = max_status[0][0] + 1
 
     return next_indexes
+
 
 def get_next_actions_indexes(conn, config):
     '''Function to get the next unused indexes for the actions tables
@@ -121,14 +125,15 @@ def get_next_actions_indexes(conn, config):
     max_organisation = cur.fetchall()
     if (len(max_organisation) > 0):
         next_indexes['organisation'] = max_organisation[0][0] + 1
- 
+
     cur.execute(config.get("QUERY", "max_action"))
     max_action = cur.fetchall()
     if (len(max_action) > 0):
         next_indexes['action'] = max_action[0][0] + 1
 
     return next_indexes
-       
+
+
 def get_next_resources_indexes(conn, config):
     '''Function to get the next unused indexes for the resources tables
     '''
@@ -143,7 +148,7 @@ def get_next_resources_indexes(conn, config):
     max_systems = cur.fetchall()
     if (len(max_systems) > 0):
         next_indexes['system'] = max_systems[0][0] + 1
-    
+
     cur.execute(config.get("QUERY", "max_sites"))
     max_sites = cur.fetchall()
     if (len(max_sites) > 0):
@@ -161,20 +166,21 @@ def get_next_resources_indexes(conn, config):
 
     return next_indexes
 
+
 def get_goc_info(data):
     '''Get the resource information from the GOCDB'''
-    
+
     out_data = []
 
     # get the data and put the information into a xml object
     command = ["curl", data["resource_data"]]
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
     output, error = proc.communicate()
     rc = proc.poll()
     if rc:
         print "Error: Unable to wget information from the gocdb %s" %\
-                (data["resource_data"])
+            (data["resource_data"])
         print "return code: ", rc
         if (len(output) > 0):
             print "Message: \n"
@@ -196,35 +202,29 @@ def get_goc_info(data):
                 if (elem.tag == "EXTENSIONS"):
                     irods_details = elem.getchildren()
                     if (len(irods_details) > 0):
-                        for irods_elem  in irods_details:
-                            t_irods_path = get_irods_elem(irods_elem, 
-                                    "irods_path")
+                        for irods_elem in irods_details:
+                            t_irods_path = get_irods_elem(irods_elem,
+                                                          "irods_path")
                             if (len(t_irods_path) > 0):
                                 irods_path = t_irods_path
-                        
+
                             t_irods_zone = get_irods_elem(irods_elem,
-                                    "irods_zone")
-                            
+                                                          "irods_zone")
+
                             if (len(t_irods_zone) > 0):
                                 irods_zone = t_irods_zone
-                            
+
                             t_irods_resc = get_irods_elem(irods_elem,
-                                    "irods_resource")
+                                                          "irods_resource")
                             if (len(t_irods_resc) > 0):
                                 irods_resc = t_irods_resc
-                            
-                        print "irods_path %s irods_zone %s irods_resc %s" %\
-                                 (irods_path, irods_zone, irods_resc)
-                        #TODO: we need to store these values in an array
-                        # that is recognisable by the loading script
-                        # ie it should simply be type|host|resource|path
-                        # we should try to add the path at a not to mucn
-                        # later point
+
                         if (len(irods_resc) > 0 and len(irods_zone) > 0):
                             data_str = "iRODS|%s|%s|%s|%s" % \
-                                    (host,irods_resc,irods_zone,irods_path)
+                                (host, irods_resc, irods_zone, irods_path)
                         out_data.append(data_str)
     return out_data
+
 
 def get_irods_elem(root_elem, key):
     '''return the value for the root element'''
@@ -237,6 +237,7 @@ def get_irods_elem(root_elem, key):
             elem_value = elem.text
     return elem_value
 
+
 def fill_resource(conn, config, next_indexes, data):
     '''Fill the resource database
     '''
@@ -248,35 +249,40 @@ def fill_resource(conn, config, next_indexes, data):
     system_count = 0
     storage_count = 0
     resource_count = 0
-    cur = conn.cursor() 
+    cur = conn.cursor()
     for row in data:
-        system, site, store, zone, path = row.split('|') 
+        system, site, store, zone, path = row.split('|')
         system = system.strip()
         site = site.strip()
         store = store.strip()
-        system_IOK, system_count = fill_table(cur, config, 
-                "systems", next_indexes['system'], system)
+        system_IOK, system_count = fill_table(cur, config,
+                                              "systems",
+                                              next_indexes['system'],
+                                              system)
         if (system_IOK):
             next_indexes['system'] = system_count
 
-        site_IOK, site_count = fill_table(cur, config, 
-                "sites", next_indexes['site'], site)
+        site_IOK, site_count = fill_table(cur, config,
+                                          "sites",
+                                          next_indexes['site'], site)
         if (site_IOK):
             next_indexes['site'] = site_count
 
-        storage_IOK, storage_count = fill_table(cur, config, 
-                "storage", next_indexes['storage'], store)
+        storage_IOK, storage_count = fill_table(cur, config,
+                                                "storage",
+                                                next_indexes['storage'],
+                                                store, path)
         if (storage_IOK):
             next_indexes['storage'] = storage_count
 
         cur.execute(config.get("QUERY", "resources"),
-                (system_count-1, site_count-1, storage_count-1))
+                    (system_count-1, site_count-1, storage_count-1))
         resources = cur.fetchall()
         res_id = 'resource'
         if (len(resources) == 0):
             cur.execute(config.get("INSERT", "resources"),
-                    (next_indexes[res_id], site_count-1, storage_count-1, 
-                        system_count-1))
+                        (next_indexes[res_id], site_count-1, storage_count-1,
+                         system_count-1))
             resource_count = next_indexes[res_id]
             resource_count += 1
             next_indexes[res_id] = resource_count
@@ -285,21 +291,30 @@ def fill_resource(conn, config, next_indexes, data):
 
     conn.commit()
 
-def fill_table(cur, config, table, idx, val):
+
+def fill_table(cur, config, table, idx, val, *values):
     '''Fill the table
     '''
     insertOK = False
     cur.execute(config.get("QUERY", table), (val,))
     vals = cur.fetchall()
     if (len(vals) == 0):
-        cur.execute(config.get("INSERT", table),
-                (idx, val))
+        if (len(values) == 0):
+            cur.execute(config.get("INSERT", table),
+                        (idx, val))
+        else:
+            params = []
+            params.append(idx)
+            params.append(val)
+            params = params + list(values)
+            cur.execute(config.get("INSERT", table), params)
         insertOK = True
         idx += 1
     else:
         idx = int(vals[0][0]) + 1
 
     return (insertOK, idx)
+
 
 def fill_profile(conn, config, next_indexes, data):
     '''Fill the profile database
@@ -309,28 +324,30 @@ def fill_profile(conn, config, next_indexes, data):
     # Fill the community
     for row in file(data["profile_community"], "r"):
         community = row.strip()
-        community_OK, community_count = fill_table(cur, config, 
-                "community", next_indexes["community"], community)
+        community_OK, community_count = fill_table(cur, config,
+                                                   "community",
+                                                   next_indexes["community"],
+                                                   community)
         if (community_OK):
             next_indexes["community"] = community_count
 
     # Fill the dpm_page
     for row in file(data["profile_page"], "r"):
         dpm_page, name = row.split('|')
-        cur.execute(config.get("QUERY", "dpm_page"), 
-                (next_indexes["dpm_page"],))
+        cur.execute(config.get("QUERY", "dpm_page"),
+                    (next_indexes["dpm_page"],))
         vals = cur.fetchall()
         if (len(vals) == 0):
-            cur.execute(config.get("INSERT", "dpm_page"), 
-                    (next_indexes["dpm_page"], dpm_page.strip(), 
-                        name.strip()))
+            cur.execute(config.get("INSERT", "dpm_page"),
+                        (next_indexes["dpm_page"], dpm_page.strip(),
+                         name.strip()))
             next_indexes["dpm_page"] = next_indexes["dpm_page"] + 1
- 
+
     # Fill the status
     for row in file(data["profile_status"], "r"):
         status = row.strip()
         status_OK, status_count = fill_table(cur, config, "status",
-                next_indexes["status"], status)
+                                             next_indexes["status"], status)
         if (status_OK):
             next_indexes["status"] = status_count
 
@@ -338,11 +355,12 @@ def fill_profile(conn, config, next_indexes, data):
     for row in file(data["profile_role"], "r"):
         role = row.strip()
         role_OK, role_count = fill_table(cur, config, "roles",
-                next_indexes["roles"], role)
+                                         next_indexes["roles"], role)
         if (role_OK):
             next_indexes["roles"] = role_count
 
     conn.commit()
+
 
 def fill_action(conn, config, next_indexes, data):
     '''Fill the action database
@@ -361,34 +379,40 @@ def fill_action(conn, config, next_indexes, data):
         atrigger = atrigger.strip()
         aoperation = aoperation.strip()
         alocation = alocation.strip()
-        
-        atype_IOK, atype_count = fill_table(cur, config, "type", 
-                next_indexes["type"], atype)
+
+        atype_IOK, atype_count = fill_table(cur, config, "type",
+                                            next_indexes["type"], atype)
         if (atype_IOK):
             next_indexes['type'] = atype_count
-         
-        atrigger_IOK, atrigger_count = fill_table(cur, config, 
-                "trigger", next_indexes["trigger"], atrigger)
+
+        atrigger_IOK, atrigger_count = fill_table(cur, config,
+                                                  "trigger",
+                                                  next_indexes["trigger"],
+                                                  atrigger)
         if (atrigger_IOK):
             next_indexes['trigger'] = atrigger_count
-           
-        aoperation_IOK, aoperation_count = fill_table(cur, config, 
-                "operation", next_indexes["operation"], aoperation)
+
+        aoperation_IOK, aoperation_count = \
+            fill_table(cur, config, "operation", next_indexes["operation"],
+                       aoperation)
         if (aoperation_IOK):
             next_indexes['operation'] = aoperation_count
-         
-        alocation_IOK, alocation_count = fill_table(cur, config, 
-                "locationtype", next_indexes["locationtype"], alocation)
+
+        alocation_IOK, alocation_count = \
+            fill_table(cur, config, "locationtype",
+                       next_indexes["locationtype"], alocation)
         if (alocation_IOK):
             next_indexes['locationtype'] = alocation_count
 
-        cur.execute(config.get("QUERY", "action"), (atype_count-1, atrigger_count-1,
-            aoperation_count-1, alocation_count-1))
+        cur.execute(config.get("QUERY", "action"),
+                    (atype_count-1, atrigger_count-1,
+                    aoperation_count-1, alocation_count-1))
         actions = cur.fetchall()
         if (len(actions) == 0):
             cur.execute(config.get("INSERT", "action"),
-            (next_indexes['action'], atype_count-1, atrigger_count-1,
-                aoperation_count-1, alocation_count-1))
+                        (next_indexes['action'], atype_count-1,
+                        atrigger_count-1,
+                        aoperation_count-1, alocation_count-1))
             action_count = next_indexes['action']
             action_count += 1
             next_indexes['action'] = action_count
@@ -396,7 +420,7 @@ def fill_action(conn, config, next_indexes, data):
             action_count = int(actions[0][0]) + 1
 
     conn.commit()
-    
+
     # Now do the organisation and persistent id tables
     cur = conn.cursor()
     org_count = 0
@@ -405,18 +429,21 @@ def fill_action(conn, config, next_indexes, data):
         org, pid = row.split('|')
         org = org.strip()
         pid = pid.strip()
-        org_IOK, org_count = fill_table(cur, config, 
-                "organisation", next_indexes["organisation"], org)
+        org_IOK, org_count = fill_table(cur, config,
+                                        "organisation",
+                                        next_indexes["organisation"], org)
         if (org_IOK):
             next_indexes['organisation'] = org_count
 
-        pid_IOK, pid_count = fill_table(cur, config, 
-                "persistentID", next_indexes["persistentid"], pid)
+        pid_IOK, pid_count = fill_table(cur, config,
+                                        "persistentID",
+                                        next_indexes["persistentid"], pid)
         if (pid_IOK):
             next_indexes['persistentid'] = pid_count
- 
+
     conn.commit()
- 
+
+
 def populate(dbfile, dbschema, dbdata, dbtype):
     '''Populate the database
     '''
@@ -435,16 +462,16 @@ def populate(dbfile, dbschema, dbdata, dbtype):
     # Get the resource information from the GOCDB
 
     # Open the database
-    print "database ",dbfile
+    print "database ", dbfile
     conn = sqlite3.connect(dbfile)
-    
+
     # read in the schema config
     config = ConfigParser.ConfigParser()
     config.read(dbschema)
 
     # Create the database tables
     create_tables(conn, config, dbtype)
-    
+
     # Get the next unused indexes for the tables
     next_indexes = {}
     if (dbtype == 'resource'):
@@ -462,6 +489,7 @@ def populate(dbfile, dbschema, dbdata, dbtype):
     elif (dbtype == 'profile'):
         fill_profile(conn, config, next_indexes, dbdata)
 
+
 def configure_files(cfgfile_tmpl, cfgfile, adminfile):
     '''Configure the config, admin and javascript files'''
     cgi_url = ""
@@ -469,8 +497,8 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile):
     auth_type = ""
     lines = []
     jsfiles = ["dpm_app.js.template", "frontPageApp.js.template",
-    "register_app.js.template", "errorUtils.js.template",
-    "admin_profile_app.js.template"]
+               "register_app.js.template", "errorUtils.js.template",
+               "admin_profile_app.js.template"]
 
     print "Configuring the policy config file. Enter 'q' to quit."
 
@@ -497,7 +525,7 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile):
             sys.exit()
         else:
             print "You must supply a valid authentication type or 'q' to quit."
-    
+
     while (1):
         print "Admin name (firstname lastname):"
         admin_name = raw_input()
@@ -540,19 +568,20 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile):
         fout.close()
 
         # Update the admin file
-        with file(adminfile,"w") as fout:
+        with file(adminfile, "w") as fout:
             fout.write('"%s", %s, %s' % (admin_name, admin_user, admin_email))
             fout.close()
 
         # Update the javascript files
         for afile in jsfiles:
             jfile = afile.split(".template")[0]
-            jsfile = os.path.abspath(os.path.join(os.path.dirname(__file__), afile))
+            jsfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                     afile))
             with file(jsfile, "r") as fin:
                 lines = fin.readlines()
                 fin.close()
-            jsout = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                "../html/dpm/js/%s" % jfile))
+            jsout = os.path.abspath(os.path.join(
+                os.path.dirname(__file__), "../html/deploy/js/%s" % jfile))
             if (not os.path.isdir(os.path.dirname(jsout))):
                 os.mkdir(os.path.dirname(jsout))
             with file(jsout, "w") as fout:
@@ -562,6 +591,8 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile):
                         line = can.safe_substitute(CGI_URL=cgi_url)
                     fout.write(line)
                 fout.close()
+    return cgi_url
+
 
 def configure_dbase(config):
     '''Configure the pages database file before loading'''
@@ -579,9 +610,11 @@ def configure_dbase(config):
             break
 
     dbfile_template = os.path.abspath(os.path.join(os.path.dirname(__file__),
-        config.get("DATABASE_LOADING", "profile_page_template")))
+                                      config.get("DATABASE_LOADING",
+                                      "profile_page_template")))
     dbfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
-        config.get("DATABASE_LOADING", "profile_page")))
+                                          config.get("DATABASE_LOADING",
+                                                     "profile_page")))
 
     with file(dbfile_template, "r") as fin:
         lines = fin.readlines()
@@ -594,6 +627,7 @@ def configure_dbase(config):
                 line = can.substitute(ROOT_URL=root_url)
             fout.write(line)
         fout.close()
+    return root_url
 
 if __name__ == '__main__':
     dbase_types = ["resource", "action", "profile"]
@@ -605,26 +639,30 @@ if __name__ == '__main__':
             usage()
             sys.exit(0)
 
-    cfgfile_tmpl = os.path.abspath(os.path.join(os.path.dirname(__file__),
-        '../cgi/dpm/config/policy.cfg.template'))
-    
-    cfgfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
-        '../cgi/dpm/config/policy.cfg'))
-    adminfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
-        '../cgi/dpm/config/dpm_admin.txt'))
-    
-    configure_files(cfgfile_tmpl, cfgfile, adminfile)
+    cfgfile_tmpl = \
+        os.path.abspath(os.path.join(
+                        os.path.dirname(__file__),
+                        '../cgi/deploy/config/policy.cfg.template'))
+
+    cfgfile = \
+        os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                     '../cgi/deploy/config/policy.cfg'))
+    adminfile = \
+        os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                     '../cgi/deploy/config/dpm_admin.txt'))
+
+    cgi_url = configure_files(cfgfile_tmpl, cfgfile, adminfile)
 
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
 
-    configure_dbase(config)
+    html_path = configure_dbase(config)
 
     # Loop over the database types and fill the databases
     for dbase in dbase_types:
         db_name_tag = "%s_name" % dbase.strip()
         db_schema_tag = "%s_schema" % dbase.strip()
- 
+
         if (dbase == 'action'):
             data_tag.append("%s_action_data" % dbase.strip())
             data_tag.append("%s_org_data" % dbase.strip())
@@ -636,8 +674,10 @@ if __name__ == '__main__':
         elif (dbase == 'resource'):
             data_tag.append("%s_data" % dbase.strip())
 
-        dbfile = os.path.abspath(os.path.join(os.path.join(os.path.dirname(__file__),
-                "../cgi/dpm/%s" % config.get("DATABASE", db_name_tag))))
+        dbfile = \
+            os.path.abspath(os.path.join(os.path.join(
+                os.path.dirname(__file__),
+                "../cgi/deploy/%s" % config.get("DATABASE", db_name_tag))))
         if (not os.path.isdir(os.path.dirname(dbfile))):
             os.makedirs(os.path.dirname(dbfile))
 
