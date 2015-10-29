@@ -4,14 +4,14 @@
             <h3 class="field">Datasets</h3>
             <div data-ng-repeat="collection in policy.collections | startFrom:currentPage*3 | limitTo:3">
                 <div class="datasets">
-                    <p>Identifier Type</p>
+                    <p>Source</p>
                     <select name="dsid"
                         data-ng-options="id.name for id in identifier_types"
                         data-ng-change="changeDataset($index + currentPage*3)"
                         data-ng-model="policy.collections[$index + currentPage*3].type"
                         data-validate-select required>
                         <option value="">
-                            --- Select a Type ---
+                            --- Select ---
                         </option>
                     </select>
                     <div data-ng-show="submitted">
@@ -20,9 +20,90 @@
                             The type is required
                         </span>
                     </div>
+                    <div id="srcColl" data-ng-show="showSrcColl(policy.collections[$index + currentPage*3].type.name)">
+                      <p>Source Organisation</p>
+                      <select name="organisation"
+                        data-ng-options="org.name for org in organisations"
+                        data-ng-model="policy.sources[$index + currentPage*3].organisation"
+                        data-ng-disabled="src_organisation_disabled"
+                        data-ng-change="changeSourceSystem($index + currentPage*3)"
+                        data-validate-select required>
+                        <option name=policy.sources[$index + currentPage*3].organisation.name" value="">
+                          {{policy.sources[$index + currentPage*3].organisation.name}}
+                        </option>
+                      </select>
+                      <div
+                        data-ng-show="submitted">
+                        <span id="error"
+                          data-ng-show="invalidFlags.source[$index + currentPage*3].organisation">
+                          The organisation is required
+                        </span>
+                      </div>
+
+                      <p>Source System</p>
+                      <select name="system" data-ng-options="sy.name for sy in src_systems"
+                        data-ng-model="policy.sources[$index + currentPage*3].system"
+                        data-ng-disabled="src_system_disabled"
+                        data-ng-change="changeSrcSite($index + currentPage*3)"
+                        data-validate-select required>
+                        <option name="policy.sources[$index + currentPage*3].system.name" value="">
+                          {{policy.sources[$index + currentPage*3].system.name}}
+                        </option>
+                      </select>
+
+                      <div data-ng-show="submitted">
+                        <span id="error"
+                          data-ng-show="invalidFlags.source[$index + currentPage*3].system">
+                          System is required
+                        </span>
+                      </div>
+
+                      <p>Source Site</p>
+                      <select name="site" data-ng-options="s.name for s in src_sites"
+                        data-ng-model="policy.sources[$index + currentPage*3].site"
+                        data-ng-change="changeSrcResource($index + currentPage*3)"
+                        data-ng-disabled="src_site_disabled"
+                        data-validate-select required>
+                          <option name="policy.sources[$index +currentPage*3].site.name" value="">
+                            {{policy.sources[$index + currentPage*3].site.name}}
+                          </option>
+                      </select>
+
+                      <div data-ng-show="submitted">
+                        <span id="error"
+                         data-ng-show="invalidFlags.source[$index + currentPage*3].site">
+                         Site is required
+                       </span>
+                     </div>
+
+                     <p>Source Resource</p>
+                     <select name="resource"
+                      data-ng-options="r.name for r in src_resources"
+                      data-ng-model="policy.sources[$index + currentPage*3].resource"
+                      data-ng-change="updateSrcResource($index + currentPage*3)"
+                      ng-disabled="src_resource_disabled"
+                      data-validate-select required>
+
+                      <option name="policy.sources[$index + currentPage*3].resource.name" value="">
+                        {{policy.sources[$index + currentPage*3].resource.name}}
+                      </option>
+                     </select>
+
+                     <div
+                      data-ng-show="submitted">
+                      <span id="error"
+                       data-ng-show="invalidFlags.source[$index + currentPage*3].resource">
+                       Resource is required
+                      </span>
+                     </div>
+
+                     <p>Path</p>
+                     <input type="text" data-ng-model="policy.sources[$index + currentPage*3].path">
+                    </div>
+
                     <div id="collection"
                         data-ng-show="showCollection(policy.collections[$index + currentPage*3].type.name)">
-                        <p>Collection</p>
+                        <p>Identifier</p>
                         <input type="text" name="dscoll"
                             data-ng-model="policy.collections[$index + currentPage*3].name"
                             data-ng-minlength="3"
@@ -31,7 +112,7 @@
                         <div data-ng-show="submitted">
                             <span id="error"
                                 data-ng-show="invalidFlags.dataset[$index + currentPage*3].coll">
-                                The collection is required
+                                The path is required
                             </span>
                         </div>
                     </div>
@@ -52,6 +133,83 @@
                 Next
             </button>
             <button id="addmore" data-ng-click="addMore()">Add More</button>
+
+            <p>Target Organisation</p>
+            <select name="tgtorganisation"
+                data-ng-options="org.name for org in organisations"
+                data-ng-model="policy.target.organisation"
+                data-ng-disabled="tgt_organisation_disabled"
+                data-ng-change="changeTgtSystem()"
+                data-validate-select required>
+                <option name=policy.target.organisation.name" value="">
+                    {{policy.target.organisation.name}}
+                </option>
+            </select>
+            <div
+                data-ng-show="submitted">
+                <span id="error"
+                    data-ng-show="pristineFlags.target.organisation || datasetactions.organisation.$error.required">
+                    The organisation is required
+                </span>
+            </div>
+
+            <p>Target System</p>
+            <select name="tgtsystem"
+                data-ng-options="sy.name for sy in tgt_systems"
+                data-ng-model="policy.target.system"
+                data-ng-disabled="tgt_system_disabled"
+                data-ng-change="changeTgtSite()"
+                data-validate-select required>
+                <option name="policy.target.system.name" value="">
+                    {{policy.target.system.name}}
+                </option>
+            </select>
+
+            <div data-ng-show="submitted">
+                <span id="error"
+                    data-ng-show="pristineFlags.target.system || datasetactions.system.$error.required">
+                    Target system is required
+                </span>
+            </div>
+
+            <p>Target Site</p>
+            <select name="tgtsite" data-ng-options="s.name for s in tgt_sites"
+                data-ng-model="policy.target.site"
+                data-ng-change="changeTgtResource()"
+                data-ng-disabled="tgt_site_disabled"
+                data-validate-select required>
+                <option name="policy.target.site.name" value="">
+                    {{policy.target.site.name}}
+                </option>
+            </select>
+
+            <div data-ng-show="submitted">
+                <span id="error"
+                    data-ng-show="pristineFlags.target.site || datasetactions.site.$error.required">
+                    Target site is required
+                </span>
+            </div>
+
+            <p>Target Resource</p>
+            <select name="tgtresource"
+                data-ng-options="r.name for r in tgt_resources"
+                data-ng-model="policy.target.resource"
+                data-ng-change="updateTgtResource()"
+                ng-disabled="tgt_resource_disabled"
+                data-validate-select required>
+                <option name="policy.target.resource.name" value="">
+                    {{policy.target.resource.name}}
+                </option>
+            </select>
+            <div data-ng-show="submitted">
+                <span id="error"
+                    data-ng-show="pristineFlags.target.resource || datasetactions.resource.$error.required">
+                    Target resource is required
+                </span>
+            </div>
+            <p>Target Path</p>
+              <input type="text" data-ng-model="policy.target.path">
+
         </fieldset>
 
         <fieldset>
@@ -88,7 +246,7 @@
             <p>Trigger</p>
             <select name="trigger" data-ng-options="tr.name for tr in triggers"
                 data-ng-model="policy.trigger" data-ng-disabled="action_trigger"
-                data-ng-change="changeOrganisation()"
+                data-ng-change="updateTrigger()"
                 data-validate-select required>
 
                 <option name="policy.trigger.name" value="">
@@ -155,106 +313,6 @@
                     </option>
                 </select>
             </div>
-
-            <p>Organisation:</p>
-            <select name="organisation"
-                data-ng-options="org.name for org in organisations"
-                data-ng-model="policy.target.organisation"
-                data-ng-disabled="tgt_organisation_disabled"
-                data-ng-change="changeLocation()"
-                data-validate-select required>
-                <option name=policy.target.organisation.name" value="">
-                    {{policy.target.organisation.name}}
-                </option>
-            </select>
-            <div
-                data-ng-show="submitted || datasetactions.organisation.$invalid">
-                <span id="error"
-                    data-ng-show="pristineFlags.target.organisation || datasetactions.organisation.$error.required">
-                    The organisation is required
-                </span>
-            </div>
-
-            <p>Location Type</p>
-            <select name="location_type"
-                data-ng-options="loc.name for loc in location_types"
-                data-ng-model="policy.target.loctype"
-                data-ng-disabled="tgt_loc_type_disabled"
-                data-ng-change="changeSystem()"
-                data-validate-select required>
-                <option name=policy.target.loctype.name" value="">
-                    {{policy.target.loctype.name}}
-                </option>
-            </select>
-            <div
-                data-ng-show="submitted || datasetactions.location_type.$invalid">
-                <span id="error"
-                    data-ng-show="pristineFlags.target.location_type || datasetactions.location_type.$error.required">
-                    The trigger is required
-                </span>
-            </div>
-
-            <p>System:</p>
-            <select name="system"
-                data-ng-options="sy.name for sy in tgt_systems"
-                data-ng-model="policy.target.system"
-                data-ng-disabled="tgt_system_disabled"
-                data-ng-change="changeTgtSite()"
-                data-validate-select required>
-                <option name="policy.target.system.name" value="">
-                    {{policy.target.system.name}}
-                </option>
-            </select>
-
-            <div data-ng-show="submitted || datasetactions.system.$invalid">
-                <span id="error"
-                    data-ng-show="pristineFlags.target.system || datasetactions.system.$error.required">
-                    System is required
-                </span>
-            </div>
-
-            <p>Site</p>
-            <select name="site" data-ng-options="s.name for s in tgt_sites"
-                data-ng-model="policy.target.site"
-                data-ng-change="changeTgtResource()"
-                data-ng-disabled="tgt_site_disabled"
-                data-validate-select required>
-                <option name="policy.target.site.name" value="">
-                    {{policy.target.site.name}}
-                </option>
-            </select>
-
-            <div data-ng-show="submitted || datasetactions.site.$invalid">
-                <span id="error"
-                    data-ng-show="pristineFlags.target.site || datasetactions.site.$error.required">
-                    Site is required
-                </span>
-            </div>
-
-            <p>Resource:</p>
-            <select name="resource"
-                data-ng-options="r.name for r in tgt_resources"
-                data-ng-model="policy.target.resource"
-                data-ng-change="updateTgtResource()"
-                ng-disabled="tgt_resource_disabled"
-                data-validate-select required>
-
-                <option name="policy.target.resource.name" value="">
-                    {{policy.target.resource.name}}
-                </option>
-            </select>
-
-            <div
-                data-ng-show="submitted || datasetactions.resource.$invalid">
-                <span id="error"
-                    data-ng-show="pristineFlags.target.resource || datasetactions.resource.$error.required">
-                    Target is required
-                </span>
-            </div>
-
-            <p>Path</p>
-            <input type="text" data-ng-model="policy.target.path">
-
         </fieldset>
     </div>
 </data-ng-form>

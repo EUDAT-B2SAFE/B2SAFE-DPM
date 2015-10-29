@@ -1,9 +1,9 @@
-function submitCtrl($scope, $location, $window, $route, submitFlag, policy, 
+function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
         pristineFlags, invalidFlags, $http, page) {
     $scope.setSubmitted = function(validObj) {
         var flago = submitFlag.getObj();
         flago.fieldsOK = checkFields(validObj, pristineFlags, invalidFlags,
-                flago);
+                flago, policy);
         flago.active = true;
         flago.submitted = true;
         submitFlag.setObj(flago);
@@ -47,6 +47,30 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
             function(data, status, headers, config) {
                 alert("error is " + data);
             });
+    };
+
+    $scope.collDefined = function() {
+      var collFlag = false;
+      var i = 0;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        if ($scope.policy.collections[i].type.name === 'collection') {
+          collFlag = true;
+          break;
+        }
+      }
+      return collFlag;
+    };
+
+    $scope.pidDefined = function() {
+      var pidFlag = false;
+      var i = 0;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        if ($scope.policy.collections[i].type.name === 'pid') {
+          pidFlag = true;
+          break;
+        }
+      }
+      return pidFlag;
     };
 
 }

@@ -18,14 +18,14 @@ def usage():
 def getKeys(config):
     '''Function to extract the policy schema keys
     '''
-    
+
     # Get the list of keys that are visible by default
     visible_keys = [x.strip() for x in config.get("DATABASE", "default_visible").split(',')]
 
     # Keys to skip
     skip_keys = [x.strip() for x in config.get("DATABASE", "skip_keys").split(',')]
     sections = ["POLICY_SCHEMA", "DATASETS_SCHEMA", "ACTIONS_SCHEMA",
-            "TARGETS_SCHEMA"]
+            "TARGETS_SCHEMA", "SOURCES_SCHEMA"]
     keys = []
     for section in sections:
         for option in config.options(section):

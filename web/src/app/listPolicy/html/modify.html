@@ -1,48 +1,88 @@
 <div data-ng-controller="modifyCtrl">
     <div id="modify" class="modify">
         <h3 class="field">Modify Policy</h3>
-        <p>Title</p> 
-        <input type="text" data-ng-change="titleChange()" 
+        <p>Title</p>
+        <input type="text" data-ng-change="titleChange()"
             data-ng-model="policy.name"><br>
-        <p>Author</p> 
-        <select data-ng-model="policy.author" 
+        <p>Author</p>
+        <select data-ng-model="policy.author"
             data-ng-change="authorChange()"
             data-ng-options="un for un in ulist">
         </select>
-        <p>Community</p> 
+        <p>Community</p>
         <select data-ng-model="policy.community"
             data-ng-change="communityChange()"
             data-ng-options="co for co in comlist">
         </select>
-        <div data-ng-repeat="col in policy.collections">
-            <p>Identifier Type</p> 
+        <div data-ng-repeat="src in policy.sources"
+          data-ng-show="collDefined()">
+            <p>Source Organisation</p>
+            <select data-ng-model="policy.sources[$index].organisation"
+              data-ng-change="srcOrganisationChange()"
+              data-ng-options="orgt for orgt in orgList">
+              <option name="policy.sources[$index].organisation.name" value="">
+                {{policy.sources[$index].organisation.name}}
+              </option>
+            </select>
+            <p>Source System</p>
+            <select data-ng-model="policy.sources[$index].system"
+              data-ng-change="srcSystemChange()"
+              data-ng-options="tsys for tsys in sysList">
+              <option name="policy.sources[$index].system.name" value="">
+                {{policy.sources[$index].system.name}}
+              </option>
+            </select>
+            <p>Source Site</p>
+            <select data-ng-model="policy.sources[$index].site"
+              data-ng-change="srcSiteChange()"
+              data-ng-options="tsite for tsite in siteList">
+              <option name="policy.sources[$index].site.name" value="">
+                {{policy.sources[$index].site.name}}
+              </option>
+            </select>
+            <p>Source Resource</p>
+            <select data-ng-model="policy.sources[$index].resource"
+              data-ng-change="srcResourceChange()"
+              data-ng-options="tres for tres in resList">
+              <option name="policy.sources[$index].resource.name" value="">
+                {{policy.sources[$index].resource.name}}
+              </option>
+            </select>
+            <p>Source Path</p>
+            <input type="text" data-ng-change="srcPathChange()"
+              data-ng-model="policy.sources[$index].path">
+              <br/>
+        </div>
+        <div data-ng-repeat="col in policy.collections"
+          data-ng-show="pidDefined()">
+            <p>Identifier Type</p>
             <select data-ng-model="policy.collections[$index].type"
                 data-ng-change="identifierChange()"
                 data-ng-options="pid for pid in pidList">
             </select><br/>
-            <p>Collection</p> 
+            <p>Collection</p>
             <input type="text" data-ng-change="collectionChange()"
                 data-ng-model="col.name"></br>
         </div>
-        <p>Action</p> 
-        <select data-ng-model="policy.action.name" 
+        <p>Action</p>
+        <select data-ng-model="policy.action.name"
             data-ng-change="actionChange()"
             data-ng-options="act for act in actionList">
         </select>
-        <p>Type</p> 
+        <p>Type</p>
         <select data-ng-model="policy.type.name"
             data-ng-change="typeChange()"
             data-ng-options="ty for ty in typeList">
         </select>
-        <p>Trigger</p> 
+        <p>Trigger</p>
         <select data-ng-model="policy.trigger.name"
             data-ng-change="triggerChange()"
             data-ng-options="trg for trg in triggerList">
         </select>
-    
+
         <div id="tdate" data-ng-show="showDate(policy.trigger.name)">
             <p>Date</p>
-            <input type="text" is-open="opened" 
+            <input type="text" is-open="opened"
                 data-datepicker-popup="dd-MM-yyyy"
                 data-ng-model="trigger_date"
                 data-ng-change="updateDate()">
@@ -50,9 +90,9 @@
                 <i class="glyphicon glyphicon-calendar"> </i>
             </button>
         </div>
-        
+
         <div id="tperiod" data-ng-show="showPeriod(policy.trigger.name)">
-            Day of Week: <select id="period" 
+            Day of Week: <select id="period"
             data-ng-options="p.name for p in period.weekday"
             data-ng-change="changePeriod()"
             data-ng-model="policy.trigger_period.weekday">
@@ -60,7 +100,7 @@
                     value="">{{policy.trigger_period.weekday.name}}
                 </option>
             </select>
-            Month: <select id="period" 
+            Month: <select id="period"
                 data-ng-options="p.name for p in period.month"
                 data-ng-change="changePeriod()"
                 data-ng-model="policy.trigger_period.month">
@@ -84,7 +124,7 @@
             </select>
             Minute: <select data-ng-options="p.name for p in period.minute"
                     data-ng-change="changePeriod()"
-                    id="period" 
+                    id="period"
                     data-ng-model="policy.trigger_period.minute">
                 <option name="policy.trigger_period.minute.name"
                     value="">{{policy.trigger_period.minute.name}}
@@ -92,34 +132,29 @@
             </select>
         </div>
         <br/>
-        <p>Organisation</p> 
+        <p>Target Organisation</p>
         <select data-ng-model="policy.target.organisation.name"
             data-ng-change="organisationChange()"
             data-ng-options="orgt for orgt in orgList">
         </select>
-        <p>Location Type</p> 
-        <select data-ng-model="policy.target.loctype.name"
-            data-ng-change="locationChange()"
-            data-ng-options="loct for loct in locTypes">
-        </select>
-        <p>System</p> 
+        <p>Target System</p>
         <select data-ng-model="policy.target.system.name"
             data-ng-change="systemChange()"
             data-ng-options="tsys for tsys in sysList">
         </select>
-        <p>Site</p> 
+        <p>Target Site</p>
         <select data-ng-model="policy.target.site.name"
             data-ng-change="siteChange()"
             data-ng-options="tsite for tsite in siteList">
         </select>
-        <p>Path</p> 
-        <input type="text" data-ng-change="pathChange()"
-            data-ng-model="policy.target.path"><br/>
-        <p>Resource</p> 
+        <p>Target Resource</p>
         <select data-ng-model="policy.target.resource.name"
             data-ng-change="resourceChange()"
             data-ng-options="tres for tres in resList">
         </select>
+        <p>Target Path</p>
+        <input type="text" data-ng-change="pathChange()"
+            data-ng-model="policy.target.path"><br/>
         <div id="modbutton" class="modbutton">
             <button id="backbtn" data-ng-click="backToList()">
                 Back to List Policies

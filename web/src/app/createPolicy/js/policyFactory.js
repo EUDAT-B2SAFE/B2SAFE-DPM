@@ -9,7 +9,8 @@ var policy = function() {
     var target_site = {name: "--- Select a Site ---"};
     var target_resource = {name: "--- Select a Resource ---"};
     var loctype = {name: "--- Select a Location type ---"};
-    var organisation = {name: "--- Select an Organisation ---"};
+    var source_organisation = new Array({name: "--- Select an Organisation ---"});
+    var target_organisation = {name: "--- Select an Organisation ---"};
     var weekday = {name: "*"};
     var day = {name: "*"};
     var month ={name: "*"};
@@ -18,18 +19,18 @@ var policy = function() {
 
     var period = {weekday: weekday, month: month, day: day, hour: hour,
         minute: minute};
-    
-    var source = {
+
+    var sources = new Array({
         loctype: loctype,
-        organisation: organisation,
+        organisation: source_organisation,
         system: source_system,
         site: source_site,
-        path: "",
+        path: '',
         resource: source_resource
-    };
+    });
     var target = {
         loctype: loctype,
-        organisation: organisation,
+        organisation: target_organisation,
         system: target_system,
         site: target_site,
         path: "",
@@ -38,14 +39,14 @@ var policy = function() {
     var collections = new Array({name: "", type: {name: ""}});
 
     var policyObj = {name: "", id: "",
-        version: "1.0", uuid: "", author: "", community: "", 
-        collections: collections, 
+        version: "1.0", uuid: "", author: "", community: "",
+        collections: collections,
         action: action,
         type: type,
         trigger: trigger,
         trigger_date: "",
         trigger_period: period,
-        source: source, 
+        sources: sources,
         target: target};
     return policyObj;
 };

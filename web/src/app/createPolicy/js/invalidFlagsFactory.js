@@ -1,6 +1,8 @@
 function invalidFlags() {
     var dataset = new Array({pid: true, coll: true});
-    var invalids = {dataset: dataset};
+    var sources = new Array({organisation: true, system: true,
+      site: true, resource: true});
+    var invalids = {dataset: dataset, source: sources};
     return invalids;
 }
-dpmApp.factory("invalidFlags", invalidFlags);
+dpmApp.factory('invalidFlags', invalidFlags);

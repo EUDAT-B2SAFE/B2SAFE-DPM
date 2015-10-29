@@ -490,64 +490,131 @@ def populate(dbfile, dbschema, dbdata, dbtype):
         fill_profile(conn, config, next_indexes, dbdata)
 
 
-def configure_files(cfgfile_tmpl, cfgfile, adminfile):
+def configure_files(cfgfile_tmpl, cfgfile, adminfile, local_cfg):
     '''Configure the config, admin and javascript files'''
     cgi_url = ""
+    old_cgi_url = ""
     admin_user = ""
-    auth_type = ""
+    old_admin_user = "dpmadmin"
+    old_admin_name = ""
+    old_admin_email = ""
+    admin_name = ""
+    admin_email = ""
+    auth = "1"
+    old_auth = "1"
+    root_url = ""
+    old_root_url = ""
+
     lines = []
     jsfiles = ["dpm_app.js.template", "frontPageApp.js.template",
                "register_app.js.template", "errorUtils.js.template",
                "admin_profile_app.js.template"]
 
+    local_conf = ConfigParser.RawConfigParser()
+    if (os.path.isfile(local_cfg)):
+        local_conf.read(local_cfg)
+        old_cgi_url = local_conf.get("DEFAULT", "CGI_URL")
+        old_auth = local_conf.get("DEFAULT", "AUTH_TYPE")
+        old_admin_name = local_conf.get("DEFAULT", "ADMIN_NAME")
+        old_admin_user = local_conf.get("DEFAULT", "ADMIN_USER")
+        old_admin_email = local_conf.get("DEFAULT", "ADMIN_EMAIL")
+        old_root_url = local_conf.get("DEFAULT", "ROOT_URL")
+
     print "Configuring the policy config file. Enter 'q' to quit."
 
     while (1):
-        print "Base URI for the CGI scripts:"
+        print "Base URI for the CGI scripts: [%s]" % old_cgi_url
         cgi_url = raw_input()
         if (cgi_url == 'q'):
             sys.exit()
         elif (len(cgi_url) == 0):
-            print "You must supply a path or 'q' to quit."
+            if (len(old_cgi_url) == 0):
+                print "You must supply a path or 'q' to quit."
+            else:
+                cgi_url = old_cgi_url
+                break
         else:
             break
 
     while (1):
-        print "Authentication method type: 1=AAI, 2=Standalone [1]:"
-        auth_type = raw_input()
-        if (auth_type == "" or auth_type == "1"):
+        print "Authentication method type: 1=AAI, 2=Standalone [%s]:" %\
+            old_auth
+        auth = raw_input()
+        if (auth == "1"):
             auth_type = "AAI"
             break
-        elif (auth_type == "2"):
+        elif (auth == "2"):
             auth_type = "STANDALONE"
             break
-        elif (auth_type == "q"):
+        elif (auth == "q"):
             sys.exit()
         else:
-            print "You must supply a valid authentication type or 'q' to quit."
+            if (len(auth) == 0):
+                if (len(old_auth) == 0 or old_auth == "1"):
+                    auth_type = "AAI"
+                    auth = "1"
+                    break
+                elif (old_auth == "2"):
+                    auth_type = "STANDALONE"
+                    auth = "2"
+                    break
 
     while (1):
-        print "Admin name (firstname lastname):"
+        print "Admin name (firstname lastname) [%s]:" % old_admin_name
         admin_name = raw_input()
         if (len(admin_name) == 0):
-            print "You must supply a name or 'q' to quit."
+            if (len(old_admin_name) == 0):
+                print "You must supply a name or 'q' to quit."
+            else:
+                admin_name = old_admin_name
+                break
         else:
             break
 
-    print "Admin username [dpmadmin]:"
+    print "Admin username [%s]:" % old_admin_user
     admin_user = raw_input()
     if (len(admin_user) == 0):
-        admin_user = "dpmadmin"
+        if (len(old_admin_user) == 0):
+            admin_user = "dpmadmin"
+        else:
+            admin_user = old_admin_user
     elif (admin_user == "q"):
         sys.exit()
 
     while (1):
-        print "Admin email address:"
+        print "Admin email address [%s]:" % old_admin_email
         admin_email = raw_input()
         if (len(admin_email) == 0):
-            print "You must supply an email address"
+            if (len(old_admin_email) == 0):
+                print "You must supply an email address"
+            else:
+                admin_email = old_admin_email
+                break
         else:
             break
+
+    while (1):
+        print "Root url for DPM web pages [%s]:" % old_root_url
+        root_url = raw_input()
+        if (len(root_url) == 0):
+            if (len(old_root_url) == 0):
+                print "You must supply a path or 'q' to quit."
+            else:
+                root_url = old_root_url
+                break
+        else:
+            break
+
+    # Write out the new default file
+    with file(local_cfg, "w") as fout:
+        fout.write("[DEFAULT]\n")
+        fout.write("CGI_URL=%s\n" % cgi_url)
+        fout.write("ADMIN_USER=%s\n" % admin_user)
+        fout.write("ADMIN_NAME=%s\n" % admin_name)
+        fout.write("ADMIN_EMAIL=%s\n" % admin_email)
+        fout.write("AUTH_TYPE=%s\n" % auth)
+        fout.write("ROOT_URL=%s\n" % root_url)
+        fout.close()
 
     # Update the config file
     with file(cfgfile_tmpl, "r") as fin:
@@ -591,23 +658,13 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile):
                         line = can.safe_substitute(CGI_URL=cgi_url)
                     fout.write(line)
                 fout.close()
-    return cgi_url
+    return (cgi_url, root_url)
 
 
-def configure_dbase(config):
+def configure_dbase(config, root_url):
     '''Configure the pages database file before loading'''
 
     lines = []
-    root_url = ""
-
-    print "Configuring the page URLs. Enter 'q' to quit."
-    while (1):
-        print "Root path for DPM web pages:"
-        root_url = raw_input()
-        if (len(root_url) == 0):
-            print "You must supply a path or 'q' to quit."
-        else:
-            break
 
     dbfile_template = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                       config.get("DATABASE_LOADING",
@@ -633,6 +690,8 @@ if __name__ == '__main__':
     dbase_types = ["resource", "action", "profile"]
     data_tag = []
     dbdata = {}
+    local_cfg = ".dpm.cfg"
+
     opts, args = getopt.getopt(sys.argv[1:], 'h', ['help'])
     for opt, val in opts:
         if (opt == '-h' or opt == '--help'):
@@ -651,14 +710,16 @@ if __name__ == '__main__':
         os.path.abspath(os.path.join(os.path.dirname(__file__),
                                      '../cgi/deploy/config/dpm_admin.txt'))
 
-    cgi_url = configure_files(cfgfile_tmpl, cfgfile, adminfile)
+    cgi_url, root_url = configure_files(cfgfile_tmpl, cfgfile, adminfile,
+                                        local_cfg)
 
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
 
-    html_path = configure_dbase(config)
+    html_path = configure_dbase(config, root_url)
 
     # Loop over the database types and fill the databases
+    # and configure the files
     for dbase in dbase_types:
         db_name_tag = "%s_name" % dbase.strip()
         db_schema_tag = "%s_schema" % dbase.strip()

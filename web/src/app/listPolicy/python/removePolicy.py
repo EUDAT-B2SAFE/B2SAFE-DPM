@@ -2,16 +2,14 @@
 import json
 import sys
 import ConfigParser
-import StringIO
-import hashlib
-import time
 import os
 import sqlite3
+
 
 def removePol(config):
     '''Function to remove the policy
     '''
-    
+
     # Read the input
     data = {}
     data = json.load(sys.stdin)
@@ -23,11 +21,11 @@ def removePol(config):
 
     conn = sqlite3.connect(dbfile)
     cur = conn.cursor()
-    
+
     # Find the key for the uuid
     uuid_str = "%s%%" % config.get("POLICY_SCHEMA", "uniqueid")
     cur.execute("select key from policies where key like ? and value=?",
-            (uuid_str, data['uuid']))
+                (uuid_str, data['uuid']))
     result = cur.fetchone()
     uuid_idx = -1
     if (len(result) > 0):
@@ -38,7 +36,7 @@ def removePol(config):
 
     # Set the removed key to true
     cur.execute("update policies set value=? where key=?",
-            ('true', pol_rm))
+                ('true', pol_rm))
     conn.commit()
 
 if __name__ == '__main__':

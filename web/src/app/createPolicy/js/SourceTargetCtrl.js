@@ -19,6 +19,7 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
     $scope.tgt_loc_type_disabled = disabled_flags_obj.tgt_loc_type;
 
     // Read from the database the available locations
+    // Don't need - but check!
     $scope.changeLocation = function() {
         var get_locations = $http({method: 'GET',
             url: '${CGI_URL}/query_actions.py',
@@ -46,9 +47,8 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
         });
     };
 
-
     // Read from the database the available systems
-    $scope.changeSystem = function() {
+    $scope.changeTgtSystem = function() {
         var get_systems = $http({method: "GET",
             url: "${CGI_URL}/query_resource.py",
             params: {qtype: "systems"}});
@@ -70,7 +70,7 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
             data_location.setLocations(loc_obj);
             disabled_flags_obj.tgt_system = false;
             disabled_flags.setFlags(disabled_flags_obj);
-            $scope.pristineFlags.target.location_type = false;
+            $scope.pristineFlags.target.organisation = false;
             $scope.policy.target.system.name = "--- Select a System ---";
             $scope.tgt_system_disabled = disabled_flags_obj.tgt_system;
         });
@@ -78,11 +78,12 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
 
     // Once the system has been selected populate the sites list for the
     // source
-    $scope.changeSrcSite = function() {
+    $scope.changeSrcSite = function(index) {
+        var default_system = "--- Select a System ---";
         var get_sites = $http({method: "GET",
             url: "${CGI_URL}/query_resource.py",
             params: {qtype: "sites",
-                system: $scope.policy.source.system.name}});
+                system: $scope.policy.sources[index].system.name}});
 
         get_sites.then(function(results) {
             var data = results.data;
@@ -98,8 +99,18 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
         });
         disabled_flags_obj.source_site = false;
         disabled_flags.setFlags(disabled_flags_obj);
-        $scope.policy.source.site.name = "--- Select a Site ---";
+        $scope.policy.sources[index].site.name = "--- Select a Site ---";
         $scope.src_site_disabled = disabled_flags_obj.source_site;
+
+        // Set the validation flags for the System
+        $scope.pristineFlags.sources[index].system = false;
+        if ($scope.policy.sources[index].system.name &&
+            $scope.policy.sources[index].system.name !=
+            default_system) {
+            $scope.invalidFlags.source[index].system = false;
+        } else {
+            $scope.invalidFlags.source[index].system = true;
+        }
     };
 
     // Once the system has been selected populate the sites list
@@ -126,12 +137,13 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
     };
 
     // Once the site has been selected populate the source resources list
-    $scope.changeSrcResource = function() {
+    $scope.changeSrcResource = function(index) {
+        var default_site = "--- Select a Site ---";
         var get_resources = $http({method: "GET",
             url: "${CGI_URL}/query_resource.py",
             params: {qtype: "resources",
-                system: $scope.policy.source.system.name,
-                site: $scope.policy.source.site.name} });
+                system: $scope.policy.sources[index].system.name,
+                site: $scope.policy.sources[index].site.name} });
         get_resources.then(function(results) {
             var data = results.data;
             loc_obj.source_resources = [];
@@ -147,8 +159,18 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
         });
         disabled_flags_obj.source_resource = false;
         disabled_flags.setFlags(disabled_flags_obj);
-        $scope.policy.source.resource.name = "--- Select a Resource ---";
+        $scope.policy.sources[index].resource.name = "--- Select a Resource ---";
         $scope.src_resource_disabled = disabled_flags_obj.source_resource;
+
+        // Set the validation flags for the site
+        $scope.pristineFlags.sources[index].site = false;
+        if ($scope.policy.sources[index].site.name &&
+            $scope.policy.sources[index].site.name !=
+            default_site) {
+            $scope.invalidFlags.source[index].site = false;
+        } else {
+            $scope.invalidFlags.source[index].site = true;
+        }
     };
 
     // Once the site has been selected populate the resources list
@@ -179,18 +201,28 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
 
     };
 
+    $scope.updateSrcResource = function(index) {
+      var default_resource = "--- Select a Resource ---";
+      var idx = $scope.src_resources.indexOf(
+        $scope.policy.sources[index].resource);
+      $scope.policy.sources[index].path = $scope.src_paths[idx].name;
+      $scope.pristineFlags.sources[index].resource = false;
+      if ($scope.policy.sources[index].resource.name &&
+         $scope.policy.sources[index].resource.name !=
+         default_resource) {
+         $scope.invalidFlags.source[index].resource = false;
+      } else {
+         $scope.invalidFlags.source[index].resource = true;
+      }
+    };
+
     // Function to update the pristine flag (we need this as the state
     // is not presered when we go back a page)
     $scope.updateTgtResource = function() {
-      console.log("update called! target " + $scope.policy.target.resource);
-      console.log("update called! source " + $scope.policy.source.resource);
       var idx = $scope.tgt_resources.indexOf($scope.policy.target.resource);
-      if (idx < 0) {
-        idx = $scope.src_resources.indexOf($scope.policy.source.resource);
-      }
       console.log("idx is " + idx);
       $scope.policy.target.path = $scope.tgt_paths[idx].name;
-      console.log("target path is " + $scope.target_path);
+      console.log("target path is " + $scope.policy.target.path);
       $scope.pristineFlags.target.resource = false;
     };
 }

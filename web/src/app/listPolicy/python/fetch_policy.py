@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import cgi
-import cgitb
-import getopt
+import os
 import sys
 import ConfigParser
 import sqlite3
+
 
 def usage():
     '''Function describing the script usage
@@ -14,6 +14,7 @@ def usage():
     print "Options"
     print "policy_id=<id>          The identifier for the policy object"
     print ""
+
 
 def fetchPolicy():
     '''Function to fetch the policy from the database
@@ -27,13 +28,13 @@ def fetchPolicy():
 
     print "Content-Type: application/json charset=utf-8"
     print ""
-    
+
     # Get the arguments
     formData = cgi.FieldStorage()
 
     keys = formData.keys()
 
-    if (formData.has_key(help_key)):
+    if (help_key in formData):
         usage()
         sys.exit(0)
 
@@ -45,7 +46,7 @@ def fetchPolicy():
         sys.exit(1)
 
     policy_object_id = formData.getvalue(policy_object_key, "")
-    
+
     # Open the database
     dbfile = config.get("DATABASE", "name").strip()
     if (not os.path.isfile(dbfile)):
@@ -57,14 +58,13 @@ def fetchPolicy():
 
     # Extract the policy from the database and return as a string
     cur.execute("select value from policies where key = ?",
-            (policy_object_id,))
+                (policy_object_id,))
     policy = cur.fetchone()
     if (policy):
-        sys.stdout.write(policy)
+        sys.stdout.write(policy[0])
     else:
         print "Error: cannot find a policy with id: ", policy_object_id
         sys.exit(20)
 
 if __name__ == '__main__':
     fetchPolicy()
-

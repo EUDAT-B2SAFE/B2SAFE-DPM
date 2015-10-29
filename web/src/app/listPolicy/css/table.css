@@ -113,7 +113,13 @@ div#modbutton {
     margin-top: 3%;
     display: block;
 }
-
+div#reactivatebtn {
+    width: 100%;
+    margin-top: 3%;
+    background-color: whitesmoke;
+    margin-left: auto;
+    margin-right: auto;
+}
 div#removebtn {
     width: 100%;
     margin-top: 3%;
@@ -125,13 +131,35 @@ button#removeback {
     margin-left: 30%;
     margin-right: 10%;
 }
+
+button#reactivateback {
+  margin-left: 30%;
+  margin-right: 10%;
+}
+
 button#remove {
 }
+
 div#tabremove {
     width: 80%;
     margin-left: auto;
     margin-right: auto;
     background-color: whitesmoke;
+}
+
+div#tabreactivate {
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: whitesmoke;
+}
+
+table#tabreactivate {
+    margin-top: 3%;
+    width: 100%;
+    background-color: whitesmoke;
+%    margin-left: auto;
+%    margin-right: auto;
 }
 
 table#tabremove {

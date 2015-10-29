@@ -1,6 +1,6 @@
 <div data-ng-controller="removeCtrl">
     <div id="tabremove">
-        <h3 class="field">Remove Policy</h3>
+        <h3 class="field">Deactivate Policy</h3>
         <table id="tabremove">
             <thead>
                 <tr>
@@ -25,18 +25,24 @@
                     <td>Community</td>
                     <td>{{policy.community}}</td>
                 </tr>
-                <tr data-ng-repeat="col in policy.collections">
-                    <td>Identifier Type </td><td>{{col.type}}</td>
+                <tr data-ng-repeat="col in policy.collections"
+                  data-ng-show="pidDefined()">
+                    <td>Source Collection</td>
+                    <td>{{col.type}}, {{col.name}}</td>
                 </tr>
-                <tr data-ng-repeat="col in policy.collections">
-                    <td>Collection </td><td>{{col.name}}</td>
+                <tr data-ng-repeat="src in policy.sources"
+                  data-ng-show="collDefined()">
+                    <td>Source Collection</td>
+                    <td>{{src.organisation.name}}, {{src.system.name}},
+                        {{src.site.name}}, {{src.resource.name}},
+                        {{src.path}}</td>
                 </tr>
                 <tr>
                     <td>Action</td>
                     <td>{{policy.action.name}}</td>
                 </tr>
                 <tr>
-                    <td>Type</td> 
+                    <td>Type</td>
                     <td>{{policy.type.name}}</td>
                 </tr>
                 <tr>
@@ -44,28 +50,12 @@
                     <td>{{policy.trigger.name}}</td>
                 </tr>
                 <tr>
-                    <td>Organisation</td>
-                    <td>{{policy.target.organisation.name}}</td>
-                </tr>
-                <tr>
-                    <td>Location Type </td>
-                    <td>{{policy.target.loctype.name}}</td>
-                </tr>
-                <tr>
-                    <td>System</td>
-                    <td>{{policy.target.system.name}}</td>
-                </tr>
-                <tr>
-                    <td>Site</td>
-                    <td>{{policy.target.site.name}}</td>
-                </tr>
-                <tr>
-                    <td>Path</td>
-                    <td>{{policy.target.path}}</td>
-                </tr>
-                <tr>
-                    <td>Resource</td>
-                    <td>{{policy.target.resource.name}}</td>
+                    <td>Target Collection</td>
+                    <td>{{policy.target.organisation.name}},
+                        {{policy.target.system.name}},
+                        {{policy.target.site.name}},
+                        {{policy.target.resource.name}},
+                        {{policy.target.path}}</td>
                 </tr>
             </tbody>
         </table>
@@ -74,7 +64,7 @@
                 Back to List Policies
             </button>
             <button id="remove" data-ng-click="removePolicy()">
-                Remove Policy?
+                Deactivate Policy?
             </button>
         </div>
     </div>

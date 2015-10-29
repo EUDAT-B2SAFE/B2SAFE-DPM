@@ -18,9 +18,17 @@
                 <td>Author</td>
                 <td>{{policy.author}}</td>
             </tr>
-            <tr data-ng-repeat="item in policy.collections">
-                <td>Collection</td>
+            <tr data-ng-repeat="item in policy.collections"
+              data-ng-show="pidDefined()">
+                <td>Source Collection</td>
                 <td>{{item.type.name}}: {{item.name}}</td>
+            </tr>
+            <tr data-ng-repeat="src in policy.sources"
+              data-ng-show="collDefined()">
+                <td>Source Collection</td>
+                <td>{{src.organisation.name}}, {{src.system.name}},
+                  {{src.site.name}}, {{src.resource.name}}, {{src.path}}
+                </td>
             </tr>
             <tr>
                 <td>Action</td>
@@ -48,26 +56,13 @@
                 </td>
             </tr>
             <tr>
-                <td>Target Organisation</td>
-                <td>{{policy.target.organisation.name}}</td>
-            </tr>
-            <tr>
-                <td>Target System</td>
-                <td>{{policy.target.system.name}}</td>
-            </tr>
-            <tr>
-                <td>Target Site</td>
-                <td>{{policy.target.site.name}}</td>
-            </tr>
-            <tr>
-                <td>Target Resource</td>
-                <td>{{policy.target.resource.name}}</td>
-            </tr>
-            <tr>
-                <td>Target Path</td>
-                <td>{{policy.target.path}}</td>
+                <td>Target Collection</td>
+                <td>{{policy.target.organisation.name}},
+                  {{policy.target.system.name}},
+                  {{policy.target.site.name}},
+                  {{policy.target.resource.name}},
+                  {{policy.target.path}}</td>
             </tr>
         </table>
     </div>
 </div>
-

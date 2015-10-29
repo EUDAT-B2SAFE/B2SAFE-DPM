@@ -1,6 +1,6 @@
 dpmApp.service('data_action', function() {
     var actions = {types:[],
-        operations:[], triggers:[], organisations:[]};
+        operations:[], triggers:[]};
     return {
         getActions: function() {
             return actions;

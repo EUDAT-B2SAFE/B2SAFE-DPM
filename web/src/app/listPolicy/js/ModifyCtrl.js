@@ -19,10 +19,10 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
     $scope.backToList = function() {
         $scope.$parent.changeLoc("template/listtable.html");
     };
-   
+
     $scope.ulist = [userProfile.username];
     $scope.comlist = userProfile.communities;
-   
+
     $scope.titleChange = function() {
         if ($scope.policy.name != origPolicy.name) {
             polChanged.title = true;
@@ -44,23 +44,23 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
                 polChanged.trigger_value = false;
             }
     };
-   
+
     // Record if the organisation changes
     $scope.organisationChange = function() {
         if ($scope.orgList.length > 1) {
-            if ($scope.target.organisation.name != 
+            if ($scope.target.organisation.name !=
                     origPolicy.target.organisation.name) {
                         polChanged.organisation = true;
             } else {
                 polChanged.organisation = false;
             }
-        }     
+        }
     };
 
     // Record if the location changes
     $scope.locationChange = function() {
         if ($scope.locTypes.length > 1) {
-            if ($scope.policy.target.loctype.name != 
+            if ($scope.policy.target.loctype.name !=
                     origPolicy.target.loctype.name) {
                         polChanged.location = true;
             } else {
@@ -76,23 +76,23 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
             polChanged.author = false;
         }
     };
-    
+
     $scope.identifierChange = function() {
         // We need to reset the collection flag since the identifier is
         // higher level
         polChanged.collection[this.$index] = false;
         if ($scope.pidList.length > 1) {
-            if (policy.collections[this.$index].type != 
+            if (policy.collections[this.$index].type !=
                     origPolicy.collections[this.$index].type) {
                 polChanged.identifier[this.$index] = true;
             } else {
                 polChanged.identifier[this.$index] = false;
             }
-        }     
+        }
     };
 
     $scope.collectionChange = function() {
-        if (policy.collections[this.$index].name != 
+        if (policy.collections[this.$index].name !=
                 origPolicy.collections[this.$index].name) {
                     polChanged.collection[this.$index] = true;
         } else {
@@ -107,7 +107,7 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
             } else {
                 polChanged.community = false;
             }
-        }    
+        }
     };
 
     // Read the available identifier types
@@ -118,7 +118,7 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
             var data = results.data;
             for (var idx = 0; idx < data.length; ++idx) {
                 if (data[idx].length > 0) {
-                    pidList.push(data[idx][0]); 
+                    pidList.push(data[idx][0]);
                 }
             }
             $scope.pidList = pidList;
@@ -175,9 +175,9 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
             } else {
                 polChanged.action = false;
             }
-        } 
+        }
     };
-    
+
     // Record if the type has changed and reload the trigger list
     $scope.typeChange = function() {
         var getTrgObj = getActionTrigger($http, $scope.policy.action.name,
@@ -194,7 +194,7 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
         });
         console.log("length " + $scope.typeList.length);
         if ($scope.typeList.length >= 1) {
-            console.log("orig " + origPolicy.type.name + " now " + 
+            console.log("orig " + origPolicy.type.name + " now " +
                     $scope.policy.type.name);
             if ($scope.policy.type.name != origPolicy.type.name) {
                 polChanged.type = true;
@@ -227,7 +227,7 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
                 polChanged.trigger_name = false;
             }
         }
-    }; 
+    };
 
     // Get the organisation from the database
     var getOrgObj = getOrganisation($http);
@@ -267,7 +267,7 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
         }
         $scope.sysList = sysList;
     });
-    
+
     // Get the list of sites
     var getSiteObj = getSite($http, $scope.policy.target.system.name);
     getSiteObj.then(function(results) {
@@ -294,23 +294,23 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
         }
         $scope.resList = resList;
     });
-    
+
     // If the system changes we need to keep a record
     $scope.systemChange = function() {
         if ($scope.sysList.length > 1) {
             polChanged.site = false;
-            if ($scope.policy.target.system.name != 
+            if ($scope.policy.target.system.name !=
                     origPolicy.target.system.name) {
                 polChanged.system = true;
             } else {
                 polChanged.system = false;
             }
-        } 
+        }
     };
 
     // If the site changes we need to reload the resources
     $scope.siteChange = function() {
-        var getResObj = getResource($http, 
+        var getResObj = getResource($http,
                 $scope.policy.target.system.name,
                 $scope.policy.target.site.name);
         getResObj.then(function(results) {
@@ -323,10 +323,10 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
             }
             $scope.resList = resList;
         });
-        // If we only have one site the flag will not change so 
+        // If we only have one site the flag will not change so
         polChanged.resource = false;
         if ($scope.siteList.length > 1) {
-            if (origPolicy.target.site.name != 
+            if (origPolicy.target.site.name !=
                     $scope.policy.target.site.name) {
                         polChanged.site = true;
             } else {
@@ -344,7 +344,7 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
         }
         return show;
     };
-    
+
     // Update the date
     $scope.updateDate = function() {
         if (($scope.trigger_date != origPolicy.trigger.value)) {
@@ -385,13 +385,13 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
     // Record the fact that the resource changed
     $scope.resourceChange = function() {
         if ($scope.resList.length > 1) {
-            if (this.policy.target.resource.name != 
+            if (this.policy.target.resource.name !=
                 origPolicy.target.resource.name) {
                     polChanged.resource = true;
             } else {
                 polChanged.resource = false;
             }
-        } 
+        }
     };
 
     // Parse the period trigger and set the corresponding types
@@ -411,12 +411,12 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
     $scope.updatePolicy = function() {
         // Check if the policy has been changed
         var polChangedObj = checkPolChanged(polChanged);
-        if (polChangedObj.changed) { 
+        if (polChangedObj.changed) {
             if (polChangedObj.invalid.length === 0) {
-                policy.uuid = createGuid(); 
-                $http.post("${CGI_URL}/storeModifiedPolicy.py", 
+                policy.uuid = createGuid();
+                $http.post("${CGI_URL}/storeModifiedPolicy.py",
                         JSON.stringify(policy),
-                        {headers: "Content-Type: application/x-www-form-urlencoded"}).success(function(data, status, headers, config) 
+                        {headers: "Content-Type: application/x-www-form-urlencoded"}).success(function(data, status, headers, config)
                             {
                                 if (data.policy_exists) {
                                     alert("The policy exists in the database");
@@ -436,5 +436,30 @@ function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile
         } else {
             alert("Policy is unmodified. Will not update the stored policy");
         }
+    };
+    // Show the collections div if the policy has pid elements
+    $scope.collDefined = function() {
+      var i = 0;
+      var collFlag = false;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        if ($scope.policy.collections[i].type === "collection") {
+          collFlag = true;
+          break;
+        }
+      }
+      return collFlag;
+    };
+    // Show the PID div if the policy has pid elements
+    $scope.pidDefined = function() {
+      var i = 0;
+      var pidFlag = false;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        console.log("coll is " + $scope.policy.collections[i].type);
+        if ($scope.policy.collections[i].type === "pid") {
+          pidFlag = true;
+          break;
+        }
+      }
+      return pidFlag;
     };
 }

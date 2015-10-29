@@ -1,4 +1,4 @@
-function actionCtrl($scope, $http, $injector, policy, disabled_flags, 
+function actionCtrl($scope, $http, $injector, policy, disabled_flags,
         data_action, submitFlag) {
     $scope.policy = policy;
     $injector.invoke(dpmCtrl, this, {$scope: $scope});
@@ -13,18 +13,17 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
 
     $scope.action_type = disabled_flags_obj.action_type;
     $scope.action_trigger = disabled_flags_obj.action_trigger;
-    $scope.tgt_organisation_disabled = disabled_flags_obj.tgt_organisation;
-   
+
     // Read in the available actions using promises
-    var actions = $http({method: "GET", 
-        url: "${CGI_URL}/query_actions.py",
-        params: {qtype: "operations"}});
+    var actions = $http({method: 'GET',
+        url: '${CGI_URL}/query_actions.py',
+        params: {qtype: 'operations'}});
 
     actions.then(function (result) {
         var data = result.data;
         for (var idx = 0; idx < data.length; ++idx) {
             if (data[idx].length > 0) {
-                action_obj.operations = 
+                action_obj.operations =
                     storeData(action_obj.operations, data[idx][0]);
             }
         }
@@ -32,9 +31,9 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
         data_action.setActions(action_obj);
     }
     );
-    
+
     $scope.period = getPeriod();
-   
+
     // Only show the date fields for the date option
     var tdate = new Date();
     $scope.showDate = function(trname) {
@@ -46,7 +45,7 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
                 $scope.policy.trigger_date = getIsoDate(tdate);
             }
         }
-        return show; 
+        return show;
     };
 
     $scope.datClear = function() {
@@ -72,7 +71,7 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
 
     // function to enable the action type option
     $scope.changeType = function() {
-        var get_types = $http({method: "GET", 
+        var get_types = $http({method: "GET",
             url: "${CGI_URL}/query_actions.py", params: {qtype: "types",
                 operation: $scope.policy.action.name} });
         get_types.then(function(results) {
@@ -80,7 +79,7 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
             action_obj.types = [];
             for (var idx = 0; idx < data.length; ++idx) {
                 if (data[idx].length > 0) {
-                    action_obj.types = 
+                    action_obj.types =
                             storeData(action_obj.types, data[idx][0]);
                 }
             }
@@ -97,10 +96,10 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
 
     // function to enable the trigger option
     $scope.changeTrigger = function() {
-        var get_triggers = $http({method: "GET", 
-            url: "${CGI_URL}/query_actions.py", 
+        var get_triggers = $http({method: "GET",
+            url: "${CGI_URL}/query_actions.py",
             params: {qtype: "triggers",
-                operation: $scope.policy.action.name, 
+                operation: $scope.policy.action.name,
             type: $scope.policy.type.name}
         });
         get_triggers.then(function(results) {
@@ -108,7 +107,7 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
             action_obj.triggers = [];
             for (var idx = 0; idx < data.length; ++idx) {
                 if (data[idx].length > 0) {
-                    action_obj.triggers = 
+                    action_obj.triggers =
                         storeData(action_obj.triggers, data[idx][0]);
                 }
             }
@@ -122,18 +121,23 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
         $scope.action_trigger = disabled_flags_obj.action_trigger;
     };
 
+    // Update the Trigger
+    $scope.updateTrigger = function() {
+      $scope.pristineFlags.action.trigger = false;
+    };
+
     // Read from the database the available locations
-    $scope.changeOrganisation = function() {
-        var get_organisations = $http({method: "GET", 
-            url: "${CGI_URL}/query_actions.py", 
+    $scope.changeTgtOrganisation = function() {
+        var get_organisations = $http({method: "GET",
+            url: "${CGI_URL}/query_actions.py",
             params: {qtype: "organisations"}});
-        
+
         get_organisations.then(function(results) {
             var data = results.data;
             action_obj.organisations = [];
             for (var idx = 0; idx < data.length; ++idx) {
                 if (data[idx].length > 0) {
-                    action_obj.organisations = 
+                    action_obj.organisations =
                         storeData(action_obj.organisations, data[idx][0]);
                 }
             }
@@ -141,12 +145,13 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
             data_action.setActions(action_obj);
             disabled_flags_obj.tgt_organisation = false;
             disabled_flags.setFlags(disabled_flags_obj);
-            $scope.pristineFlags.action.trigger = false;
             $scope.policy.target.organisation.name = "--- Select an Organisation ---";
             $scope.tgt_organisation_disabled = disabled_flags_obj.tgt_organisation;
- 
+
         });
     };
+
+    $scope.changeTgtOrganisation();
 
     // invoke the SourceTarget control
     $injector.invoke(sourceTargetCtrl, this, {$scope: $scope});

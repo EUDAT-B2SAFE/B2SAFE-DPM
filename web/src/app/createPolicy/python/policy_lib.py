@@ -6,7 +6,6 @@
 #
 
 import sys
-import getopt
 import re as re_
 import base64
 import datetime as datetime_

@@ -28,13 +28,21 @@ type=action_type
 trigger=action_trigger_action
 trigger_type=action_trigger_type
 
+[SOURCES_SCHEMA]
+site_type=src_location_site_type
+site=src_location_site
+path=src_location_path
+resource=src_location_resource
+type=src_location_type
+# loctype=src_loctype
+
 [TARGETS_SCHEMA]
 site_type=location_site_type
 site=location_site
 path=location_path
 resource=location_resource
 type=location_type
-loctype=loctype
+# loctype=loctype
 
 [XML_NAMESPACE]
 namespacedef=xmlns:tns="http://eudat.eu/2013/policy" xmlns:irodsns="http://eudat.eu/2013/iRODS-policy"
