@@ -15,10 +15,11 @@ def usage():
     '''Function describing the script usage
     '''
     print 'Configure the Data Policy Manager.'
-    print 'Usage: configure_dpm.py [-h]'
+    print 'Usage: configure_dpm.py [-h][-f]'
     print ''
     print 'Options:'
     print '-h, --help              Print this help'
+    print '-f, --force             Forces the repopulation of the databases'
     print ''
 
 
@@ -197,7 +198,7 @@ def get_goc_info(data):
             host = ""
             for elem in spoint.getchildren():
                 if (elem.tag == "HOSTNAME"):
-                    print "host ", elem.text
+                    # print "host ", elem.text
                     host = elem.text
                 if (elem.tag == "EXTENSIONS"):
                     irods_details = elem.getchildren()
@@ -444,25 +445,21 @@ def fill_action(conn, config, next_indexes, data):
     conn.commit()
 
 
-def populate(dbfile, dbschema, dbdata, dbtype):
-    '''Populate the database
+def populate(dbfile, dbschema, dbdata, dbtype, force_flag):
+    '''Populate the databases
     '''
     if (os.path.isfile(dbfile)):
-        print 'Warning: database file %s exists' % dbfile
-        print 'Will update this database.'
-        cont = raw_input('Ok to continue? [y/n]')
-        if (cont != 'y' and cont != 'Y'):
-            print 'Exiting'
-            sys.exit(0)
+        if (force_flag is True):
+            print 'Repopulating database %s.' % dbfile
         else:
-            print 'Uploading data to the %s database' % dbtype
+            return
     else:
         print 'Uploading data to the %s database' % dbtype
 
     # Get the resource information from the GOCDB
 
     # Open the database
-    print "database ", dbfile
+    # print "database ", dbfile
     conn = sqlite3.connect(dbfile)
 
     # read in the schema config
@@ -690,13 +687,16 @@ if __name__ == '__main__':
     dbase_types = ["resource", "action", "profile"]
     data_tag = []
     dbdata = {}
+    force_flag = False
     local_cfg = ".dpm.cfg"
 
-    opts, args = getopt.getopt(sys.argv[1:], 'h', ['help'])
+    opts, args = getopt.getopt(sys.argv[1:], 'hf', ['help', 'force'])
     for opt, val in opts:
         if (opt == '-h' or opt == '--help'):
             usage()
             sys.exit(0)
+        if (opt == '-f' or opt == '--force'):
+            force_flag = True
 
     cfgfile_tmpl = \
         os.path.abspath(os.path.join(
@@ -746,4 +746,4 @@ if __name__ == '__main__':
         for tag in data_tag:
             dbdata[tag] = config.get("DATABASE_LOADING", tag)
 
-        populate(dbfile, dbschema, dbdata, dbase)
+        populate(dbfile, dbschema, dbdata, dbase, force_flag)
