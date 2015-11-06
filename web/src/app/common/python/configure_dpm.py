@@ -582,15 +582,33 @@ def read_input(local_cfg):
         else:
             break
 
-    print "Admin username [%s]:" % old_cfg['admin_user']
-    admin_user = raw_input()
-    if (len(admin_user) == 0):
-        if (len(old_cfg['admin_user']) == 0):
-            admin_user = "dpmadmin"
+    if (auth_type == "AAI" and old_cfg['auth'] != auth):
+        old_cfg['admin_user'] = ''
+
+    while(1):
+        print "Admin username [%s]:" % old_cfg['admin_user']
+        if (auth_type == "AAI"):
+            print "Note: this username should be the AAI identifier for the" +\
+                " admin user."
+        admin_user = raw_input()
+        if (len(admin_user) == 0):
+            if (auth_type == 'STANDALONE'):
+                if (len(old_cfg['admin_user']) == 0):
+                    admin_user = "dpmadmin"
+                else:
+                    admin_user = old_cfg['admin_user']
+                break
+            elif (auth_type == 'AAI'):
+                if (len(old_cfg['admin_user']) == 0 and len(admin_user) == 0):
+                    print "You must supply the AAI identifier or 'q' to quit"
+                else:
+                    if (len(admin_user) == 0):
+                        admin_user = old_cfg['admin_user']
+                    break
+        elif (admin_user == "q"):
+            sys.exit()
         else:
-            admin_user = old_cfg['admin_user']
-    elif (admin_user == "q"):
-        sys.exit()
+            break
 
     while (1):
         print "Admin email address [%s]:" % old_cfg['admin_email']
