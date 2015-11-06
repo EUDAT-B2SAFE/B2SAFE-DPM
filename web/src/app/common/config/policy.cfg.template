@@ -58,7 +58,7 @@ allowed_states=QUEUED, RUNNING, FAILED, FINISHED
 
 [DATABASE]
 name=data/policy.db
-fetch_string=${CGI_URL}/fetch_policy.py?policy_id
+fetch_string=${CLI_URL}/fetch_policy.py?policy_id
 default_visible=policy_name, policy_author, policy_ctime, policy_community
 skip_keys=policy_object
 last_index=last_index

@@ -8,6 +8,7 @@ import ConfigParser
 import sqlite3
 import subprocess
 import string
+import shutil
 import xml.etree.ElementTree
 
 
@@ -487,55 +488,68 @@ def populate(dbfile, dbschema, dbdata, dbtype, force_flag):
         fill_profile(conn, config, next_indexes, dbdata)
 
 
-def configure_files(cfgfile_tmpl, cfgfile, adminfile, local_cfg):
-    '''Configure the config, admin and javascript files'''
-    cgi_url = ""
-    old_cgi_url = ""
-    admin_user = ""
-    old_admin_user = "dpmadmin"
-    old_admin_name = ""
-    old_admin_email = ""
-    admin_name = ""
-    admin_email = ""
-    auth = "1"
-    old_auth = "1"
-    root_url = ""
-    old_root_url = ""
-
-    lines = []
-    jsfiles = ["dpm_app.js.template", "frontPageApp.js.template",
-               "register_app.js.template", "errorUtils.js.template",
-               "admin_profile_app.js.template"]
-
+def read_local_config(local_cfg):
+    '''Read in the local config file'''
+    cfg = {}
     local_conf = ConfigParser.RawConfigParser()
+    local_conf.read(local_cfg)
+    cfg['cgi_url'] = local_conf.get("DEFAULT", "CGI_URL")
+    cfg['cli_url'] = local_conf.get("DEFAULT", "CLI_URL")
+    cfg['auth'] = local_conf.get("DEFAULT", "AUTH_TYPE")
+    cfg['admin_name'] = local_conf.get("DEFAULT", "ADMIN_NAME")
+    cfg['admin_user'] = local_conf.get("DEFAULT", "ADMIN_USER")
+    cfg['admin_email'] = local_conf.get("DEFAULT", "ADMIN_EMAIL")
+    cfg['root_url'] = local_conf.get("DEFAULT", "ROOT_URL")
+    return cfg
+
+
+def read_input(local_cfg):
+    '''Read the input from the command line'''
+    cgi_url = ''
+    cli_url = ''
+    admin_user = ''
+    admin_name = ''
+    admin_email = ''
+    auth = '1'
+    root_url = ''
+    old_cfg = {'cgi_url': '', 'cli_url': '', 'root_url': '',
+               'auth': '1', 'admin_user': 'dpmadmin', 'admin_name': '',
+               'admin_email': ''}
+
     if (os.path.isfile(local_cfg)):
-        local_conf.read(local_cfg)
-        old_cgi_url = local_conf.get("DEFAULT", "CGI_URL")
-        old_auth = local_conf.get("DEFAULT", "AUTH_TYPE")
-        old_admin_name = local_conf.get("DEFAULT", "ADMIN_NAME")
-        old_admin_user = local_conf.get("DEFAULT", "ADMIN_USER")
-        old_admin_email = local_conf.get("DEFAULT", "ADMIN_EMAIL")
-        old_root_url = local_conf.get("DEFAULT", "ROOT_URL")
+        old_cfg = read_local_config(local_cfg)
 
     print "Configuring the policy config file. Enter 'q' to quit."
 
     while (1):
-        print "Base URI for the CGI scripts: [%s]" % old_cgi_url
+        print "Base URI for the CGI scripts: [%s]" % old_cfg['cgi_url']
         cgi_url = raw_input()
         if (cgi_url == 'q'):
             sys.exit()
         elif (len(cgi_url) == 0):
-            if (len(old_cgi_url) == 0):
+            if (len(old_cfg['cgi_url']) == 0):
                 print "You must supply a path or 'q' to quit."
             else:
-                cgi_url = old_cgi_url
+                cgi_url = old_cfg['cgi_url']
                 break
         else:
             break
 
+    if (len(old_cfg['cli_url']) == 0):
+        old_cfg['cli_url'] = "%s-cli" % cgi_url
+
+    while (1):
+        print "Base URI for the CLI scripts: [%s]" % old_cfg['cli_url']
+        cli_url = raw_input()
+        if (cli_url == 'q'):
+            sys.exit()
+        elif (len(cli_url) == 0):
+            cli_url = old_cfg['cli_url']
+            break
+
     while (1):
         print "Authentication method type: 1=AAI, 2=Standalone [%s]:" %\
-            old_auth
+            old_cfg['auth']
         auth = raw_input()
         if (auth == "1"):
             auth_type = "AAI"
@@ -547,57 +561,57 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile, local_cfg):
             sys.exit()
         else:
             if (len(auth) == 0):
-                if (len(old_auth) == 0 or old_auth == "1"):
+                if (len(old_cfg['auth']) == 0 or old_cfg['auth'] == "1"):
                     auth_type = "AAI"
                     auth = "1"
                     break
-                elif (old_auth == "2"):
+                elif (old_cfg['auth'] == "2"):
                     auth_type = "STANDALONE"
                     auth = "2"
                     break
 
     while (1):
-        print "Admin name (firstname lastname) [%s]:" % old_admin_name
+        print "Admin name (firstname lastname) [%s]:" % old_cfg['admin_name']
         admin_name = raw_input()
         if (len(admin_name) == 0):
-            if (len(old_admin_name) == 0):
+            if (len(old_cfg['admin_name']) == 0):
                 print "You must supply a name or 'q' to quit."
             else:
-                admin_name = old_admin_name
+                admin_name = old_cfg['admin_name']
                 break
         else:
             break
 
-    print "Admin username [%s]:" % old_admin_user
+    print "Admin username [%s]:" % old_cfg['admin_user']
     admin_user = raw_input()
     if (len(admin_user) == 0):
-        if (len(old_admin_user) == 0):
+        if (len(old_cfg['admin_user']) == 0):
             admin_user = "dpmadmin"
         else:
-            admin_user = old_admin_user
+            admin_user = old_cfg['admin_user']
     elif (admin_user == "q"):
         sys.exit()
 
     while (1):
-        print "Admin email address [%s]:" % old_admin_email
+        print "Admin email address [%s]:" % old_cfg['admin_email']
         admin_email = raw_input()
         if (len(admin_email) == 0):
-            if (len(old_admin_email) == 0):
+            if (len(old_cfg['admin_email']) == 0):
                 print "You must supply an email address"
             else:
-                admin_email = old_admin_email
+                admin_email = old_cfg['admin_email']
                 break
         else:
             break
 
     while (1):
-        print "Root url for DPM web pages [%s]:" % old_root_url
+        print "Root url for DPM web pages [%s]:" % old_cfg['root_url']
         root_url = raw_input()
         if (len(root_url) == 0):
-            if (len(old_root_url) == 0):
+            if (len(old_cfg['root_url']) == 0):
                 print "You must supply a path or 'q' to quit."
             else:
-                root_url = old_root_url
+                root_url = old_cfg['root_url']
                 break
         else:
             break
@@ -606,12 +620,46 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile, local_cfg):
     with file(local_cfg, "w") as fout:
         fout.write("[DEFAULT]\n")
         fout.write("CGI_URL=%s\n" % cgi_url)
+        fout.write("CLI_URL=%s\n" % cli_url)
         fout.write("ADMIN_USER=%s\n" % admin_user)
         fout.write("ADMIN_NAME=%s\n" % admin_name)
         fout.write("ADMIN_EMAIL=%s\n" % admin_email)
         fout.write("AUTH_TYPE=%s\n" % auth)
         fout.write("ROOT_URL=%s\n" % root_url)
         fout.close()
+    out_args = {'cgi_url': cgi_url, 'cli_url': cli_url, 'root_url': root_url,
+                'admin_user': admin_user, 'admin_name': admin_name,
+                'admin_email': admin_email, 'auth_type': auth_type}
+    return out_args
+
+
+def read_config(local_cfg):
+    '''Read in the input configuration from the input file'''
+    cfgs = {}
+    cfgs = read_local_config(local_cfg)
+    if (cfgs['auth'] == '1'):
+        cfgs['auth_type'] = "STANDALONE"
+    elif (cfgs['auth'] == '2'):
+        cfgs['auth_type'] = 'AAI'
+    return cfgs
+
+
+def configure_files(cfgfile_tmpl, cfgfile, adminfile, local_cfg, deploy_dir,
+                    use_config):
+    '''Configure the config, admin and javascript files'''
+
+    lines = []
+    jsfiles = ["dpm_app.js.template", "frontPageApp.js.template",
+               "register_app.js.template", "errorUtils.js.template",
+               "admin_profile_app.js.template"]
+
+    in_args = {}
+
+    # Read in the command line input or read from the config file
+    if (not use_config):
+        in_args = read_input(local_cfg)
+    else:
+        in_args = read_config(local_cfg)
 
     # Update the config file
     with file(cfgfile_tmpl, "r") as fin:
@@ -619,21 +667,26 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile, local_cfg):
         fin.close()
     with file(cfgfile, "w") as fout:
         for line in lines:
+            if ("CLI_URL" in line):
+                can = string.Template(line)
+                line = can.substitute(CLI_URL=in_args['cli_url'])
             if ("CGI_URL" in line):
                 can = string.Template(line)
-                line = can.substitute(CGI_URL=cgi_url)
+                line = can.substitute(CGI_URL=in_args['cgi_url'])
             elif ("HTMLUSER" in line):
                 can = string.Template(line)
-                line = can.substitute(HTMLUSER=admin_user)
+                line = can.substitute(HTMLUSER=in_args['admin_user'])
             elif ("AUTHTYPE" in line):
                 can = string.Template(line)
-                line = can.substitute(AUTHTYPE=auth_type)
+                line = can.substitute(AUTHTYPE=in_args['auth_type'])
             fout.write("%s" % line)
         fout.close()
 
         # Update the admin file
         with file(adminfile, "w") as fout:
-            fout.write('"%s", %s, %s' % (admin_name, admin_user, admin_email))
+            fout.write('"%s", %s, %s' % (in_args['admin_name'],
+                                         in_args['admin_user'],
+                                         in_args['admin_email']))
             fout.close()
 
         # Update the javascript files
@@ -645,17 +698,18 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile, local_cfg):
                 lines = fin.readlines()
                 fin.close()
             jsout = os.path.abspath(os.path.join(
-                os.path.dirname(__file__), "../html/deploy/js/%s" % jfile))
+                os.path.dirname(__file__), "%s/html/js/%s" %
+                (deploy_dir, jfile)))
             if (not os.path.isdir(os.path.dirname(jsout))):
                 os.mkdir(os.path.dirname(jsout))
             with file(jsout, "w") as fout:
                 for line in lines:
                     if ("CGI_URL" in line):
                         can = string.Template(line)
-                        line = can.safe_substitute(CGI_URL=cgi_url)
+                        line = can.safe_substitute(CGI_URL=in_args['cgi_url'])
                     fout.write(line)
                 fout.close()
-    return (cgi_url, root_url)
+    return (in_args['cgi_url'], in_args['cli_url'], in_args['root_url'])
 
 
 def configure_dbase(config, root_url):
@@ -683,35 +737,111 @@ def configure_dbase(config, root_url):
         fout.close()
     return root_url
 
+
+def copy_files(target_dir, source_dirs):
+    '''Copy all the files from the source directory to the target directory'''
+
+    skipfiles = ['policy.cfg.template']
+    for sdir in source_dirs:
+        for adir, dirs, files in os.walk(sdir):
+            tdir = adir.replace('..', target_dir)
+            if (not os.path.isdir(tdir)):
+                try:
+                    os.makedirs(tdir)
+                except Exception as err:
+                    print "problem creating directory %s" % tdir
+                    print err
+                    sys.exit(-5)
+            for afile in files:
+                if (afile in skipfiles):
+                    continue
+                sfile = os.path.abspath(os.path.join(adir, afile))
+                tfile = os.path.abspath(os.path.join(tdir, afile))
+                try:
+                    shutil.copyfile(sfile, tfile)
+                    shutil.copymode(sfile, tfile)
+                except Exception as err:
+                    print "problem copying file %s to %s" % (sfile, tfile)
+                    print err
+                    sys.exit(-10)
+
+
+def print_done(deploy_dir, indirs, data_dir, root_url, cgi_url, cli_url):
+    '''Print out some help upon completion'''
+
+    data_url = os.path.join(cgi_url, data_dir)
+    html_dir = indirs[2].replace('..', deploy_dir)
+    cgi_dir = indirs[0].replace('..', deploy_dir)
+    cli_dir = indirs[1].replace('..', deploy_dir)
+
+    print ""
+    print "Configuration Completed"
+    print "Please copy:"
+    print "1. the directory containing web pages: "
+    print "'%s'" % html_dir
+    print "to the path corresponding to the URL:"
+    print "'%s'" % root_url
+    print "2. the directory containing cgi scripts:"
+    print "'%s'" % cgi_dir
+    print "to the directory corresponding to the URL:"
+    print "'%s'" % cgi_url
+    print "3. the directory containing cgi scripts for command-line access:"
+    print "'%s'" % cli_dir
+    print "to the directory coresponding to the URL:"
+    print "'%s'" % cli_url
+    print ""
+    print "Notes:"
+    print "- Please make sure the directory corresponding to the url:"
+    print "'%s'" % data_url
+    print "is writeable by your webserver."
+    print "- You may need to remove the '.htaccess' file from your web pages"
+    print "directory if you are running in STANDALONE mode."
+    print ""
+
+
 if __name__ == '__main__':
     dbase_types = ["resource", "action", "profile"]
     data_tag = []
     dbdata = {}
     force_flag = False
+    use_config = False
     local_cfg = ".dpm.cfg"
+    deploy_dir = '../../deploy'
+    data_dir = 'config/data'
+    build_dirs = ['../cgi', '../cgi_cli', '../html']
 
-    opts, args = getopt.getopt(sys.argv[1:], 'hf', ['help', 'force'])
+    opts, args = getopt.getopt(sys.argv[1:], 'hfc:', ['help', 'force',
+                               'config='])
     for opt, val in opts:
         if (opt == '-h' or opt == '--help'):
             usage()
             sys.exit(0)
         if (opt == '-f' or opt == '--force'):
             force_flag = True
+        if (opt == '-c' or opt == '--config'):
+            use_config = True
+            local_cfg = val.strip()
+
+    # Copy all the build scripts to the deploy area
+    copy_files(deploy_dir, build_dirs)
 
     cfgfile_tmpl = \
         os.path.abspath(os.path.join(
-                        os.path.dirname(__file__),
-                        '../cgi/deploy/config/policy.cfg.template'))
+                        os.path.dirname(__file__), 'policy.cfg.template'))
 
     cfgfile = \
         os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                     '../cgi/deploy/config/policy.cfg'))
+                                     '%s/cgi/config/policy.cfg' %
+                                     deploy_dir))
     adminfile = \
         os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                     '../cgi/deploy/config/dpm_admin.txt'))
+                                     '%s/cgi/config/dpm_admin.txt' %
+                                     deploy_dir))
 
-    cgi_url, root_url = configure_files(cfgfile_tmpl, cfgfile, adminfile,
-                                        local_cfg)
+    # Configure the data files
+    cgi_url, cli_url, root_url = configure_files(cfgfile_tmpl, cfgfile,
+                                                 adminfile, local_cfg,
+                                                 deploy_dir, use_config)
 
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
@@ -738,7 +868,8 @@ if __name__ == '__main__':
         dbfile = \
             os.path.abspath(os.path.join(os.path.join(
                 os.path.dirname(__file__),
-                "../cgi/deploy/%s" % config.get("DATABASE", db_name_tag))))
+                "%s/cgi/%s" % (deploy_dir,
+                               config.get("DATABASE", db_name_tag)))))
         if (not os.path.isdir(os.path.dirname(dbfile))):
             os.makedirs(os.path.dirname(dbfile))
 
@@ -747,3 +878,7 @@ if __name__ == '__main__':
             dbdata[tag] = config.get("DATABASE_LOADING", tag)
 
         populate(dbfile, dbschema, dbdata, dbase, force_flag)
+
+        # Print out what the user needs to do upon completion
+        print_done(deploy_dir, build_dirs, data_dir, root_url, cgi_url,
+                   cli_url)
