@@ -1,0 +1,6 @@
+
+Dear Requester,
+This is to inform you that your request for %s access to the Data Policy
+Manager interface for the %s community has been granted.
+Best Wishes
+The DPM Administrator 

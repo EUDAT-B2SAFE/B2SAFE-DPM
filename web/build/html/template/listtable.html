@@ -1,0 +1,63 @@
+<div data-ng-controller="listCtrl">
+    <div id="listbuttons">
+        <input type="button" data-ng-click="showCheckbox()"
+            data-ng-show="!displayKeys" value="Show Keys">
+        <input type="button" data-ng-click="showCheckbox()"
+            data-ng-show="displayKeys" value="Hide Keys">
+        <div class="buttondiv1"></div>
+        Search:<input data-ng-model="searchparam" data-ng-change="filterPolicy()">
+        <div class="buttondiv0"></div>
+        <input type="button" data-ng-click="clearSearch()" value="Clear">
+        <div class="buttondiv1"></div>
+        <input type="button" data-ng-click="showActive()" value="Show Active">
+        <div class="buttondiv1"></div>
+        <input type="button" data-ng-click="showRemoved()" value="Show Removed">
+        <div class="buttondiv1"></div>
+        <input type="button" data-ng-click="reloadPolicyList()" value="Reload List">
+        <input type=button id="listlogbutton" data-ng-click="loadLogList()" value="List Logs">
+    </div>
+    <div id="checkboxes" data-ng-show="displayKeys">
+        <div class="checkbox" data-ng-repeat="policy_column in policy_columns">
+            <input type="checkbox" data-ng-model="policy_key.name"
+                data-ng-change="updateKey(policy_column.idx)"
+                data-ng-checked="policy_column.visible">
+                {{policy_column.name}}
+        </div>
+    </div>
+    <h3 class="field">Policy List</h3>
+    <table data-ng-table="tabs" show-filter="true" class="table ng-table-rowselected">
+        <thead>
+            <tr>
+                <th data-ng-repeat="policy_col in policy_columns"
+                    data-ng-show="policy_col.visible">
+                    {{policy_col.name}}
+                </th>
+                <th>
+                    Action
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr data-ng-repeat="pol_data in $data"
+                data-ng-show="pol_data.visible && !pol_data.removed"
+                data-ng-click="resetFlag(); pol_data.$selected = !pol_data.$selected; display_pol(pol_data)"
+                data-ng-class="{'rowhighlight': pol_data.$selected, '': !pol_data.$selected}">
+                <td data-ng-repeat="pol_val in pol_data.pol_vals"
+                    data-ng-show="pol_val.visible">
+                    {{pol_val.name}}
+                </td>
+                <td>
+                    <select data-ng-model="polselected"
+                    data-ng-change="actionPolicy()"
+                    data-ng-options="laction.name for laction in pol_data.listaction">
+                    <option value=""> --- Select --- </option>
+                    </select>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <textarea id="listpolicy">
+        {{policy_obj}}
+    </textarea>
+</div>
+

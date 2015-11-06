@@ -1,0 +1,71 @@
+<div data-ng-controller="removeCtrl">
+    <div id="tabremove">
+        <h3 class="field">Deactivate Policy</h3>
+        <table id="tabremove">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Title</td>
+                    <td>{{policy.name}}</td>
+                </tr>
+                <tr>
+                    <td>Author</td>
+                    <td>{{policy.author}}</td>
+                </tr>
+                <tr>
+                    <td>Version</td>
+                    <td>{{policy.version}}</td>
+                </tr>
+                <tr>
+                    <td>Community</td>
+                    <td>{{policy.community}}</td>
+                </tr>
+                <tr data-ng-repeat="col in policy.collections"
+                  data-ng-show="pidDefined()">
+                    <td>Source Collection</td>
+                    <td>{{col.type}}, {{col.name}}</td>
+                </tr>
+                <tr data-ng-repeat="src in policy.sources"
+                  data-ng-show="collDefined()">
+                    <td>Source Collection</td>
+                    <td>{{src.organisation.name}}, {{src.system.name}},
+                        {{src.site.name}}, {{src.resource.name}},
+                        {{src.path}}</td>
+                </tr>
+                <tr>
+                    <td>Action</td>
+                    <td>{{policy.action.name}}</td>
+                </tr>
+                <tr>
+                    <td>Type</td>
+                    <td>{{policy.type.name}}</td>
+                </tr>
+                <tr>
+                    <td>Trigger</td>
+                    <td>{{policy.trigger.name}}</td>
+                </tr>
+                <tr>
+                    <td>Target Collection</td>
+                    <td>{{policy.target.organisation.name}},
+                        {{policy.target.system.name}},
+                        {{policy.target.site.name}},
+                        {{policy.target.resource.name}},
+                        {{policy.target.path}}</td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="removebtn">
+            <button id="removeback" data-ng-click="backToList()">
+                Back to List Policies
+            </button>
+            <button id="remove" data-ng-click="removePolicy()">
+                Deactivate Policy?
+            </button>
+        </div>
+    </div>
+</div>

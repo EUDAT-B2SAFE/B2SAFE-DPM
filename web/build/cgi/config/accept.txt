@@ -1,0 +1,9 @@
+From: The Data Policy Administrator <noreply@dpm.eudat>
+To: <%s>
+Subject: Approval for %s for %s-level access to the Data Policy Manager
+
+Dear %s
+This is to inform you that your request for %s access to the Data Policy
+Manager interface has been granted for the %s community.
+Best Wishes
+The Data Policy Administrator 

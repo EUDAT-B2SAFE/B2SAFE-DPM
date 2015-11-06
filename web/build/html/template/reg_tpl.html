@@ -1,0 +1,101 @@
+<div id="regform" class="regform">
+    <form name="register" class="reg-form" 
+        data-ng-submit="submitForm()" 
+        data-ng-controller="regFormCtrl" novalidate>
+        <div id="hreg"></div>
+        <label>First Name:</label> 
+        <input type="text" data-ng-model="cm.firstname" 
+            name="cm_firstname" required>
+        <div data-ng-show="register.cm_firstname.$invalid && register_submitted">
+            <span id="error">
+                First name must be supplied
+            </span>
+        </div>
+        <div id="hreg"></div>
+
+        <label>Last Name:</label> 
+        <input type="text" data-ng-model="cm.lastname" name="cm_lastname" 
+            required>
+        <div data-ng-show="register.cm_lastname.$invalid && register_submitted">
+            <span id="error">
+                Last name must be supplied
+            </span>
+        </div>
+        <div id="hreg"></div>
+        
+        <label>Email:</label> 
+        <input type="email" data-ng-model="cm.email" name="cm_email"
+            required>
+        <div data-ng-show="register.cm_email.$invalid && register_submitted">
+            <span id="error">
+                A valid email address must be supplied
+            </span>
+        </div>
+        <div id="hreg"></div>
+
+        <label>Username:</label> 
+        <input type="text" data-ng-model="cm.username" name="cm_username" 
+            value="cm.username" 
+            required>
+        <div id="hreg"></div>
+
+        <label>Role:</label> 
+        <select name="cm_role" 
+            data-ng-options="comm_role for comm_role in comm_roles"
+            data-ng-model="cm.role" data-validate-select required>
+            <option value="">
+                --- Select a Role ---
+            </option>
+        </select>
+        <div data-ng-show="register_submitted && register.cm_role.$invalid">
+            <span id="error">
+                A role must be selected
+            </span>
+        </div>
+        <div id="hreg"></div>
+
+        <div data-ng-repeat="community in cm.communities | startFrom:currentPage*3 | limitTo:3">
+            <label>Community:</label> <select name="cm_community" 
+                data-ng-options="comm_type for comm_type in comm_types[cm.role]"
+                data-ng-change="changeCommunity($index + currentPage *3)"
+                data-ng-model="cm.communities[$index + currentPage *3].name"
+                data-validate-select required>
+                <option value="">
+                    --- Select a Community ---
+                </option>
+            </select>
+            <div data-ng-show="invalidFlags.communities[$index + 
+                currentPage*3].community && register_submitted">
+                <span id="error">
+                    Community must be supplied
+                </span>
+            </div>
+            <button data-ng-if="($index + currentPage) > 0"
+                data-ng-click="removeCommunity(cm.communities, $index+currentPage)">
+                    Remove
+            </button>
+            <br/>
+        </div>
+        <div id="hreg"></div>
+        <div id="clabel"></div>
+        <button data-ng-disabled="currentPage == 0" 
+            data-ng-click="currentPage=currentPage-1">
+            Previous
+        </button>
+        {{currentPage+1}}/{{numberOfPages()}}
+        <button data-ng-click="currentPage=currentPage+1"
+            data-ng-disabled="currentPage >= numberOfPages() -1">
+            Next
+        </button>
+        <button data-ng-click="addMore()">Add More</button>
+        <div id="hreg"></div>
+        <div id="hreg"></div>
+        <div id="clabel"></div>
+        <input type="reset" id="reset" value="Reset" 
+            data-ng-click="resetForm()">
+        <input type="submit" id="submit" value="Submit" 
+            data-ng-click="submitReq()">
+        <div id="hreg"></div>
+    </form>
+</div>
+

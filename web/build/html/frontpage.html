@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css"
+    href="./css/frontpage.css" />
+    <link rel="stylesheet" type="text/css"
+    href="./css/dpm.css" />
+ 
+    <title>Data Policy Manager</title>
+</head>
+<body data-ng-app="frontPageApp">
+    <div id="header-wrapper">
+        <div id="header">
+            <img src="img/logo.jpg" />
+            <h1 class="title">Data Policy Manager</h1>
+        </div>
+        <hr style="margin: 0px 0px;">
+    </div>
+    <h2 class="subtitle"></h2>
+    <div id="page">
+        <div id="frontpage" data-ng-controller="frontPageCtrl">
+            <div id="frontpagetext">
+                <p>
+                    You are registered as an administrator. You can choose 
+                    to access either the Data Policy Manager or the 
+                    Administrator Interface.
+                </p>
+            </div>
+            <div id="frontbuttons">
+                <button id="dpmbutton" data-ng-click="sendToDPM()">
+                    Data Policy Manager
+                </button>
+                <button id="adminbutton" data-ng-click="sendToAdmin()">
+                    Admin Interface
+                </button>
+                <button id="fronthelp" onclick="displayHelp('fronthelpbox')">
+                    Help
+                </button>
+            </div>
+        </div>
+        <div id="fronthelpbox">
+            <div id="fronthelptext">
+                <p>
+                    The Data Policy Manager provides access to the 
+                    interface to pages to create new and manage existing 
+                    policies. If you are a Commuity Administrator you will 
+                    only see the policies for your community.
+                </p>
+                <p>
+                    The Administrator Interface provides access to the 
+                    pages for user administration. In these pages you will 
+                    be able to manage DPM registered user accounts.
+                </p>
+                <div id="closefronthelp">
+                    <button id="closefrontbutton" onclick="closeHelp('fronthelpbox')">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+        <script src="./script/angular/angular.min.js" 
+        type="text/javascript"></script>
+        <script src="./js/frontPageApp.js" type="text/javascript"></script>
+        <script src="./js/errorUtils.js" type="text/javascript"></script>
+</body>
+</html>

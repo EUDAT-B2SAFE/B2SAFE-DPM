@@ -1,0 +1,5 @@
+Dear Requester,
+This is to inform you that your %s access to the data policy manager
+for the %s community has been closed.
+Best Wishes
+The DPM Administrator

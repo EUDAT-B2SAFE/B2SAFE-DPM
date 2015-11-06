@@ -1,0 +1,5 @@
+Dear Requestor,
+This is to inform you that your request for %s access to the Data Policy
+Manager interface for the %s community has been declined.
+Best Wishes
+The DPM Administrator 

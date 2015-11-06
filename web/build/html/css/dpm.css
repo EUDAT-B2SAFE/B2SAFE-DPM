@@ -1,0 +1,590 @@
+/*
+.ng-table {
+    border: 1px solid #000;
+}
+table.ng-table thead th:not(:first-child) {
+    border-left: 1px solid #000;
+}
+table.ng-table thead th:not(:last-child) {
+    border-right: 1px solid #000;
+}
+table.ng-table tbody td:not(:first-child) {
+    border-left: 1px solid #000;
+}
+table.ng-table tbody td:not(:last-child) {
+    border-right: 1px solid #000;
+}
+*/
+div#mesg {
+    width: 100px;
+}
+textarea#e_subject {
+    width: auto;
+}
+textarea#e_body {
+    width: auto;
+}
+
+div#buttons {
+    width: 30%;
+    height: 5%;
+    margin-top: 2%;
+    margin-left: 70%;
+    margin-bottom: 1%;
+}
+
+*{	
+	margin:0;
+	padding:0;
+	}
+body{
+	width:100%;
+	height:auto;
+	overflow:scroll;
+	background-color:#f7f7f7;
+	background-image:url(../img/bk-num.png);
+	background-repeat:no-repeat;
+	background-position: right 150px;
+	background-attachment:scroll;
+	}
+div#page {
+	width: 1024px; 
+	min-height:768px;
+	margin:0 auto !important;
+	}
+div#header-wrapper{
+	background-color:white;
+	overflow:hidden;
+	}
+div#header{
+	width:1024px;
+	margin:0 auto !important;
+	padding-top:6px;
+	padding-bottom:12px;
+	background-color:#FFF;
+	}
+hr{
+	height:3px;
+	border:0px;
+	background-color:#e5601e;}
+div#header-box{
+	height:46px;
+	background-color: #d4d3d4;
+	-moz-box-shadow: 10px 10px 5px #666;
+	-webkit-box-shadow: 10px 10px 5px #666;
+	box-shadow: 10px 10px 5px #666;
+	}
+h1, h2, h3, p {font-family:Arial, 'Helvetica', sans-serif;}
+h1, h2, h3 {line-height: 22px;}
+h1.title{
+	font-weight:bold;
+	font-size: 27pt;
+	color:#be0a09;
+	float:right;
+	}
+h2 {
+	font-size: 30pt;
+	color:#6b6a6a;
+	font-weight:lighter;
+	}
+h2.subtitle{
+	padding-top:25px;
+	}
+h3.field {
+	color:white;
+	font-weight:bold;
+	font-size:14pt;
+	display:block;
+	background-color:#be0a09;
+	width:310px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+	margin-top:35px;
+	padding-left:10px;
+	}
+/*editing form*/
+/*
+input.text, select{
+	width:250px;
+	height:22px;
+	}
+*/
+p{
+	padding-top:15px;
+	font-size:12pt;
+	color:#6b6a6a;
+    margin: 0 0 0;
+	}
+input.add-more-button{
+	font-size:8pt;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+	color:#333;
+	padding:2px;
+	}
+select.option, select.select-title{
+	padding-top:2px;
+	color:#333;
+	}
+
+.dpm-form {
+    background-color: #F7F7F7;
+    border: 1px solid #E5601E;
+}
+
+div#pendingbox {
+    width: 40%;
+    border: 1px solid #E5601E;
+    background: #F7F7F7;
+    margin-top: 10%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div#pendingtxt {
+    width: 80%;
+    margin-top: 2%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 2%;
+}
+
+div#closedbox {
+    width: 40%;
+    border: 1px solid #E5601E;
+    background: #F7F7F7;
+    margin-top: 10%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div#closedtxt {
+    width: 80%;
+    margin-top: 2%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 2%;
+}
+
+button#cancel {
+    margin-left: 30%;
+}
+
+div#policydetails {
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+  /*  border: 1px dotted #3399FF; */
+}
+span#error {
+    background-color: yellow;
+}
+/*
+div#sources {
+    width: 50%;
+    float: left;
+    margin: auto;
+    border: 1px dotted #3399FF;
+}
+div#targets {
+    width: 50%;
+    height: 230px;
+    float: right;
+    margin: auto;
+    border: 1px dotted #3399FF;
+}
+
+div#button_space {
+    width: 5px;
+    height: 10px;
+    margin: auto;
+    float: left;
+}
+div#submit_space {
+    width: 50px;
+    height: 10px;
+    margin: auto;
+    float: left;
+}
+*/
+.dpm-form button#prevpage {
+    margin-right: 5%;
+    float: left;
+}
+
+.dpm-form button#nextpage {
+    margin-right: 3%;
+}
+
+.dpm-form button#submit {
+    margin-right: 5%;
+    float: left;
+}
+
+.personalinfo label {
+    float: left;
+    width: 120px;
+    margin-left: 2px;
+    margin-right: 3px;
+}
+.personalinfo input {
+    margin-right: 3px;
+}
+
+.datasets {
+    display: inline-block;
+}
+
+.datasets label {
+    float: left;
+    width: 120px;
+    margin-right: 3px;
+}
+.datasets select {
+    margin-right: 3px;
+}
+.datasets div#remove {
+    margin-top: 5%;
+}
+
+div#collection {
+    float left;
+}
+
+div#pers {
+    width: 50%;
+    margin-top: 5%;
+    margin-left: auto;
+    margin-right: auto;
+/*    background-color: #F7F7F7; 
+    border: 1px solid #E5601E; */
+}
+
+div#summary {
+    margin-top: 2%;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: whitesmoke;
+}
+table#summary {
+    width: 100%;
+    border-collapse: collapse;
+    line-height: 1.5;
+    margin-top: 2%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+th {
+    text-align: center;
+	background:white;
+	border-bottom:3px solid #d4d3d4;
+	color:#be0a09;
+}
+
+td {
+	border-bottom:solid #be0a09 1px;
+	color:#6b6a6a;
+	text-align:center;
+	border-radius: 3px; -moz-border-radius:3px; -webkit-border-radius:3px;
+	width:10px;
+}
+
+div#regform {
+    width: 50%;
+    background-color: whitesmoke;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px dotted #3399FF;
+}
+.regform label {
+    width: 120px;
+    float: left;
+    margin-left: 2px;
+    margin-right: 3px;
+}
+
+div#hreg {
+    height: 7px;
+    width: auto;
+}
+
+div#clabel {
+    width: 120px;
+    height: 20px;
+    float: left;
+    margin-left: 2px;
+    margin-right: 3px;
+    display: block;
+}
+
+.regform input#reset {
+    margin-right: 40px;
+}
+
+input.text, select{
+    width: 250px;
+    height: 22px;
+    padding: 0px 6px;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+    margin-bottom: 0%;
+}
+
+select#period {
+    width: 8%;
+}
+
+button#previouspage {
+    margin-right: 1%;
+}
+button#nextpage {
+    margin-left: 1%;
+}
+button#addmore {
+    margin-left: 1%;
+}
+
+div#errreg {
+    width: 40%;
+    border: 1px solid #E5601E;
+    background: #F7F7F7;
+    margin-top: 10%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div#errtext {
+    width: 80%;
+    margin-top: 5%;
+    margin-left: auto;
+    margin-right: auto;
+}
+div#errbutton {
+    margin-top: 5%;
+    margin-bottom: 2%;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+button#regbutton {
+}
+button#reghelp {
+    float: right;
+}
+div#helptext {
+    display: none;
+    background: #F7F7F7;
+    border: 1px solid #E5601E;
+    width: 40%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 3%;
+}
+div#helptext2 {
+    width: 90%;
+    margin-top: 3%;
+    margin-bottom: 2%;
+    margin-left: auto;
+    margin-right: auto;
+}
+div#helpclose {
+}
+button#closehelp {
+    margin-left: 87%;
+    margin-right: 3%;
+    margin-bottom: 2%;
+}
+
+.queued {
+    background-color: lightblue;
+}
+.running {
+    background-color: yellow;
+}
+.finished {
+    background-color: LightGreen;
+}
+.failed {
+    background-color: red;
+}
+
+.ng-table-rowselected tr {
+    cursor: pointer;
+}
+.rowhighlight {
+    background-color: yellow;
+}
+textarea#listpolicy {
+    width: 100%;
+    height: 180px;
+    white-space: pre;
+    word-wrap: normal;
+    overflow: scroll;
+}
+div#checkboxes {
+    width: 100%;
+    height: 5%;
+}
+.checkbox {
+    width: 25%;
+    display: inline-block;
+}
+
+.buttondiv1 {
+    width: 8px;
+    height: auto;
+    display: inline-block;
+}
+.buttondiv0 {
+    width: 2px;
+    height: auto;
+    display: inline-block;
+}
+div#listbuttons {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    height: 7%;
+}
+
+input#listlogbutton {
+    float: right;
+}
+
+div#buttonspace1 {
+    width: auto;
+    height: 8px;
+}
+.ng-table {
+    border: none;
+}
+
+table.ng-table thead th:not(:first-child) {
+    text-align: center;
+    border-right: none;
+    border-left: none;
+}
+table.ng-table thead th:not(:last-child) {
+    text-align: center;
+    border-right: none;
+    border-left: none;
+}
+
+table.ng-table tbody td:not(:first-child) {
+    text-align: center;
+    border-right: none;
+    border-left: none;
+	border-bottom:solid #be0a09 1px;
+	color:#6b6a6a;
+	border-radius: 3px; -moz-border-radius:3px; -webkit-border-radius:3px;
+	width:10px;
+}
+
+table.ng-table tbody td:not(:last-child) {
+    text-align: center;
+    border-right: none;
+    border-left: none;
+	border-bottom:solid #be0a09 1px;
+	color:#6b6a6a;
+	border-radius: 3px; -moz-border-radius:3px; -webkit-border-radius:3px;
+	width:10px;
+}
+
+table {
+    background-color: whitesmoke;
+    border-collapse: collapse;
+    line-height: 1.5;
+}
+
+th {
+	background:white;
+	border-bottom:3px solid #d4d3d4;
+	color:#be0a09;
+}
+/*
+.modify label {
+    width: 120px;
+    float: left;
+}
+*/
+div#modify {
+    background-color: whitesmoke;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.modbutton button#backbtn {
+    float: left;
+    margin-right: 20%;
+}
+div#modbutton {
+/*    float: left; */
+    margin-top: 3%;
+    display: block;
+}
+div#reactivatebtn {
+    width: 100%;
+    margin-top: 3%;
+    background-color: whitesmoke;
+    margin-left: auto;
+    margin-right: auto;
+}
+div#removebtn {
+    width: 100%;
+    margin-top: 3%;
+    background-color: whitesmoke;
+    margin-left: auto;
+    margin-right: auto;
+}
+button#removeback {
+    margin-left: 30%;
+    margin-right: 10%;
+}
+
+button#reactivateback {
+  margin-left: 30%;
+  margin-right: 10%;
+}
+
+button#remove {
+}
+
+div#tabremove {
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: whitesmoke;
+}
+
+div#tabreactivate {
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: whitesmoke;
+}
+
+table#tabreactivate {
+    margin-top: 3%;
+    width: 100%;
+    background-color: whitesmoke;
+%    margin-left: auto;
+%    margin-right: auto;
+}
+
+table#tabremove {
+    margin-top: 3%;
+    width: 100%;
+    background-color: whitesmoke;
+%    margin-left: auto;
+%    margin-right: auto;
+}
+
+div#tperiod {
+    margin-top: 3%;
+}

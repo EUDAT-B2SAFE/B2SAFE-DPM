@@ -1,0 +1,318 @@
+<data-ng-form name="datasetactions">
+    <div id="policydetails">
+        <fieldset>
+            <h3 class="field">Datasets</h3>
+            <div data-ng-repeat="collection in policy.collections | startFrom:currentPage*3 | limitTo:3">
+                <div class="datasets">
+                    <p>Source</p>
+                    <select name="dsid"
+                        data-ng-options="id.name for id in identifier_types"
+                        data-ng-change="changeDataset($index + currentPage*3)"
+                        data-ng-model="policy.collections[$index + currentPage*3].type"
+                        data-validate-select required>
+                        <option value="">
+                            --- Select ---
+                        </option>
+                    </select>
+                    <div data-ng-show="submitted">
+                        <span id="error"
+                            data-ng-show="pristineFlags.dataset[$index + currentPage*3].pid || invalidFlags.dataset[$index + currentPage*3].pid">
+                            The type is required
+                        </span>
+                    </div>
+                    <div id="srcColl" data-ng-show="showSrcColl(policy.collections[$index + currentPage*3].type.name)">
+                      <p>Source Organisation</p>
+                      <select name="organisation"
+                        data-ng-options="org.name for org in organisations"
+                        data-ng-model="policy.sources[$index + currentPage*3].organisation"
+                        data-ng-disabled="src_organisation_disabled"
+                        data-ng-change="changeSourceSystem($index + currentPage*3)"
+                        data-validate-select required>
+                        <option name=policy.sources[$index + currentPage*3].organisation.name" value="">
+                          {{policy.sources[$index + currentPage*3].organisation.name}}
+                        </option>
+                      </select>
+                      <div
+                        data-ng-show="submitted">
+                        <span id="error"
+                          data-ng-show="invalidFlags.source[$index + currentPage*3].organisation">
+                          The organisation is required
+                        </span>
+                      </div>
+
+                      <p>Source System</p>
+                      <select name="system" data-ng-options="sy.name for sy in src_systems"
+                        data-ng-model="policy.sources[$index + currentPage*3].system"
+                        data-ng-disabled="src_system_disabled"
+                        data-ng-change="changeSrcSite($index + currentPage*3)"
+                        data-validate-select required>
+                        <option name="policy.sources[$index + currentPage*3].system.name" value="">
+                          {{policy.sources[$index + currentPage*3].system.name}}
+                        </option>
+                      </select>
+
+                      <div data-ng-show="submitted">
+                        <span id="error"
+                          data-ng-show="invalidFlags.source[$index + currentPage*3].system">
+                          System is required
+                        </span>
+                      </div>
+
+                      <p>Source Site</p>
+                      <select name="site" data-ng-options="s.name for s in src_sites"
+                        data-ng-model="policy.sources[$index + currentPage*3].site"
+                        data-ng-change="changeSrcResource($index + currentPage*3)"
+                        data-ng-disabled="src_site_disabled"
+                        data-validate-select required>
+                          <option name="policy.sources[$index +currentPage*3].site.name" value="">
+                            {{policy.sources[$index + currentPage*3].site.name}}
+                          </option>
+                      </select>
+
+                      <div data-ng-show="submitted">
+                        <span id="error"
+                         data-ng-show="invalidFlags.source[$index + currentPage*3].site">
+                         Site is required
+                       </span>
+                     </div>
+
+                     <p>Source Resource</p>
+                     <select name="resource"
+                      data-ng-options="r.name for r in src_resources"
+                      data-ng-model="policy.sources[$index + currentPage*3].resource"
+                      data-ng-change="updateSrcResource($index + currentPage*3)"
+                      ng-disabled="src_resource_disabled"
+                      data-validate-select required>
+
+                      <option name="policy.sources[$index + currentPage*3].resource.name" value="">
+                        {{policy.sources[$index + currentPage*3].resource.name}}
+                      </option>
+                     </select>
+
+                     <div
+                      data-ng-show="submitted">
+                      <span id="error"
+                       data-ng-show="invalidFlags.source[$index + currentPage*3].resource">
+                       Resource is required
+                      </span>
+                     </div>
+
+                     <p>Path</p>
+                     <input type="text" data-ng-model="policy.sources[$index + currentPage*3].path">
+                    </div>
+
+                    <div id="collection"
+                        data-ng-show="showCollection(policy.collections[$index + currentPage*3].type.name)">
+                        <p>Identifier</p>
+                        <input type="text" name="dscoll"
+                            data-ng-model="policy.collections[$index + currentPage*3].name"
+                            data-ng-minlength="3"
+                            data-ng-change="changeColl($index+currentPage*3)"
+                            required/>
+                        <div data-ng-show="submitted">
+                            <span id="error"
+                                data-ng-show="invalidFlags.dataset[$index + currentPage*3].coll">
+                                The path is required
+                            </span>
+                        </div>
+                    </div>
+                    <div id="remove" data-ng-if="($index + currentPage) > 0">
+                        <button
+                            data-ng-click="removeCollection(policy.collections, $index+currentPage)">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <button id="previouspage" data-ng-disabled="currentPage == 0"
+                data-ng-click="currentPage=currentPage-1">Previous</button>
+            {{currentPage+1}}/{{numberOfPages()}}
+            <button id="nextpage" data-ng-click="currentPage=currentPage+1"
+                data-ng-disabled="currentPage >= (policy.collections.length -1)/3">
+                Next
+            </button>
+            <button id="addmore" data-ng-click="addMore()">Add More</button>
+
+            <p>Target Organisation</p>
+            <select name="tgtorganisation"
+                data-ng-options="org.name for org in organisations"
+                data-ng-model="policy.target.organisation"
+                data-ng-disabled="tgt_organisation_disabled"
+                data-ng-change="changeTgtSystem()"
+                data-validate-select required>
+                <option name=policy.target.organisation.name" value="">
+                    {{policy.target.organisation.name}}
+                </option>
+            </select>
+            <div
+                data-ng-show="submitted">
+                <span id="error"
+                    data-ng-show="pristineFlags.target.organisation || datasetactions.organisation.$error.required">
+                    The organisation is required
+                </span>
+            </div>
+
+            <p>Target System</p>
+            <select name="tgtsystem"
+                data-ng-options="sy.name for sy in tgt_systems"
+                data-ng-model="policy.target.system"
+                data-ng-disabled="tgt_system_disabled"
+                data-ng-change="changeTgtSite()"
+                data-validate-select required>
+                <option name="policy.target.system.name" value="">
+                    {{policy.target.system.name}}
+                </option>
+            </select>
+
+            <div data-ng-show="submitted">
+                <span id="error"
+                    data-ng-show="pristineFlags.target.system || datasetactions.system.$error.required">
+                    Target system is required
+                </span>
+            </div>
+
+            <p>Target Site</p>
+            <select name="tgtsite" data-ng-options="s.name for s in tgt_sites"
+                data-ng-model="policy.target.site"
+                data-ng-change="changeTgtResource()"
+                data-ng-disabled="tgt_site_disabled"
+                data-validate-select required>
+                <option name="policy.target.site.name" value="">
+                    {{policy.target.site.name}}
+                </option>
+            </select>
+
+            <div data-ng-show="submitted">
+                <span id="error"
+                    data-ng-show="pristineFlags.target.site || datasetactions.site.$error.required">
+                    Target site is required
+                </span>
+            </div>
+
+            <p>Target Resource</p>
+            <select name="tgtresource"
+                data-ng-options="r.name for r in tgt_resources"
+                data-ng-model="policy.target.resource"
+                data-ng-change="updateTgtResource()"
+                ng-disabled="tgt_resource_disabled"
+                data-validate-select required>
+                <option name="policy.target.resource.name" value="">
+                    {{policy.target.resource.name}}
+                </option>
+            </select>
+            <div data-ng-show="submitted">
+                <span id="error"
+                    data-ng-show="pristineFlags.target.resource || datasetactions.resource.$error.required">
+                    Target resource is required
+                </span>
+            </div>
+            <p>Target Path</p>
+              <input type="text" data-ng-model="policy.target.path">
+
+        </fieldset>
+
+        <fieldset>
+            <h3 class="field">Actions</h3>
+            <p>Action</p>
+            <select name="action"
+                data-ng-options="a.name for a in operations"
+                data-ng-model="policy.action" data-ng-change="changeType()"
+                data-validate-select required>
+                <option name="policy.action.name" value="">
+                    {{policy.action.name}}
+                </option>
+            </select>
+            <div data-ng-show="submitted || datasetactions.action.$invalid">
+                <span id="error"
+                    data-ng-show="pristineFlags.action.action || datasetactions.action.$error.required">
+                    The action is required
+                </span>
+            </div>
+            <p>Type</p>
+            <select name="type" data-ng-options="ty.name for ty in types"
+                data-ng-model="policy.type" data-ng-disabled="action_type"
+                data-ng-change="changeTrigger()"
+                data-validate-select required>
+                <option name="policy.type.name" value="">
+                    {{policy.type.name}}
+                </option>
+            </select>
+            <div data-ng-show="submitted || datasetactions.type.$invalid">
+                <span id="error" data-ng-show="pristineFlags.action.type || datasetactions.type.$error.required">
+                    The type is required
+                </span>
+            </div>
+            <p>Trigger</p>
+            <select name="trigger" data-ng-options="tr.name for tr in triggers"
+                data-ng-model="policy.trigger" data-ng-disabled="action_trigger"
+                data-ng-change="updateTrigger()"
+                data-validate-select required>
+
+                <option name="policy.trigger.name" value="">
+                    {{policy.trigger.name}}
+                </option>
+            </select>
+
+            <div data-ng-show="submitted || datasetactions.trigger.$invalid">
+                <span id="error" data-ng-show="pristineFlags.action.trigger || datasetactions.trigger.$error.required">
+                    The trigger is required
+                </span>
+            </div>
+
+            <div id="action-date" data-ng-show="showDate(policy.trigger.name)">
+                <p>Date</p>
+                <input type="text" is-open="opened"
+                    data-datepicker-popup="dd-MM-yyyy"
+                    data-ng-model="trigger_date"
+                    data-ng-change="updateDate()">
+                <button class="btn btn-default"
+                    data-ng-click="datOpen($event)">
+                    <i class="glyphicon glyphicon-calendar"> </i>
+                </button>
+            </div>
+
+            <div id="action-period"
+                data-ng-show="showPeriod(policy.trigger.name)">
+                <br>
+                Day of Week:
+                <select id="period"
+                    data-ng-options="p.name for p in period.weekday"
+                    data-ng-model="policy.trigger_period.weekday">
+                    <option name="policy.trigger_period.weekday.name"
+                    value="">{{policy.trigger_period.weekday.name}}
+                    </option>
+                </select>
+                Month:
+                <select id="period"
+                    data-ng-options="p.name for p in period.month"
+                    data-ng-model="policy.trigger_period.month">
+                    <option name="policy.trigger_period.month.name"
+                        value="">{{policy.trigger_period.month.name}}
+                    </option>
+                </select>
+                Day of Month:
+                <select data-ng-options="p.name for p in period.day"
+                    id="period" data-ng-model="policy.trigger_period.day">
+                    <option name="policy.trigger_period.day.name"
+                        value="">{{policy.trigger_period.day.name}}
+                    </option>
+                </select>
+                Hour:
+                <select data-ng-options="p.name for p in period.hour"
+                    id="period" data-ng-model="policy.trigger_period.hour">
+                    <option name="policy.trigger_period.hour.name"
+                        value="">{{policy.trigger_period.hour.name}}
+                    </option>
+                </select>
+                Minute:
+                <select data-ng-options="p.name for p in period.minute"
+                    id="period" data-ng-model="policy.trigger_period.minute">
+                    <option name="policy.trigger_period.minute.name"
+                        value="">{{policy.trigger_period.minute.name}}
+                    </option>
+                </select>
+            </div>
+        </fieldset>
+    </div>
+</data-ng-form>

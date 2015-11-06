@@ -1,0 +1,29 @@
+<div data-ng-controller="logsCtrl">
+    <div id="listlog">
+        <input type="button" id="listlogbutton" 
+            data-ng-click="loadPolicyList()" 
+            value="List Policies">
+    </div>
+    <div id="buttonspace1"></div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th data-ng-repeat="log_col in logColumns">
+                    {{log_col}}
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr data-ng-repeat="log_dat in logData"
+                data-ng-show="log_dat.visible">
+                <td data-ng-repeat="log_dat_cpt in log_dat.row"
+                    data-ng-class="{'running': log_dat_cpt=='RUNNING',
+                    'queued': log_dat_cpt=='QUEUED',
+                    'finished': log_dat_cpt=='FINISHED', 
+                    'failed': log_dat_cpt=='FAILED'}">
+                    {{log_dat_cpt | date: 'yyyy-MM-dd HH:mm:ss'}}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,63 @@
+<div id="pers">
+    <h3 class="field">Policy Description</h3>
+    <data-ng-form name="personalinfo" class="personalinfo">
+        <p>Policy Name</p>
+        <input type="text" class="text" data-ng-model="policy.name"
+            name="policyname" data-ng-minlength="3" required/><br/>
+        <div data-ng-show="invalidFlag.policyName">
+            <span id="error" data-ng-show="personalinfo.policyname.$invalid">
+                A name must be supplied
+            </span>
+        </div>
+        <p>Version</p> 
+        <input type="text" class="text" data-ng-model="policy.version"
+            name="policyversion" data-validate-input-number 
+            data-ng-readonly="policy.version" required/><br/>
+        <div data-ng-show="personalinfo.policyversion.$invalid && invalidFlag.policyVersion">
+            <span id="error" data-ng-show="personalinfo.policyversion.$error.required">
+                Version is invalid (should be a number)
+            </span>
+        </div>
+        <p>Author</p> 
+        <input type="text" class="text" data-ng-model="policy.author" 
+            name="policyauthor" data-ng-minlength="3" 
+            data-ng-readonly="policy.author" required/><br>
+        <div data-ng-show="invalidFlag.policyAuthor">
+            <span id="error" data-ng-show="personalinfo.policyauthor.$invalid">
+                An author must be supplied
+            </span>
+        </div>
+        <div data-ng-switch on="community_number">
+            <div data-ng-switch-when="one">
+                <p>Community</p> <input type="text" class="text" 
+                    data-ng-model="policy.community" 
+                    name="policycommunity" data-ng-minlength="3" 
+                    data-ng-readonly="policy.community" required/><br>
+                <div data-ng-show="invalidFlag.policyCommunity">
+                    <span id="error" 
+                        data-ng-show="personalinfo.policycommunity.$invalid">
+                        A community must be supplied
+                    </span>
+                </div>
+            </div>
+            <div data-ng-switch-when="many">
+                <p>Community</p> <select name="policycommunity"
+                    class="select"
+                    data-ng-options="comm for comm in communities"
+                    data-ng-change="changeCommunity($index)"
+                    data-ng-model="policy.community"
+                    data-validate-select required>
+                    <option value="">
+                        --- Select ---
+                    </option>
+                </select>
+                <div data-ng-show="invalidFlag.policyCommunity">
+                    <span id="error" 
+                        data-ng-show="personalinfo.policycommunity.$invalid">
+                        A community must be supplied
+                    </span>
+                </div>
+            </div>
+        </div>
+    </data-ng-form>
+</div> 

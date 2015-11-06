@@ -1,0 +1,2455 @@
+var dpmApp = angular.module("dpmApp", ["ngRoute", "ui.bootstrap", "ngTable"]);
+
+// The list of routes. Each 'page' of the form is a route
+var locList = [{url: "/personal", path: "template/personal.html"},
+               {url: "/dataset_action", path: "template/dataset_action.html"},
+               {url: "/summary", path: "template/summary.html"},
+              ];
+
+var logList = [{url: "/listlogs", path: "template/listlogs.html"}];
+
+var maxPage = 1;
+var minPage = 0;
+var ds_count = 0;
+
+function dpmFormConfig($routeProvider) {
+    $routeProvider.
+        when("/", {
+            controller: personalCtrl,
+            templateUrl: locList[0].path
+        }).
+        when(locList[0].url, {
+            controller: personalCtrl,
+            templateUrl: locList[0].path
+        }).
+        when(locList[1].url, {
+            controller: datasetCtrl,
+            templateUrl: locList[1].path
+        }).
+        when(locList[2].url, {
+            controller: confirmCtrl,
+            templateUrl: locList[2].path
+        }).
+        when(logList[0].url, {
+            controller: logsCtrl,
+            templateUrl: logList[0].path
+        }).
+        when("/complete", {
+            controller: completeCtrl,
+            templateUrl: "template/complete.html"
+        }).
+        otherwise({
+            redirectTo: "/"
+        });
+}
+
+dpmApp.config(dpmFormConfig);
+
+function storeData(arr, val) {
+    var duplicate = false;
+    var i;
+    for (i = 0; i < arr.length; i++) {
+        if (val == arr[i].name) {
+            duplicate = true;
+            break;
+        }
+    }
+    if (! duplicate) {
+        arr.push({name: val});
+    }
+    return arr;
+}
+
+
+// Function for getting the user profile
+function getProfile($http) {
+    return $http({method: "GET", url: "${CGI_URL}/getProfile.py"});
+}
+
+// Function to get the user environment variable
+function getUserEnv($http) {
+    return $http({method: "GET", url: "${CGI_URL}/getUserEnv.py"});
+}
+
+function createGuid() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,
+                function(c) {
+                    var r = Math.random() * 16|0, v = c === 'x' ? r : (r&0x3|0x8);
+                    return v.toString(16);
+                });
+}
+
+function getIsoDate(idate) {
+    var t_date;
+    var cur_date = idate.getDate();
+    var cur_month = idate.getMonth() + 1;
+    var cur_year = idate.getFullYear();
+    t_date = cur_year + "-" + cur_month + "-" + cur_date;
+    return t_date;
+}
+
+function actionCtrl($scope, $http, $injector, policy, disabled_flags,
+        data_action, submitFlag) {
+    $scope.policy = policy;
+    $injector.invoke(dpmCtrl, this, {$scope: $scope});
+
+    var disabled_flags_obj = disabled_flags.getFlags();
+    var action_obj = data_action.getActions();
+
+    $scope.operations = action_obj.operations;
+    $scope.triggers = action_obj.triggers;
+    $scope.types = action_obj.types;
+    $scope.location_types = action_obj.location_types;
+
+    $scope.action_type = disabled_flags_obj.action_type;
+    $scope.action_trigger = disabled_flags_obj.action_trigger;
+
+    // Read in the available actions using promises
+    var actions = $http({method: 'GET',
+        url: '${CGI_URL}/query_actions.py',
+        params: {qtype: 'operations'}});
+
+    actions.then(function (result) {
+        var data = result.data;
+        for (var idx = 0; idx < data.length; ++idx) {
+            if (data[idx].length > 0) {
+                action_obj.operations =
+                    storeData(action_obj.operations, data[idx][0]);
+            }
+        }
+        $scope.operations = action_obj.operations;
+        data_action.setActions(action_obj);
+    }
+    );
+
+    $scope.period = getPeriod();
+
+    // Only show the date fields for the date option
+    var tdate = new Date();
+    $scope.showDate = function(trname) {
+        var show = false;
+        if (trname == "date") {
+            show = true;
+            if (typeof $scope.trigger_date == "undefined") {
+                $scope.trigger_date = tdate;
+                $scope.policy.trigger_date = getIsoDate(tdate);
+            }
+        }
+        return show;
+    };
+
+    $scope.datClear = function() {
+    };
+    $scope.datOpen = function($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.opened = true;
+    };
+
+    $scope.updateDate = function() {
+        $scope.policy.trigger_date = getIsoDate($scope.trigger_date);
+    };
+
+    // Only show the period fields for the periodic option
+    $scope.showPeriod = function(trname) {
+        var show = false;
+        if (trname == "period") {
+            show = true;
+        }
+        return show;
+    };
+
+    // function to enable the action type option
+    $scope.changeType = function() {
+        var get_types = $http({method: "GET",
+            url: "${CGI_URL}/query_actions.py", params: {qtype: "types",
+                operation: $scope.policy.action.name} });
+        get_types.then(function(results) {
+            var data = results.data;
+            action_obj.types = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    action_obj.types =
+                            storeData(action_obj.types, data[idx][0]);
+                }
+            }
+            $scope.types = action_obj.types;
+            data_action.setActions(action_obj);
+        });
+        disabled_flags_obj.action_type = false;
+        disabled_flags.setFlags(disabled_flags_obj);
+        $scope.pristineFlags.action.action = false;
+        $scope.policy.type.name = '--- Select a Type ---';
+        $scope.action_type = disabled_flags_obj.action_type;
+    };
+
+
+    // function to enable the trigger option
+    $scope.changeTrigger = function() {
+        var get_triggers = $http({method: "GET",
+            url: "${CGI_URL}/query_actions.py",
+            params: {qtype: "triggers",
+                operation: $scope.policy.action.name,
+            type: $scope.policy.type.name}
+        });
+        get_triggers.then(function(results) {
+            var data = results.data;
+            action_obj.triggers = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    action_obj.triggers =
+                        storeData(action_obj.triggers, data[idx][0]);
+                }
+            }
+            $scope.triggers = action_obj.triggers;
+            data_action.setActions(action_obj);
+        });
+        disabled_flags_obj.action_trigger = false;
+        disabled_flags.setFlags(disabled_flags_obj);
+        $scope.pristineFlags.action.type = false;
+        $scope.policy.trigger.name = "--- Select a Trigger ---";
+        $scope.action_trigger = disabled_flags_obj.action_trigger;
+    };
+
+    // Update the Trigger
+    $scope.updateTrigger = function() {
+      $scope.pristineFlags.action.trigger = false;
+    };
+
+    // Read from the database the available locations
+    $scope.changeTgtOrganisation = function() {
+        var get_organisations = $http({method: "GET",
+            url: "${CGI_URL}/query_actions.py",
+            params: {qtype: "organisations"}});
+
+        get_organisations.then(function(results) {
+            var data = results.data;
+            action_obj.organisations = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    action_obj.organisations =
+                        storeData(action_obj.organisations, data[idx][0]);
+                }
+            }
+            $scope.organisations = action_obj.organisations;
+            data_action.setActions(action_obj);
+            disabled_flags_obj.tgt_organisation = false;
+            disabled_flags.setFlags(disabled_flags_obj);
+            $scope.policy.target.organisation.name = "--- Select an Organisation ---";
+            $scope.tgt_organisation_disabled = disabled_flags_obj.tgt_organisation;
+
+        });
+    };
+
+    $scope.changeTgtOrganisation();
+
+    // invoke the SourceTarget control
+    $injector.invoke(sourceTargetCtrl, this, {$scope: $scope});
+}
+
+function confirmCtrl($scope, $injector, page, submitFlag, policy) {
+    $scope.policy = policy;
+    $injector.invoke(dpmCtrl, this, {$scope: $scope});
+    // We need to reset the active flag so we don't automatically
+    // trigger the submitForm code
+    var flago = submitFlag.getObj();
+    flago.active = false;
+    flago.flag = false;
+    flago.confirm = true;
+    submitFlag.setObj(flago);
+}
+
+function dpmCtrl($scope, $window, $location, page, invalidFlag, submitFlag) {
+    
+    $scope.invalidFlag = invalidFlag;
+
+    if (page.firstPage === true) {
+        $location.url(locList[page.count].url);
+        page.firstPage = false;
+    }
+    $scope.nextPage = function nextPage(evnt, invalid) {
+        if (invalid) {
+            $scope.invalidFlag.policyName = true;
+            $scope.invalidFlag.policyVersion = true;
+            $scope.invalidFlag.policyAuthor = true;
+            $scope.invalidFlag.policyCommunity = true;
+        } else {
+            $scope.invalidFlag.policyVersion = false;
+            $scope.invalidFlag.policyAuthor = false;
+            $scope.invalidFlag.policyCommunity = false;
+            $scope.invalidFlag.policyName = false;
+            if (page.count < maxPage) {
+                page.count += 1;
+                $location.url(locList[page.count].url);
+            }
+        }
+    };
+    $scope.prevPage = function prevPage() {
+        flago = submitFlag.getObj();
+        if (flago.submitted && !flago.flag) {
+            flago.flag = true;
+            flago.confirm = false;
+            submitFlag.setObj(flago);
+        }
+        if (page.count > minPage) {
+            page.count -= 1;
+            $location.url(locList[page.count].url);
+        }
+    };
+    $scope.firstPage = function () {
+        var showP = true;
+        if (page.count <= minPage) {
+            showP = false;
+        }
+        return showP;
+    };
+    $scope.lastPage = function () {
+        var showP = true;
+        if (page.count >= maxPage) {
+            showP = false;
+        }
+        return showP;
+    };
+    $scope.showSubmit = function() {
+        var showS = false;
+        var flago = submitFlag.getObj();
+        if (flago.flag || page.count >= maxPage) {
+            if (flago.submitted && !flago.flag) {
+                showS = false;
+            } else {
+                showS = true;
+            }
+        }
+        return showS;
+    };
+    $scope.showConfirm = function() {
+        var showC = false;
+        var flago = submitFlag.getObj();
+        if (flago.confirm) {
+            showC = true;
+        }
+        return showC;
+    };
+
+    // Reset the form, reset the javascript object and set the
+    // page to the list policy page
+    $scope.cancelPolicy = function() {
+        var newPolicy = resetPolicy($scope.policy);
+        $scope.policy = newPolicy;
+        $window.location.reload();
+    };
+}
+
+function datasetCtrl($scope, $http, $injector, data_identifier, policy,
+        pristineFlags, invalidFlags, disabled_flags, data_location,
+        submitFlag) {
+    $scope.policy = policy;
+    $scope.pristineFlags = pristineFlags;
+    $scope.invalidFlags = invalidFlags;
+    var disabled_flags_obj = disabled_flags.getFlags();
+    $scope.src_system_disabled = disabled_flags_obj.source_system;
+    var loc_obj = data_location.getLocations();
+
+    // Call the base dpm controller for the next/previous pages
+    $injector.invoke(dpmCtrl, this, {$scope: $scope});
+    var identifier_obj = data_identifier.getIdentifiers();
+
+    // Read in the available identifier types using promises to avoid
+    // problems with asynch calls
+    var get_identifiers = $http({method: 'GET',
+                    url: '${CGI_URL}/query_actions.py',
+                    params: {qtype: 'identifiers'}});
+
+    get_identifiers.then(function(results) {
+        var data = results.data;
+        for (var idx = 0; idx < data.length; ++idx) {
+            if (data[idx].length > 0) {
+                identifier_obj.types = storeData(identifier_obj.types,
+                    data[idx][0]);
+            }
+        }
+        $scope.identifier_types = identifier_obj.types;
+        data_identifier.setIdentifiers(identifier_obj);
+    });
+
+    $scope.currentPage = 0;
+
+    $scope.addMore = function() {
+        ds_count += 1;
+        var id = 'dataset_' + ds_count;
+        var flago = submitFlag.getObj();
+        flago.active = false;
+        submitFlag.setObj(flago);
+        $scope.policy.collections.push({name: '', type: {name: ''}});
+        $scope.invalidFlags.dataset.push({pid: true, coll: true});
+        $scope.pristineFlags.dataset.push({pid: true, coll: true});
+        $scope.pristineFlags.sources.push({organisation: true,
+          location_type: true, system: true, site: true, resource: true});
+        $scope.policy.sources.push({loctype: '', organisation: '',
+          system: '', site: '', path: '', resource: ''
+        });
+        $scope.submitted = false;
+        $scope.invalidFlags.source.push({organisation: true, system: true,
+          site: true, resource: true});
+    };
+    $scope.numberOfPages = function() {
+        return Math.ceil($scope.policy.collections.length/3);
+    };
+    $scope.removeCollection = function(array, index) {
+        array.splice(index, 1);
+    };
+
+    // Show the source collection for the collection option
+    $scope.showSrcColl = function(trname) {
+      var show = false;
+      var tname = trname.replace(/^\s+|\s+$/g, '');
+      if (tname === 'collection') {
+        show = true;
+      }
+      return show;
+    };
+
+    // Only show the collection fields for the PID option
+    $scope.showCollection = function(trname) {
+        var show = false;
+        var tname = trname.replace(/^\s+|\s+$/g, '');
+        if (tname === 'pid') {
+          show = true;
+        }
+        return show;
+    };
+
+    // If the dataset select changes update our pristine flag
+    // the invalid flag needs to be handled manually since we
+    // can have multiple datasets
+    $scope.changeDataset = function(index) {
+        $scope.pristineFlags.dataset[index].pid = false;
+        if ($scope.policy.collections[index].type.name) {
+            $scope.invalidFlags.dataset[index].pid = false;
+        } else {
+            $scope.invalidFlags.dataset[index].pid = true;
+        }
+        if ($scope.policy.collections[index].type.name === 'collection') {
+          changeSrcOrganisation(index);
+        }
+    };
+
+    // If the dataset coll is changed update the flags
+    $scope.changeColl = function(index) {
+        $scope.pristineFlags.dataset[index].coll = false;
+        if ($scope.policy.collections[index].name &&
+                $scope.policy.collections[index].name.length >= 3) {
+            $scope.invalidFlags.dataset[index].coll = false;
+        } else {
+            $scope.invalidFlags.dataset[index].coll = true;
+        }
+    };
+
+    // Call the action controller
+    $injector.invoke(actionCtrl, this, {$scope: $scope});
+
+    // Get the systems from the database
+    $scope.changeSourceSystem = function (index) {
+      var default_org = '--- Select an Organisation ---';
+      var get_systems = $http({method: 'GET',
+        url: '${CGI_URL}/query_resource.py',
+        params: {qtype: 'systems'}});
+
+        get_systems.then(function(results) {
+            var data = results.data;
+            loc_obj.source_systems = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    loc_obj.source_systems =
+                        storeData(loc_obj.source_systems, data[idx][0]);
+                }
+            }
+            $scope.src_systems = loc_obj.source_systems;
+            data_location.setLocations(loc_obj);
+            disabled_flags_obj.source_system = false;
+            disabled_flags.setFlags(disabled_flags_obj);
+            $scope.pristineFlags.sources[index].location_type = false;
+            $scope.policy.sources[index].system.name = '--- Select a System ---';
+            $scope.src_system_disabled = disabled_flags_obj.source_system;
+        });
+
+        // Set the validation flags for the organisation
+        $scope.pristineFlags.sources[index].organisation = false;
+        if ($scope.policy.sources[index].organisation.name &&
+            $scope.policy.sources[index].organisation.name != default_org) {
+            $scope.invalidFlags.source[index].organisation = false;
+        } else {
+            $scope.invalidFlags.source[index].organisation = true;
+        }
+    };
+
+    // Get the organisations for the sources
+    function changeSrcOrganisation(index) {
+        var default_org = '--- Select an Organisation ---';
+        var get_organisations = $http({method: 'GET',
+            url: '${CGI_URL}/query_actions.py',
+            params: {qtype: 'organisations'}});
+
+        get_organisations.then(function(results) {
+            var data = results.data;
+            loc_obj.source_organisations = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    loc_obj.source_organisations =
+                        storeData(loc_obj.source_organisations, data[idx][0]);
+                }
+            }
+            $scope.organisations = loc_obj.source_organisations;
+            data_location.setLocations(loc_obj);
+            disabled_flags_obj.source_organisation = false;
+            disabled_flags.setFlags(disabled_flags_obj);
+            $scope.policy.sources[index].organisation.name = default_org;
+            $scope.src_organisation_disabled = disabled_flags_obj.source_organisation;
+
+            // Set the validation flags
+            $scope.pristineFlags.sources[index].organisation = false;
+            if ($scope.policy.sources[index].organisation.name &&
+                $scope.policy.sources[index].organisation.name !=
+                default_org) {
+                $scope.invalidFlags.source[index].organisation = false;
+            } else {
+              $scope.invalidFlags.source[index].organisation = true;
+            }
+        });
+    }
+}
+
+function personalCtrl($scope, $injector, policy) {
+    $scope.policy = policy;
+    $scope.policy.uuid = createGuid();
+    $injector.invoke(dpmCtrl, this, {$scope: $scope});
+    $scope.changeCommunity = function(idx) {
+    };
+}
+
+function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
+        data_location, submitFlag) {
+    $scope.policy = policy;
+    $injector.invoke(dpmCtrl, this, {$scope: $scope});
+    var disabled_flags_obj = disabled_flags.getFlags();
+    var loc_obj = data_location.getLocations();
+
+    $scope.src_systems = loc_obj.source_systems;
+    $scope.tgt_systems = loc_obj.target_systems;
+    $scope.src_sites = loc_obj.source_sites;
+    $scope.tgt_sites = loc_obj.target_sites;
+    $scope.src_resources = loc_obj.source_resources;
+    $scope.tgt_resources = loc_obj.target_resources;
+    $scope.src_site_disabled = disabled_flags_obj.source_site;
+    $scope.tgt_site_disabled = disabled_flags_obj.target_site;
+    $scope.src_resource_disabled = disabled_flags_obj.source_resource;
+    $scope.tgt_resource_disabled = disabled_flags_obj.target_resource;
+    $scope.tgt_system_disabled = disabled_flags_obj.tgt_system;
+    $scope.tgt_loc_type_disabled = disabled_flags_obj.tgt_loc_type;
+
+    // Read from the database the available locations
+    // Don't need - but check!
+    $scope.changeLocation = function() {
+        var get_locations = $http({method: 'GET',
+            url: '${CGI_URL}/query_actions.py',
+            params: {qtype: 'locations',
+                 operation: $scope.policy.action.name,
+                 type: $scope.policy.type.name,
+                 trigger: $scope.policy.trigger.name} });
+        get_locations.then(function(results) {
+            var data = results.data;
+            loc_obj.location_types = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    loc_obj.location_types =
+                        storeData(loc_obj.location_types, data[idx][0]);
+                }
+            }
+            $scope.location_types = loc_obj.location_types;
+            data_location.setLocations(loc_obj);
+            disabled_flags_obj.tgt_loc_type = false;
+            disabled_flags.setFlags(disabled_flags_obj);
+            $scope.pristineFlags.target.organisation = false;
+            $scope.policy.target.loctype.name = "--- Select a Location Type ---";
+            $scope.tgt_loc_type_disabled = disabled_flags_obj.tgt_loc_type;
+
+        });
+    };
+
+    // Read from the database the available systems
+    $scope.changeTgtSystem = function() {
+        var get_systems = $http({method: "GET",
+            url: "${CGI_URL}/query_resource.py",
+            params: {qtype: "systems"}});
+
+        get_systems.then(function(results) {
+            var data = results.data;
+            loc_obj.source_systems = [];
+            loc_obj.target_systems = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    loc_obj.source_systems =
+                        storeData(loc_obj.source_systems, data[idx][0]);
+                    loc_obj.target_systems =
+                        storeData(loc_obj.target_systems, data[idx][0]);
+                }
+            }
+            $scope.src_systems = loc_obj.source_systems;
+            $scope.tgt_systems = loc_obj.target_systems;
+            data_location.setLocations(loc_obj);
+            disabled_flags_obj.tgt_system = false;
+            disabled_flags.setFlags(disabled_flags_obj);
+            $scope.pristineFlags.target.organisation = false;
+            $scope.policy.target.system.name = "--- Select a System ---";
+            $scope.tgt_system_disabled = disabled_flags_obj.tgt_system;
+        });
+    };
+
+    // Once the system has been selected populate the sites list for the
+    // source
+    $scope.changeSrcSite = function(index) {
+        var default_system = "--- Select a System ---";
+        var get_sites = $http({method: "GET",
+            url: "${CGI_URL}/query_resource.py",
+            params: {qtype: "sites",
+                system: $scope.policy.sources[index].system.name}});
+
+        get_sites.then(function(results) {
+            var data = results.data;
+            loc_obj.source_sites = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    loc_obj.source_sites =
+                        storeData(loc_obj.source_sites, data[idx][0]);
+                }
+            }
+            $scope.src_sites = loc_obj.source_sites;
+            data_location.setLocations(loc_obj);
+        });
+        disabled_flags_obj.source_site = false;
+        disabled_flags.setFlags(disabled_flags_obj);
+        $scope.policy.sources[index].site.name = "--- Select a Site ---";
+        $scope.src_site_disabled = disabled_flags_obj.source_site;
+
+        // Set the validation flags for the System
+        $scope.pristineFlags.sources[index].system = false;
+        if ($scope.policy.sources[index].system.name &&
+            $scope.policy.sources[index].system.name !=
+            default_system) {
+            $scope.invalidFlags.source[index].system = false;
+        } else {
+            $scope.invalidFlags.source[index].system = true;
+        }
+    };
+
+    // Once the system has been selected populate the sites list
+    $scope.changeTgtSite = function() {
+        var get_tgtsites = $http({method: "GET",
+            url: "${CGI_URL}/query_resource.py",
+            params: {qtype: "sites",
+                system: $scope.policy.target.system.name} });
+        get_tgtsites.then(function(results) {
+            var data = results.data;
+            loc_obj.target_sites = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    $scope.tgt_sites =
+                        storeData(loc_obj.target_sites, data[idx][0]);
+                }
+            }
+        });
+        disabled_flags_obj.target_site = false;
+        disabled_flags.setFlags(disabled_flags_obj);
+        $scope.policy.target.site.name = "--- Select a Site ---";
+        $scope.pristineFlags.target.system = false;
+        $scope.tgt_site_disabled = disabled_flags_obj.target_site;
+    };
+
+    // Once the site has been selected populate the source resources list
+    $scope.changeSrcResource = function(index) {
+        var default_site = "--- Select a Site ---";
+        var get_resources = $http({method: "GET",
+            url: "${CGI_URL}/query_resource.py",
+            params: {qtype: "resources",
+                system: $scope.policy.sources[index].system.name,
+                site: $scope.policy.sources[index].site.name} });
+        get_resources.then(function(results) {
+            var data = results.data;
+            loc_obj.source_resources = [];
+            loc_obj.source_paths = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    $scope.src_resources =
+                        storeData(loc_obj.source_resources, data[idx][0]);
+                    $scope.src_paths =
+                        storeData(loc_obj.source_paths, data[idx][1]);
+                }
+            }
+        });
+        disabled_flags_obj.source_resource = false;
+        disabled_flags.setFlags(disabled_flags_obj);
+        $scope.policy.sources[index].resource.name = "--- Select a Resource ---";
+        $scope.src_resource_disabled = disabled_flags_obj.source_resource;
+
+        // Set the validation flags for the site
+        $scope.pristineFlags.sources[index].site = false;
+        if ($scope.policy.sources[index].site.name &&
+            $scope.policy.sources[index].site.name !=
+            default_site) {
+            $scope.invalidFlags.source[index].site = false;
+        } else {
+            $scope.invalidFlags.source[index].site = true;
+        }
+    };
+
+    // Once the site has been selected populate the resources list
+    $scope.changeTgtResource = function() {
+        var get_tgtresources = $http({method: "GET",
+            url: "${CGI_URL}/query_resource.py",
+            params: {qtype: "resources",
+            system: $scope.policy.target.system.name,
+            site: $scope.policy.target.site.name} });
+        get_tgtresources.then(function(results) {
+            var data = results.data;
+            loc_obj.target_resources = [];
+            loc_obj.target_paths = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    $scope.tgt_resources =
+                        storeData(loc_obj.target_resources, data[idx][0]);
+                    $scope.tgt_paths = storeData(loc_obj.target_paths,
+                        data[idx][1]);
+                }
+            }
+        });
+        disabled_flags_obj.target_resource = false;
+        disabled_flags.setFlags(disabled_flags_obj);
+        $scope.pristineFlags.target.site = false;
+        $scope.policy.target.resource.name = "--- Select a Resource ---";
+        $scope.tgt_resource_disabled = disabled_flags_obj.target_resource;
+
+    };
+
+    $scope.updateSrcResource = function(index) {
+      var default_resource = "--- Select a Resource ---";
+      var idx = $scope.src_resources.indexOf(
+        $scope.policy.sources[index].resource);
+      $scope.policy.sources[index].path = $scope.src_paths[idx].name;
+      $scope.pristineFlags.sources[index].resource = false;
+      if ($scope.policy.sources[index].resource.name &&
+         $scope.policy.sources[index].resource.name !=
+         default_resource) {
+         $scope.invalidFlags.source[index].resource = false;
+      } else {
+         $scope.invalidFlags.source[index].resource = true;
+      }
+    };
+
+    // Function to update the pristine flag (we need this as the state
+    // is not presered when we go back a page)
+    $scope.updateTgtResource = function() {
+      var idx = $scope.tgt_resources.indexOf($scope.policy.target.resource);
+      console.log("idx is " + idx);
+      $scope.policy.target.path = $scope.tgt_paths[idx].name;
+      console.log("target path is " + $scope.policy.target.path);
+      $scope.pristineFlags.target.resource = false;
+    };
+}
+
+function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
+        pristineFlags, invalidFlags, $http, page) {
+    $scope.setSubmitted = function(validObj) {
+        var flago = submitFlag.getObj();
+        flago.fieldsOK = checkFields(validObj, pristineFlags, invalidFlags,
+                flago, policy);
+        flago.active = true;
+        flago.submitted = true;
+        submitFlag.setObj(flago);
+        $scope.submitted = flago.submitted;
+    };
+    $scope.submitForm = function () {
+        var flago = submitFlag.getObj();
+        if (flago.fieldsOK) {
+            if (flago.active) {
+                $location.url(locList[locList.length-1].url);
+                page.count = locList.length - 1;
+            }
+        } else {
+            if (flago.active) {
+                alert("The form is invalid. Check fields for errors");
+                flago.submitted = false;
+            }
+        }
+    };
+    $scope.confirmOK = function() {
+        // We can now set the id for the policy before sending to the
+        // database
+        policy.id = policy.uuid;
+        $http.post("${CGI_URL}/storePolicy.py", JSON.stringify(policy),
+                {headers: "Content-Type: application/x-www-form-urlencoded"})
+            .then(function(results) {
+                var data = results.data;
+                if (data.policy_exists) {
+                    alert("The policy exists in the database");
+                } else {
+                    alert("Policy successfully stored in the database");
+                }
+                // Reset the policy and reload the page which puts us on
+                // the default page - the policy listing
+                var new_policy = {};
+                new_policy = resetPolicy(policy);
+                $scope.policy = new_policy;
+                // alert("scope is " + JSON.stringify($scope.policy));
+                $window.location.reload();
+            },
+            function(data, status, headers, config) {
+                alert("error is " + data);
+            });
+    };
+
+    $scope.collDefined = function() {
+      var collFlag = false;
+      var i = 0;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        if ($scope.policy.collections[i].type.name === 'collection') {
+          collFlag = true;
+          break;
+        }
+      }
+      return collFlag;
+    };
+
+    $scope.pidDefined = function() {
+      var pidFlag = false;
+      var i = 0;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        if ($scope.policy.collections[i].type.name === 'pid') {
+          pidFlag = true;
+          break;
+        }
+      }
+      return pidFlag;
+    };
+
+}
+
+function tabsCtrl($scope, $http, logPageList, $route, polList, userProfile,
+        policy, showLog, uuids) {
+    $scope.list_url = "template/listtable.html";
+    $scope.hideLog = logPageList.hide;
+    $scope.displayLog = logPageList.active;
+    $scope.listPolicy = polList.active;
+
+    // Get the username from the environment. We need a promise to
+    // work with the results when ready
+    userProfile.promise = $http({method: "GET",
+        url: "${CGI_URL}/getProfile.py"}).then(function(response) {
+            var data = response.data;
+            userProfile.username = data.profile[0].username;
+            userProfile.email = data.profile[0].email;
+            userProfile.communities = data.profile[1].communities;
+            if (userProfile.communities.length === 1) {
+                $scope.community_number = "one";
+                $scope.communities = userProfile.communities[0];
+                policy.community = userProfile.communities[0];
+            } else {
+                $scope.community_number = "many";
+                $scope.communities = userProfile.communities;
+            }
+            policy.author = data.profile[0].username;
+            $scope.policy = policy;
+    });
+
+    // Function to change the location of the for the list view
+    $scope.changeLoc = function (turl) {
+        // alert("parent scope function called " + turl);
+        $scope.list_url = turl;
+        $route.reload();
+    };
+}
+
+function checkFields(validObj, pristineFlagsObj, invalidFlagsObj, flago,
+  policy) {
+    var fieldsOK = false;
+
+    if (validObj) {
+        fieldsOK = true;
+        // We have to ignore the pristine flag in the case of
+        // a person submitting and goes back to update the form
+        // so we use our own flags
+        if (!flago.submitted) {
+            pristineFlagsObj.action.action = validObj.action.$pristine;
+            pristineFlagsObj.action.type = validObj.type.$pristine;
+            pristineFlagsObj.action.trigger = validObj.trigger.$pristine;
+            pristineFlagsObj.target.organisation = validObj.tgtorganisation.$pristine;
+            // pristineFlagsObj.target.location_type = validObj.location_type.$pristine;
+            pristineFlagsObj.target.system = validObj.tgtsystem.$pristine;
+            pristineFlagsObj.target.site = validObj.tgtsite.$pristine;
+            pristineFlagsObj.target.resource = validObj.tgtresource.$pristine;
+        }
+
+        // Loop over all the flags for the dataset pid. On the first true
+        // set the valid flag to false and break out
+        var i;
+        for (i=0; i < pristineFlagsObj.dataset.length; i++) {
+            if (policy.collections[i].type.name === "pid") {
+              if (pristineFlagsObj.dataset[i].pid === true ||
+                  pristineFlagsObj.dataset[i].coll === true ||
+                  invalidFlagsObj.dataset[i].pid === true ||
+                  invalidFlagsObj.dataset[i].coll === true) {
+                    fieldsOK = false;
+                    break;
+              }
+            } else if (policy.collections[i].type.name === "collection") {
+              if (pristineFlagsObj.sources[i].organisation === true ||
+                  pristineFlagsObj.sources[i].system === true ||
+                  pristineFlagsObj.sources[i].site === true ||
+                  pristineFlagsObj.sources[i].resource === true ||
+                  invalidFlagsObj.source[i].organisation === true ||
+                  invalidFlagsObj.source[i].system === true ||
+                  invalidFlagsObj.source[i].site === true ||
+                  invalidFlagsObj.source[i].resource === true) {
+                    fieldsOK = false;
+                    break;
+                  }
+            }
+        }
+
+        if (pristineFlagsObj.action.action || validObj.action.$invalid) fieldsOK = false;
+        if (pristineFlagsObj.action.type || validObj.type.$invalid) fieldsOK = false;
+        if (pristineFlagsObj.action.trigger || validObj.trigger.$invalid) fieldsOK = false;
+        if (pristineFlagsObj.target.organisation || validObj.tgtorganisation.$invalid) fieldsOK = false;
+        // if (pristineFlagsObj.target.location_type || validObj.location_type.$invalid) fieldsOK = false;
+        if (pristineFlagsObj.target.system || validObj.tgtsystem.$invalid) fieldsOK = false;
+        if (pristineFlagsObj.target.site || validObj.tgtsite.$invalid) fieldsOK = false;
+        if (pristineFlagsObj.target.resource || validObj.tgtresource.$invalid) fieldsOK = false;
+    }
+    return fieldsOK;
+}
+
+function completeCtrl($scope) {
+}
+
+dpmApp.service('data_action', function() {
+    var actions = {types:[],
+        operations:[], triggers:[]};
+    return {
+        getActions: function() {
+            return actions;
+        },
+        setActions: function(loc) {
+            actions = loc;
+        }
+    };
+});
+
+dpmApp.service('data_identifier', function() {
+    var identifiers = {types:[]};
+    return {
+        getIdentifiers: function() {
+            return identifiers;
+        },
+        setIdentifiers: function(loc) {
+            identifiers = loc;
+        }
+    };
+});
+
+dpmApp.service('data_location', function() {
+    var locations = {source_systems:[],
+        source_sites:[], source_resources:[],
+        source_organisations:[],
+        target_systems:[], target_sites:[],
+        target_resources:[],
+        target_organisations:[], 
+        location_types:[]};
+    return {
+        getLocations: function() {
+            return locations;
+        },
+        setLocations: function(loc) {
+            locations = loc;
+        }
+    };
+});
+
+dpmApp.service("disabled_flags", function() {
+    var disabled_flags_obj = {action_type: true, action_trigger: true,
+        tgt_loc_type: true, tgt_organisation: true,
+        tgt_system: true, source_system: true,
+        source_organisation: true,
+        source_site: true, target_site: true,
+        source_resource: true, target_resource: true};
+    return {
+        getFlags: function() {
+            return disabled_flags_obj;
+        },
+        setFlags: function(obj) {
+            disabled_flags_obj = obj;
+        }
+    };
+});
+
+dpmApp.factory('invalidFlag', function() {
+    var validObj = {"policyName": false,
+        "policyVersion": false,
+        "policyAuthor": false,
+        "policyCommunity": false
+    };
+    return validObj;
+});
+
+function invalidFlags() {
+    var dataset = new Array({pid: true, coll: true});
+    var sources = new Array({organisation: true, system: true,
+      site: true, resource: true});
+    var invalids = {dataset: dataset, source: sources};
+    return invalids;
+}
+dpmApp.factory('invalidFlags', invalidFlags);
+
+// Service for handling pages
+var page = function() {
+    this.firstPage = true;
+    this.count = 0;
+};
+// Register the service with the module
+dpmApp.service("page", page);
+
+function getPeriod() {
+    var periodObj = {};
+    var weekday = [{name: "*"}];
+    for (i = 0; i < 7; i++) {
+        weekday.push({name: i});
+    }
+
+    var month = new Array({name: "*"});
+    for (i = 0; i < 12; i++) {
+        month.push({name: i});
+    }
+ 
+    var day = new Array({name: "*"});
+    for (i = 0; i < 32; i++) {
+        day.push({name: i});
+    }
+ 
+    var hour = new Array({name: "*"});
+    for (i = 0; i < 24; i++) {
+        hour.push({name: i});
+    }
+ 
+    var minute = new Array({name: "*"});
+    for (i = 0; i < 60; i++) {
+        minute.push({name: i});
+    }
+    periodObj = {month: month, weekday: weekday, day: day, hour: hour,
+        minute: minute};
+    return periodObj;
+}
+
+var policy = function() {
+    var action = {name: "--- Select an Action ---"};
+    var type = {name: "--- Select a Type ---"};
+    var trigger = {name: "--- Select a Trigger ---"};
+    var source_system = {name: "--- Select a System ---"};
+    var source_site = {name: "--- Select a Site ---"};
+    var source_resource = {name: "--- Select a Resource ---"};
+    var target_system = {name: "--- Select a System ---"};
+    var target_site = {name: "--- Select a Site ---"};
+    var target_resource = {name: "--- Select a Resource ---"};
+    var loctype = {name: "--- Select a Location type ---"};
+    var source_organisation = new Array({name: "--- Select an Organisation ---"});
+    var target_organisation = {name: "--- Select an Organisation ---"};
+    var weekday = {name: "*"};
+    var day = {name: "*"};
+    var month ={name: "*"};
+    var hour = {name: "*"};
+    var minute = {name: "*"};
+
+    var period = {weekday: weekday, month: month, day: day, hour: hour,
+        minute: minute};
+
+    var sources = new Array({
+        loctype: loctype,
+        organisation: source_organisation,
+        system: source_system,
+        site: source_site,
+        path: '',
+        resource: source_resource
+    });
+    var target = {
+        loctype: loctype,
+        organisation: target_organisation,
+        system: target_system,
+        site: target_site,
+        path: "",
+        resource: target_resource
+    };
+    var collections = new Array({name: "", type: {name: ""}});
+
+    var policyObj = {name: "", id: "",
+        version: "1.0", uuid: "", author: "", community: "",
+        collections: collections,
+        action: action,
+        type: type,
+        trigger: trigger,
+        trigger_date: "",
+        trigger_period: period,
+        sources: sources,
+        target: target};
+    return policyObj;
+};
+
+// create a factory to generate a policy object
+dpmApp.factory("policy", policy);
+
+function pristineFlags() {
+    var dataset = new Array({pid: true, coll: true});
+    var action = {action: true, type: true, trigger: true};
+    var target = {organisation: true, location_type: true, system: true,
+        site: true, resource: true};
+    var sources = new Array({organisation: true, location_type: true, system: true,
+        site: true, resource: true});
+    var pristine = {dataset: dataset, action: action, sources: sources,
+        target: target};
+    return pristine;
+}
+
+// Create a factory for the pristine flags
+dpmApp.factory("pristineFlags", pristineFlags);
+
+function resetPolicy(apol) {
+    // Rest the policy object apart from the personal information
+    var action = {name: "--- Select an Action ---"};
+    var type = {name: "--- Select a Type ---"};
+    var trigger = {name: "--- Select a Trigger ---"};
+    var source_system = {name: "--- Select a System ---"};
+    var source_site = {name: "--- Select a Site ---"};
+    var source_resource = {name: "--- Select a Resource ---"};
+    var target_system = {name: "--- Select a System ---"};
+    var target_site = {name: "--- Select a Site ---"};
+    var target_resource = {name: "--- Select a Resource ---"};
+    var loctype = {name: "--- Select a Location type ---"};
+    var organisation = {name: "--- Select an Organisation ---"};
+    var weekday = {name: "*"};
+    var day = {name: "*"};
+    var month ={name: "*"};
+    var hour = {name: "*"};
+    var minute = {name: "*"};
+
+    var period = {weekday: weekday, month: month, day: day, hour: hour,
+        minute: minute};
+    
+    var source = {
+        loctype: loctype,
+        organisation: organisation,
+        system: source_system,
+        site: source_site,
+        path: "",
+        resource: source_resource
+    };
+    var target = {
+        loctype: loctype,
+        organisation: organisation,
+        system: target_system,
+        site: target_site,
+        path: "",
+        resource: target_resource
+    };
+
+    var opol = {};
+    opol.name = "";
+    opol.version = "1.0";
+    opol.author = apol.author;
+    opol.community = apol.community;
+    opol.id = "";
+    opol.uuid = "";
+    opol.collections = new Array({name: "", type: {name: ""}});
+    opol.action = action;
+    opol.type = type;
+    opol.trigger = trigger;
+    opol.trigger_date = "";
+    opol.trigger_period = period;
+    opol.source = source; 
+    opol.target = target;
+
+    return opol;
+}
+
+dpmApp.filter("startFrom", function() {
+    return function(input, start) {
+        start = +start;
+        aslice = input.slice(start);
+        return aslice;
+    };
+});
+
+dpmApp.service('submitFlag', function() {
+    var sflag = {flag: false, active: false, submitted: false, 
+        fieldsOK: false, confirm: false};
+    return {
+        getObj: function() {
+            return sflag;
+        },
+        setObj: function(valobj) {
+            sflag = valobj;
+        }
+    };
+});
+
+dpmApp.factory('userProfile', function() {
+    var profile = {"promise": undefined, "username": "", "email": "",
+        "communities": ""};
+    return profile;
+});
+
+dpmApp.factory("userProfileService", function($http) {
+    $http({method: "GET",
+        url: "${CGI_URL}/getProfile.py"}).then(function(results) {
+            var data = results.data;
+            userProfile.username = data.profile[0].username;
+            userProfile.email = data.profile[0].email;
+            userProfile.communities = data.profile[0].communities;
+            if (userProfile.communities.length === 1) {
+                $scope.community_number = "one";
+            } else {
+                $scope.community_number = "many";
+            }
+            policy.author = data.profile[0].username;
+            $scope.policy = policy;
+    });
+});
+
+dpmApp.directive("validateInputNumber", function() {
+    return {
+        restrict: 'A',
+        require: "ngModel",
+        link: function(scope, elem, attr, ctrl) {
+            ctrl.$parsers.unshift(function(aval) {
+                if (!isNaN(parseFloat(aval)) && isFinite(aval)) {
+                    ctrl.$setValidity("required", true);
+                    return aval;
+                } else {
+                    ctrl.$setValidity("required", false);
+                    return undefined;
+                }
+            });
+        }
+    };
+});
+
+dpmApp.directive("validateSelect", function() {
+    return {
+        restrict: 'A',
+        require: "ngModel",
+        link: function(scope, elem, attrs, ctrl) {
+            ctrl.$parsers.unshift(function(aval) {
+                if (aval && aval.name !== "") {
+                    ctrl.$setValidity("required", true);
+                    return aval;
+                } else {
+                    ctrl.$setValidity("required", false);
+                    return "";
+                }
+            });
+        }
+    };
+});
+
+function logsCtrl($scope, $route, $interval, $http, logData, 
+        policy, uuids, showLog, ngTableParams) {
+
+    // Query the database for the log information
+    getLogs($scope, ngTableParams, $http, showLog, policy.author, uuids);
+    
+    // Regularly query the database for any updates
+    // (only run the repeat when we are actually displaying the log info
+    // otherwise stop)
+    if (showLog.name) {
+        var repeatGetLogs = $interval(function() {
+            getLogs($scope, ngTableParams, $http, showLog, policy.author, uuids);
+        }, 6000, 0);
+    }
+
+    //Display the policy information
+    $scope.loadPolicyList = function() {
+        $interval.cancel(repeatGetLogs);
+        showLog.name = false;
+        var url="template/listtable.html";
+        $scope.$parent.changeLoc(url);
+    };
+}
+
+function getLogs($scope, ngTableParams, $http, showLog,
+        author, uuids) {
+    var get_author = $http({method: 'GET',
+        url: '${CGI_URL}/getPolicyLog.py',
+        params: {username: author} }).then(function(results) {
+            var data = results.data;
+            var loglen = 0;
+            var logData = [];
+            if (data.data.length > 0) {
+                loglen = data.data.length;
+                // loop over the rows and set the visibility
+                // for the row depending on whether the log id
+                // is in the list of ids from the list page
+                for (var i = 0; i < loglen; i++) {
+                    var logVisible = false;
+                    if (uuids.indexOf(data.data[i][1]) >= 0) {
+                        logVisible = true;
+                    }
+                    logData.push({visible: logVisible, row: data.data[i]});
+                }
+                $scope.logData = logData;
+                $scope.data = logData;
+            }
+            $scope.logColumns = data.columns;
+    });
+}
+
+dpmApp.service('logData', function() {
+    var logDataObj = [];
+    return {
+        getObj: function() {
+            return logDataObj;
+        },
+        setObj: function(valobj) {
+            logDataObj = valobj;
+        }
+    };
+});
+
+dpmApp.factory('logPageList', function() {
+    var logList = {"hide": true, "active": false};
+    return logList;
+});
+
+dpmApp.factory('showLog', function() {
+    var showlog = {name: false};
+    return showlog;
+});
+
+function frontPageCtrl($scope, $http) {
+    $scope.sendToDPM = function() {
+        $http({method: "POST", url: "${CGI_URL}/getURL.py", 
+            data: angular.toJson({name:"dpm"})}).then(function(response){
+                window.location.href = response.data;
+        });
+    };
+
+    $scope.sendToAdmin = function() {
+        $http({method: "POST", url: "${CGI_URL}/getURL.py", 
+            data: angular.toJson({name:"admin"})}).then(function(response){
+                window.location.href = response.data;
+        });
+    };
+}
+
+var frontPageApp = angular.module("frontPageApp", []);
+
+
+function listCtrl($scope, $sce, $http, $route,
+        $filter, $location, logPageList,
+        logData, policy, polList, uuids,
+        showLog, userProfile, listaction, ngTableParams) {
+
+    var keys = [];
+    var dkeys = {};
+    $scope.displayKeys = false;
+
+
+    // Display the checkbox for the columns
+    $scope.showCheckbox = function() {
+        if ($scope.displayKeys === false) {
+            $scope.displayKeys = true;
+        } else {
+            $scope.displayKeys = false;
+        }
+    };
+
+    // Set the type of list action
+    $scope.listaction = listaction;
+
+    $scope.actionPolicy = function() {
+        for (i = 0; i < keys.length; i++) {
+            dkeys[keys[i].name] = keys[i].idx;
+        }
+        // console.log("dkeys is " + JSON.stringify(dkeys));
+        // console.log("data is " + JSON.stringify(this.pol_data));
+        $scope.policy.name = this.pol_data.pol_vals[dkeys.policy_name].name;
+        $scope.policy.version = this.pol_data.pol_vals[dkeys.policy_version].name;
+        $scope.policy.author = this.pol_data.pol_vals[dkeys.policy_author].name;
+        $scope.policy.uuid = this.pol_data.pol_vals[dkeys.policy_uniqueid].name;
+        $scope.policy.id = this.pol_data.pol_vals[dkeys.policy_id].name;
+
+        $scope.policy.community = this.pol_data.pol_vals[dkeys.policy_community].name.toLowerCase();
+        // We need to split the collection name as we display as
+        // a string of more than one collection
+        if (this.pol_data.pol_vals[dkeys.collection_persistentIdentifier].name === null) {
+          colls = ['none'];
+        } else {
+          colls = this.pol_data.pol_vals[dkeys.collection_persistentIdentifier].name.split(',');
+        }
+        if (this.pol_data.pol_vals[dkeys.collection_persistentIdentifier_type].name === null) {
+          coll_types = ['none'];
+        } else {
+          coll_types = this.pol_data.pol_vals[dkeys.collection_persistentIdentifier_type].name.split(',');
+        }
+        policy.collections = [];
+        for (var i = 0; i < colls.length; i++) {
+            var coll = colls[i].replace(/ /g,'');
+            var coll_type = coll_types[i].replace(/ /g,'');
+            policy.collections.push({"name": coll,
+                "type": coll_type});
+        }
+
+        // We need to split the source path, resource, site, organisation, system
+        // as there may be more than one source
+        var sources = [];
+        if (this.pol_data.pol_vals[dkeys.src_location_site_type].name === null) {
+          sources = [['none', 'none', 'none', 'none', 'none']];
+        } else {
+          var orgs = this.pol_data.pol_vals[dkeys.src_location_site_type].name.split(',');
+          var sites = this.pol_data.pol_vals[dkeys.src_location_site].name.split(',');
+          var resources = this.pol_data.pol_vals[dkeys.src_location_resource].name.split(',');
+          var systems = this.pol_data.pol_vals[dkeys.src_location_type].name.split(',');
+          var paths = this.pol_data.pol_vals[dkeys.src_location_path].name.split(',');
+          var k;
+          for (k = 0; k < orgs.length; k++) {
+            sources.push({organisation: {name: orgs[k]},
+                          site: {name: sites[k]},
+                          system: {name: systems[k]},
+                          resource: {name: resources[k]},
+                          path: paths[k]});
+          }
+        }
+        $scope.policy.sources = sources;
+        // console.log("sources " + JSON.stringify($scope.policy.sources));
+
+        $scope.policy.action.name = this.pol_data.pol_vals[dkeys.action_name].name;
+        $scope.policy.type.name = this.pol_data.pol_vals[dkeys.action_type].name;
+        $scope.policy.trigger.name = this.pol_data.pol_vals[dkeys.action_trigger_type].name;
+        $scope.policy.trigger.value = this.pol_data.pol_vals[dkeys.action_trigger_action].name;
+        $scope.policy.target.organisation.name = this.pol_data.pol_vals[dkeys.location_site_type].name;
+        $scope.policy.target.site.name = this.pol_data.pol_vals[dkeys.location_site].name;
+        $scope.policy.target.path = this.pol_data.pol_vals[dkeys.location_path].name;
+        $scope.policy.target.resource.name = this.pol_data.pol_vals[dkeys.location_resource].name;
+        $scope.policy.target.system.name = this.pol_data.pol_vals[dkeys.location_type].name;
+        //$scope.policy.target.loctype.name = this.pol_data.pol_vals[dkeys.loctype].name;
+
+        var url = "";
+        if (this.polselected.name === "Modify") {
+            url = "template/modify.html";
+        } else if (this.polselected.name === "Deactivate") {
+            url = "template/remove.html";
+            $scope.policy.saved_uuid = $scope.policy.uuid;
+        } else if (this.polselected.name === "Reactivate") {
+            url = "template/reactivate.html";
+            $scope.policy.saved_uuid = $scope.policy.uuid;
+        }
+        $scope.$parent.changeLoc(url);
+    };
+
+    // Read in from the config file the database schema. These will
+    // be our search fields
+    $http({method: "GET",
+        url: "${CGI_URL}/getKeys.py"}).then(function(results) {
+            var data = results.data;
+            var i;
+            var is_visible = false;
+            for (i = 0; i < data.length; i++) {
+                is_visible = (data[i][1] === 'true');
+                keys.push({idx: i, name: data[i][0], visible: is_visible});
+            }
+            for (i = 0; i < keys.length; i++) {
+                dkeys[keys[i].name] = keys[i].idx;
+            }
+    });
+    $scope.policy_columns = keys;
+    $scope.updateKey = function(idx) {
+        // Since the checkbutton just toggles we set the value to opposite
+        // its current setting
+        if ($scope.policy_columns[idx].visible === true) {
+            $scope.policy_columns[idx].visible = false;
+        } else {
+            $scope.policy_columns[idx].visible = true;
+        }
+        // Need to loop over all the rows of data and set the visible flags
+        // for each row
+        var i = 0;
+        for (i = 0; i < $scope.data.length; i++) {
+            var j = 0;
+            for (j = 0; j < $scope.data[i].pol_vals.length; j++) {
+                if (idx == j) {
+                    if ($scope.data[i].pol_vals[j].visible === false) {
+                        $scope.data[i].pol_vals[j].visible = true;
+                    } else {
+                        $scope.data[i].pol_vals[j].visible = false;
+                    }
+                }
+            }
+        }
+    };
+
+    //
+    // Get the policies from the database as well as the log information
+    var dvals = [];
+    var dataSave = [];
+
+    // Since the population of the author is asynchronous we can only execute
+    // when the author is filled we need to make use of the promise
+    userProfile.promise.then(function (response) {
+        $http({method: "GET",
+            url: "${CGI_URL}/getPolicyData.py"}).then(function(results) {
+                var i;
+                var j;
+                var data = results.data;
+                uuids = clearArray(uuids);
+                for (i = 0; i < data.length; i++) {
+                    var ddvals = [];
+                    var is_visible = false;
+                    for (j = 0; j < data[i].length; j++) {
+                      if (j === 6) {
+                        dat = new Date(parseInt(data[i][j][0])*1000);
+                        data[i][j][0] = dat.getFullYear() + '-' +
+                        dat.getMonth() + '-' + dat.getDate();
+                      }
+                        is_visible = (data[i][j][1] === 'true');
+                        ddvals.push({name: data[i][j][0],
+                            visible: is_visible});
+                    }
+                    // Set flag indicating whether to show removed
+                    // policy to false by default.
+                    var polrm = false;
+
+                    dvals.push({pol_vals: ddvals, visible: true,
+                        removed: polrm});
+                    // Keep the uid for matching with the log files
+                    uuids.push(data[i][dkeys.policy_uniqueid][0]);
+                }
+
+                // For removed or deactivated policies we need to
+                // remove the option to remove the policy
+                var k;
+                for (k = 0; k < dvals.length; k++) {
+                    if (dvals[k].pol_vals[dkeys.policy_removed].name === "true") {
+                      // dvals[k].listaction = [{"name": "Reactivate"},
+                      //      {"name": "Modify"}];
+                      dvals[k].listaction = [{"name": "Reactivate"}];
+                    } else {
+                      dvals[k].listaction = listaction;
+                    }
+                }
+
+                $scope.data = dvals;
+                var totlen = 0;
+                if ($scope.data.length > 0) {
+                    totlen = $scope.data.length;
+                }
+
+                // Also save a copy of the data for quicker access
+                // when using filtering
+                dataSave = dvals;
+
+                $scope.tabs = new ngTableParams({page: 1, count: 10},
+                        {
+                            total: totlen,
+                            getData: function($defer, params) {
+                                $defer.resolve($scope.data.slice((params.page() - 1) * params.count(), params.page() * params.count()));
+
+                            }
+                        });
+        });
+    }
+    );
+    // Filter the policy so we only show those that have visibility selected
+    $scope.filterPolicy = function() {
+        var i;
+        var j;
+        var count = 0;
+        // We need to reset the array and repopulate from the saved list
+        $scope.data = [];
+        uuids = clearArray(uuids);
+        for (i = 0; i < dataSave.length; i++) {
+            for (j = 0; j < dataSave[i].pol_vals.length; j++) {
+                if (null == $scope.searchparam || $scope.searchparam.length === 0 || dataSave[i].pol_vals[j].name.indexOf($scope.searchparam) >= 0) {
+                    $scope.data[count] = dataSave[i];
+                    uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
+                    count += 1;
+                    break;
+                }
+            }
+        }
+
+        // We need to reset the page counter after filtering
+        $scope.tabs.total($scope.data.length);
+        $scope.tabs.reload();
+    };
+
+    // Clear the search
+    $scope.clearSearch = function() {
+        $scope.searchparam = '';
+        $scope.filterPolicy();
+    };
+
+    $scope.reloadPolicyList = function() {
+        // Get the policies from the database
+        var dvals = [];
+        $scope.data = [];
+        userProfile.promise.then(
+            $http({method: "GET",
+                url: "${CGI_URL}/getPolicyData.py",
+                params: {username: policy.author} }).success(function(data,
+                    status, headers, config) {
+                        var i;
+                        var j;
+                        uuids = clearArray(uuids);
+                        for (i = 0; i < data.length; i++) {
+                            var ddvals = [];
+                            for (j = 0; j < data[i].length; j++) {
+                                if (j === 6) {
+                                  var dat = new Date(parseInt(data[i][j][0])*1000);
+                                  data[i][j][0] = dat.getFullYear() + '-' +
+                                  dat.getMonth() + '-' + dat.getDate();
+                                }
+                                ddvals.push({name: data[i][j][0],
+                                    visible: $scope.policy_columns[j].visible});
+                            }
+                            // Set flag indicating whether to show removed
+                            // policy to false by default.
+                            var polrm = false;
+
+                            dvals.push({pol_vals: ddvals, visible: true,
+                            removed: polrm});
+                            uuids.push(data[i][dkeys.policy_uniqueid][0]);
+                        }
+                        dataSave = dvals;
+                        $scope.data = dvals;
+
+                        // We need to also make sure the filter is applied
+                        // correctly before reloading the table
+                        $scope.filterPolicy();
+                        $scope.tabs.reload();
+
+            })
+        );
+    };
+
+    // Show only the active policies
+    $scope.showActive = function() {
+        var i;
+        var j;
+        var count = 0;
+        // We need to reset the array and repopulate from the saved list
+        $scope.data = [];
+        uuids = clearArray(uuids);
+        for (i = 0; i < dataSave.length; i++) {
+            for (j = 0; j < dataSave[i].pol_vals.length; j++) {
+                if (dataSave[i].pol_vals[dkeys.policy_removed].name === "false") {
+                    $scope.data[count] = dataSave[i];
+                    uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
+                    count += 1;
+                    break;
+                }
+            }
+        }
+
+        // We need to reset the page counter after filtering
+        $scope.tabs.total($scope.data.length);
+        $scope.tabs.reload();
+
+    };
+
+    // Show only the removed policies
+    $scope.showRemoved = function() {
+        var i;
+        var j;
+        var count = 0;
+        // We need to reset the array and repopulate from the saved list
+        $scope.data = [];
+        uuids = clearArray(uuids);
+        for (i = 0; i < dataSave.length; i++) {
+            for (j = 0; j < dataSave[i].pol_vals.length; j++) {
+                if (dataSave[i].pol_vals[dkeys.policy_removed].name === "true") {
+                    $scope.data[count] = dataSave[i];
+                    uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
+                    count += 1;
+                    break;
+                }
+            }
+        }
+
+        // We need to reset the page counter after filtering
+        $scope.tabs.total($scope.data.length);
+        $scope.tabs.reload();
+    };
+
+    // Function to reset the highlight flags for rows
+    $scope.resetFlag = function() {
+        uuids = clearArray(uuids);
+        var i;
+        for (i = 0; i < $scope.data.length; i++) {
+            if ($scope.data[i].$selected === true) {
+                $scope.data[i].$selected = false;
+                break;
+            }
+        }
+    };
+
+    // Function to display the policy
+    $scope.display_pol = function(pol_data) {
+        // The 4th element is the id. Query the database to get the policy
+        // corresponding to the uuid
+        $http({method: "GET",
+            url: "${CGI_URL}/getPolicy.py",
+            params: {uuid: pol_data.pol_vals[dkeys.policy_uniqueid].name} }).then(function(results) {
+                var data = results.data;
+                uuids = clearArray(uuids);
+                uuids.push(pol_data.pol_vals[dkeys.policy_uniqueid].name);
+                $scope.policy_obj = JSON.parse(data);
+        });
+    };
+
+    // Function to display the log information
+    // (the flags for the tabs are in the parent of the parent)
+    $scope.loadLogList = function() {
+       var url = "template/listlogs.html";
+       showLog.name = true;
+       $scope.$parent.changeLoc(url);
+    };
+}
+
+function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile) {
+
+    var periodChanged = false;
+
+    // We need to make a copy of the original policy so any updates
+    // can be compared
+
+    // If the policy has a period type we need to pass the string and
+    // fill the corresponding values
+    policy = parsePeriod(policy);
+    var origPolicy = copyPol(policy);
+
+    // Flags to detect if a policy element changes
+    var polChanged = {title: null, community: null, identifier: [],
+        collection: [], type: null, trigger_name: null, trigger_value: null,
+        organisation: null, location: null, system: null, action: null,
+        site: null, path: null, resource: null};
+
+    $scope.backToList = function() {
+        $scope.$parent.changeLoc("template/listtable.html");
+    };
+
+    $scope.ulist = [userProfile.username];
+    $scope.comlist = userProfile.communities;
+
+    $scope.titleChange = function() {
+        if ($scope.policy.name != origPolicy.name) {
+            polChanged.title = true;
+        } else {
+            polChanged.title = false;
+        }
+    };
+
+    $scope.changePeriod = function() {
+        var periodval = [$scope.policy.trigger_period.weekday.name,
+            $scope.policy.trigger_period.month.name,
+            $scope.policy.trigger_period.day.name,
+            $scope.policy.trigger_period.hour.name,
+            $scope.policy.trigger_period.minute.name];
+        trigger_value = periodval.join(", ");
+            if (trigger_value != origPolicy.trigger.value) {
+                polChanged.trigger_value = true;
+            } else {
+                polChanged.trigger_value = false;
+            }
+    };
+
+    // Record if the organisation changes
+    $scope.organisationChange = function() {
+        if ($scope.orgList.length > 1) {
+            if ($scope.target.organisation.name !=
+                    origPolicy.target.organisation.name) {
+                        polChanged.organisation = true;
+            } else {
+                polChanged.organisation = false;
+            }
+        }
+    };
+
+    // Record if the location changes
+    $scope.locationChange = function() {
+        if ($scope.locTypes.length > 1) {
+            if ($scope.policy.target.loctype.name !=
+                    origPolicy.target.loctype.name) {
+                        polChanged.location = true;
+            } else {
+                polChanged.location = false;
+            }
+        }
+    };
+
+    $scope.authorChange = function() {
+        if ($scope.policy.author != origPolicy.author) {
+            polChanged.author = true;
+        } else {
+            polChanged.author = false;
+        }
+    };
+
+    $scope.identifierChange = function() {
+        // We need to reset the collection flag since the identifier is
+        // higher level
+        polChanged.collection[this.$index] = false;
+        if ($scope.pidList.length > 1) {
+            if (policy.collections[this.$index].type !=
+                    origPolicy.collections[this.$index].type) {
+                polChanged.identifier[this.$index] = true;
+            } else {
+                polChanged.identifier[this.$index] = false;
+            }
+        }
+    };
+
+    $scope.collectionChange = function() {
+        if (policy.collections[this.$index].name !=
+                origPolicy.collections[this.$index].name) {
+                    polChanged.collection[this.$index] = true;
+        } else {
+            polChanged.collection[this.$index] = false;
+        }
+    };
+
+    $scope.communityChange = function() {
+        if ($scope.comlist.length > 1) {
+            if ($scope.policy.community != origPolicy.community) {
+                polChanged.community = true;
+            } else {
+                polChanged.community = false;
+            }
+        }
+    };
+
+    // Read the available identifier types
+    pidList = [];
+    $http({method: "GET",
+        url: "${CGI_URL}/query_actions.py",
+        params: {qtype: "identifiers"}}).then(function(results) {
+            var data = results.data;
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    pidList.push(data[idx][0]);
+                }
+            }
+            $scope.pidList = pidList;
+    });
+
+    // Read the list of actions
+    $http({method: "GET",
+        url: "${CGI_URL}/query_actions.py",
+        params: {qtype: "operations"}}).then(function(results) {
+            var data = results.data;
+            var opList = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    opList.push(data[idx][0]);
+                }
+            }
+            $scope.actionList = opList;
+    });
+
+    // Read the action types
+    var getTypObj = getActionType($http, $scope.policy.action.name);
+
+    getTypObj.success(function(data,
+                status, headers, config) {
+                    var typeList = [];
+                    for (var idx = 0; idx < data.length; ++idx) {
+                        if (data[idx].length > 0) {
+                            typeList.push(data[idx][0]);
+                        }
+                    }
+                    $scope.typeList = typeList;
+                });
+
+    // If the action changes need to update the list of types
+    // and reset the type default (since it may not correspond
+    $scope.actionChange = function() {
+        var getTypObj = getActionType($http, $scope.policy.action.name);
+        getTypObj.then(function(results) {
+            var data = results.data;
+            var typeList = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    typeList.push(data[idx][0]);
+                }
+            }
+            $scope.typeList = typeList;
+        });
+        // Is the action different to original?
+        // need to reset the type flag as the two are coupled
+        polChanged.type = false;
+        if ($scope.actionList.length > 1) {
+            if ($scope.policy.action.name != origPolicy.action.name) {
+                polChanged.action = true;
+            } else {
+                polChanged.action = false;
+            }
+        }
+    };
+
+    // Record if the type has changed and reload the trigger list
+    $scope.typeChange = function() {
+        var getTrgObj = getActionTrigger($http, $scope.policy.action.name,
+                $scope.policy.type.name);
+        getTrgObj.then(function(results) {
+            var data = results.data;
+            var triggerList = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    triggerList.push(data[idx][0]);
+                }
+            }
+            $scope.triggerList = triggerList;
+        });
+        console.log("length " + $scope.typeList.length);
+        if ($scope.typeList.length >= 1) {
+            console.log("orig " + origPolicy.type.name + " now " +
+                    $scope.policy.type.name);
+            if ($scope.policy.type.name != origPolicy.type.name) {
+                polChanged.type = true;
+            } else {
+                polChanged.type = false;
+            }
+        }
+    };
+
+    // Get the triggers
+    var getTrgObj = getActionTrigger($http, $scope.policy.action.name,
+            $scope.policy.type.name);
+    getTrgObj.then(function(results) {
+        var data = results.data;
+        var triggerList = [];
+        for (var idx = 0; idx < data.length; ++idx) {
+            if (data[idx].length > 0) {
+                triggerList.push(data[idx][0]);
+            }
+        }
+        $scope.triggerList = triggerList;
+    });
+
+    // Record a change in the trigger
+    $scope.triggerChange = function() {
+        if ($scope.triggerList.length > 1) {
+            if ($scope.policy.trigger.name != origPolicy.trigger.name) {
+                polChanged.trigger_name = true;
+            } else {
+                polChanged.trigger_name = false;
+            }
+        }
+    };
+
+    // Get the organisation from the database
+    var getOrgObj = getOrganisation($http);
+    getOrgObj.success(function(data, status, headers, config) {
+        var orgList = [];
+        for (var idx = 0; idx < data.length; ++idx) {
+            if (data[idx].length > 0) {
+                orgList.push(data[idx][0]);
+            }
+        }
+        $scope.orgList = orgList;
+    });
+
+    // Get the location type
+    var getLocObj = getLocation($http, $scope.policy.action.name,
+            $scope.policy.type.name, $scope.policy.trigger.name);
+    getLocObj.then(function(results) {
+        var data = results.data;
+        var locTypes = [];
+        for (var idx = 0; idx < data.length; ++idx) {
+            if (data[idx].length > 0) {
+                locTypes.push(data[idx][0]);
+            }
+        }
+        $scope.locTypes = locTypes;
+    });
+
+    // Get the list of systems
+    var getSysObj = getSystem($http);
+    getSysObj.then(function(results) {
+        var data = results.data;
+        var sysList = [];
+        for (var idx = 0; idx < data.length; ++idx) {
+            if (data[idx].length > 0) {
+                sysList.push(data[idx][0]);
+            }
+        }
+        $scope.sysList = sysList;
+    });
+
+    // Get the list of sites
+    var getSiteObj = getSite($http, $scope.policy.target.system.name);
+    getSiteObj.then(function(results) {
+        var data = results.data;
+        var siteList = [];
+        for (var idx = 0; idx < data.length; ++idx) {
+            if (data[idx].length > 0) {
+                siteList.push(data[idx][0]);
+            }
+        }
+        $scope.siteList = siteList;
+    });
+
+    // Get the list of resources
+    var getResObj = getResource($http, $scope.policy.target.system.name,
+            $scope.policy.target.site.name);
+    getResObj.then(function(results) {
+        var data = results.data;
+        var resList = [];
+        for (var idx = 0; idx < data.length; ++idx) {
+            if (data[idx].length > 0) {
+                resList.push(data[idx][0]);
+            }
+        }
+        $scope.resList = resList;
+    });
+
+    // If the system changes we need to keep a record
+    $scope.systemChange = function() {
+        if ($scope.sysList.length > 1) {
+            polChanged.site = false;
+            if ($scope.policy.target.system.name !=
+                    origPolicy.target.system.name) {
+                polChanged.system = true;
+            } else {
+                polChanged.system = false;
+            }
+        }
+    };
+
+    // If the site changes we need to reload the resources
+    $scope.siteChange = function() {
+        var getResObj = getResource($http,
+                $scope.policy.target.system.name,
+                $scope.policy.target.site.name);
+        getResObj.then(function(results) {
+            var data = results.data;
+            var resList = [];
+            for (var idx = 0; idx < data.length; ++idx) {
+                if (data[idx].length > 0) {
+                    resList.push(data[idx][0]);
+                }
+            }
+            $scope.resList = resList;
+        });
+        // If we only have one site the flag will not change so
+        polChanged.resource = false;
+        if ($scope.siteList.length > 1) {
+            if (origPolicy.target.site.name !=
+                    $scope.policy.target.site.name) {
+                        polChanged.site = true;
+            } else {
+                polChanged.site = false;
+            }
+        }
+    };
+
+    // Show the date if the trigger type is date
+    $scope.showDate = function(trgname) {
+        var show = false;
+        if (trgname === "date") {
+            show = true;
+            $scope.trigger_date = $scope.policy.trigger.value;
+        }
+        return show;
+    };
+
+    // Update the date
+    $scope.updateDate = function() {
+        if (($scope.trigger_date != origPolicy.trigger.value)) {
+            polChanged.trigger_value = true;
+        } else {
+            polChanged.trigger_value = false;
+        }
+        $scope.policy.trigger.value = getIsoDate($scope.trigger_date);
+    };
+
+    // Handle the opening of the calendar from the icon
+    $scope.datOpen = function($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.opened = true;
+    };
+
+    $scope.period = getPeriod();
+
+    // Show the period
+    $scope.showPeriod = function(trgname) {
+        var show = false;
+        if (trgname === "period") {
+            show = true;
+        }
+        return show;
+    };
+
+    // Record changes to the path
+    $scope.pathChange = function() {
+        if (this.policy.target.path != origPolicy.target.path) {
+            polChanged.path = true;
+        } else {
+            polChanged.path = false;
+        }
+    };
+
+    // Record the fact that the resource changed
+    $scope.resourceChange = function() {
+        if ($scope.resList.length > 1) {
+            if (this.policy.target.resource.name !=
+                origPolicy.target.resource.name) {
+                    polChanged.resource = true;
+            } else {
+                polChanged.resource = false;
+            }
+        }
+    };
+
+    // Parse the period trigger and set the corresponding types
+    function parsePeriod(apolicy) {
+        if (apolicy.trigger.name === "period") {
+            vals = apolicy.trigger.value.split(', ');
+            apolicy.trigger_period.weekday.name = vals[4];
+            apolicy.trigger_period.month.name = vals[3];
+            apolicy.trigger_period.day.name = vals[2];
+            apolicy.trigger_period.hour.name = vals[1];
+            apolicy.trigger_period.minute.name = vals[0];
+        }
+        return apolicy;
+    }
+
+    // submit the policy to the database
+    $scope.updatePolicy = function() {
+        // Check if the policy has been changed
+        var polChangedObj = checkPolChanged(polChanged);
+        if (polChangedObj.changed) {
+            if (polChangedObj.invalid.length === 0) {
+                policy.uuid = createGuid();
+                $http.post("${CGI_URL}/storeModifiedPolicy.py",
+                        JSON.stringify(policy),
+                        {headers: "Content-Type: application/x-www-form-urlencoded"}).success(function(data, status, headers, config)
+                            {
+                                if (data.policy_exists) {
+                                    alert("The policy exists in the database");
+                                } else {
+                                    alert("Updated policy has been successfully stored in the database");
+                                }
+                                $window.location.reload();
+                            }).error(function(data, status, headers, config)
+                                {
+                                    alert("Problem with storing the policy");
+                                    alert(data);
+                                });
+            } else {
+                alert("there is a problem " + angular.toJson(polChanged) +
+                        " obj " + angular.toJson(polChangedObj));
+            }
+        } else {
+            alert("Policy is unmodified. Will not update the stored policy");
+        }
+    };
+    // Show the collections div if the policy has pid elements
+    $scope.collDefined = function() {
+      var i = 0;
+      var collFlag = false;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        if ($scope.policy.collections[i].type === "collection") {
+          collFlag = true;
+          break;
+        }
+      }
+      return collFlag;
+    };
+    // Show the PID div if the policy has pid elements
+    $scope.pidDefined = function() {
+      var i = 0;
+      var pidFlag = false;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        console.log("coll is " + $scope.policy.collections[i].type);
+        if ($scope.policy.collections[i].type === "pid") {
+          pidFlag = true;
+          break;
+        }
+      }
+      return pidFlag;
+    };
+}
+
+function reactivateCtrl($scope, $http, $window, policy) {
+
+    // Back to the list
+    $scope.backToList = function() {
+        $scope.$parent.changeLoc("template/listtable.html");
+    };
+
+    // Reactivate the policy
+    // This means marking the policy as not being deleted
+    $scope.reactivatePolicy = function() {
+        var resp = confirm("Are you sure?");
+        if (resp === true) {
+            var reactivatepolicy = $http({method: "POST",
+                url: "${CGI_URL}/reactivatePolicy.py",
+                data: angular.toJson({uuid: $scope.policy.saved_uuid})});
+            reactivatepolicy.then(function(response) {
+                alert("The policy has been reactivated");
+                $window.location.reload();
+            });
+        }
+    };
+
+    $scope.collDefined = function() {
+      var collFlag = false;
+      var i = 0;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        if ($scope.policy.collections[i].type === 'collection') {
+          collFlag = true;
+          break;
+        }
+      }
+      return collFlag;
+    };
+
+    $scope.pidDefined = function() {
+      var pidFlag = false;
+      var i = 0;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        if ($scope.policy.collections[i].type === 'pid') {
+          pidFlag = true;
+          break;
+        }
+      }
+      return pidFlag;
+    };
+}
+
+function removeCtrl($scope, $http, $window, policy) {
+
+    // Back to the list
+    $scope.backToList = function() {
+        $scope.$parent.changeLoc('template/listtable.html');
+    };
+
+    // Delete the policy
+    $scope.removePolicy = function() {
+        var resp = confirm('Are you sure?');
+        if (resp === true) {
+            var rmpolicy = $http({method: 'POST',
+                url: '${CGI_URL}/removePolicy.py',
+                data: angular.toJson({uuid: $scope.policy.saved_uuid})});
+            rmpolicy.then(function(response) {
+                alert('Policy has been removed');
+                $window.location.reload();
+            });
+        }
+    };
+
+    // console.log("policy is " + JSON.stringify(policy));
+
+    $scope.collDefined = function() {
+      var collFlag = false;
+      var i = 0;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        if ($scope.policy.collections[i].type === 'collection') {
+          collFlag = true;
+          break;
+        }
+      }
+      return collFlag;
+    };
+
+    $scope.pidDefined = function() {
+      var pidFlag = false;
+      var i = 0;
+      for (i = 0; i < $scope.policy.collections.length; i++) {
+        if ($scope.policy.collections[i].type === 'pid') {
+          pidFlag = true;
+          break;
+        }
+      }
+      return pidFlag;
+    };
+}
+
+function checkPolChanged(polObj) {
+    var invalidPol = false;
+    var polHasChanged = false;
+    var invalidFlags = [];
+
+    // has the policy changed (we only need to find one example
+    for (var key in polObj) {
+        if (polObj[key] === true) {
+            polHasChanged = true;
+            break;
+        }
+    }
+    
+    // We need to check the combination of elements since some elements
+    // work in conjunction:
+    // identifier - collection
+    // action - type
+    // system - site
+    // trigger name - trigger value
+    // site - resource
+    if (polHasChanged) {
+        for (var i; i < polObj.identifier.length; i++) {
+            if ((polObj.identifier[i] != null && 
+                        polObj.collection[i] != null) &&
+                    (polObj.identifier[i] != polObj.collection[i])) {
+                invalidPol = true;
+                if (polObj.identifier[i]) {
+                    invalidFlags.push("collection");
+                } else {
+                    invalidFlags.push("identifier");
+                }
+            }
+        }
+        if ((polObj.action != null && polObj.type != null) &&
+                (polObj.action != polObj.type)) {
+            invalidPol = true;
+            if (polObj.action) {
+                invalidFlags.push("type");
+            } else {
+                invalidFlags.push("action");
+            }
+        }
+        if ((polObj.system != null && polObj.site != null) && 
+                (polObj.system != polObj.site)) {
+            invalidPol = true;
+            if (polObj.system) {
+                invalidFlags.push("site");
+            } else {
+                invalidFlags.push("system");
+            }
+        }
+        if ((polObj.site != null && polObj.resource != null) && 
+                polObj.site != polObj.resource) {
+            invalidPol = true;
+            if (polObj.site) {
+                invalidFlags.push("resource");
+            } else {
+                invalidFlags.push("site");
+            }
+        }
+        if (polObj.trigger_name && ! polObj.trigger_value) {
+            invalidPol = true;
+            invalidFlags.push("trigger");
+        }
+    }
+    return {changed: polHasChanged, invalid: invalidFlags};
+}
+
+function clearArray(in_array) {
+    while (in_array.length > 0) {
+        in_array.pop();
+    }
+    return in_array;
+}
+
+function copyPol(pol1) {
+    // Make a deep copy of a policy
+    var pol2 = {};
+    pol2.name = pol1.name;
+    pol2.version = pol1.version;
+    pol2.author = pol1.author;
+    pol2.uuid = pol1.uuid;
+    pol2.community = pol1.community;
+    pol2.collections = [];    
+    for (var i = 0; i < pol1.collections.length; i++) {
+        var coll = {};
+        coll = {name: pol1.collections[i].name, 
+            type: pol1.collections[i].type};
+        pol2.collections.push(coll);
+    }
+    pol2.action = {name: pol1.action.name};
+    pol2.type = {name: pol1.type.name};
+    pol2.trigger = {name: pol1.trigger.name, value: pol1.trigger.value};
+    var loctype = {name: pol1.target.loctype.name};
+    var organisation = {name: pol1.target.organisation.name};
+    var site = {name: pol1.target.site.name};
+    var resource = {name: pol1.target.resource.name};
+    var system = {name: pol1.target.system.name};
+    pol2.target = {organisation: organisation, site: site, system: system,
+        loctype: loctype, resource: resource, path: pol1.target.path};
+    return pol2;
+}
+
+function getActionTrigger($http, action, type) {
+    var getObj = $http({method: "GET",
+            url: "${CGI_URL}/query_actions.py",
+            params: {qtype: "triggers",
+                operation: action, type: type}
+        });
+    return getObj;
+}
+
+function getActionType($http, param) {
+    var getObj = $http({method: "GET",
+            url: "${CGI_URL}/query_actions.py",
+            params: {qtype: "types",
+                operation: param}
+        });
+    return getObj;
+}
+
+function getLocation($http, op, type, trig) {
+    var getObj = $http({method: "GET", 
+        url: "${CGI_URL}/query_actions.py", params: {qtype: "locations", 
+            operation: op, type: type, trigger: trig}});
+    return getObj;
+}
+
+function getOrganisation($http) {
+    var getObj = $http({method: "GET", 
+        url: "${CGI_URL}/query_actions.py", 
+        params: {qtype: "organisations"}});
+    return getObj;
+}
+
+function getResource($http, system, site)  {
+    var getObj = $http({method: "GET", 
+        url: "${CGI_URL}/query_resource.py", 
+        params: {qtype: "resources", system: system, site: site}
+    });
+    return getObj;
+}
+
+function getSite($http, system) {
+    var getObj = $http({method: "GET", 
+        url: "${CGI_URL}/query_resource.py", params: {qtype: "sites", 
+            system: system}
+    });
+    return getObj;
+}
+
+function getSystem($http) {
+    var getObj = $http({method: "GET", 
+        url: "${CGI_URL}/query_resource.py", params: {qtype: "systems"}});
+    return getObj;
+}
+
+dpmApp.factory('listaction', function() {
+//  var alist = [{"name": "Modify"}, {"name": "Remove"}];
+  var alist = [{"name": "Deactivate"}];
+    return alist;
+});
+
+dpmApp.factory('polList', function() {
+    var polList = {"hide": false, "active": true};
+    return polList;
+});
+
+dpmApp.factory('uuids', function() {
+    var uuidList = [];
+    return uuidList;
+});
+
