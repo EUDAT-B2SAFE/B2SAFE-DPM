@@ -27,6 +27,9 @@ the AAI persistent identifier for the administrator.
 * The email address of the DPM admin.
 * Root URI for the web pages.
 
+You can supply the input parameters via config file using the '-c' option (see
+  the 'Config File Schema' section for the structure of the file).
+
 3. Once script has completed you will need to copy the 'html', 'cgi', 'cgi-cli'
 directories under the 'deploy' directory to those that map to the corresponding
 URI.
@@ -63,7 +66,21 @@ grunt build
 '''
 This will run a number of tasks that effectively 'compile' the scripts
 and store them in under the 'build' directory. At this point you can follow
-the 'Deploy' steps to deploy the pages on your web server.
+the 'Deploying the DPM' steps to deploy the pages on your web server.
+
+## Config File Schema
+Using the '-c' option of the configure_dpm.py script you can supply the input
+parameters in a config file. The structure of the file should follow:
+
+[DEFAULT]
+CGI_URL=<root url to the cgi scripts>
+CLI_URL=<root url to the cgi scripts that provide the command line interface>
+ADMIN_USER=<the username or AAI persistent identifier for the admin user>
+ADMIN_NAME=<the firstname lastname of the admin user>
+ADMIN_EMAIL=<the email address of the admin user>
+AUTH_TYPE=<the authentication type: either 1 or 2 where 1=AAI, 2=STANDALONE>
+ROOT_URL=<root url to the DPM html>
+
 
 Comments:
 adilhasan2@gmail.com
