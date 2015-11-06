@@ -16,11 +16,13 @@ def usage():
     '''Function describing the script usage
     '''
     print 'Configure the Data Policy Manager.'
-    print 'Usage: configure_dpm.py [-h][-f]'
+    print 'Usage: configure_dpm.py [-h][-f][-c <config>]'
     print ''
     print 'Options:'
-    print '-h, --help              Print this help'
-    print '-f, --force             Forces the repopulation of the databases'
+    print '-h, --help                 Print this help'
+    print '-f, --force                Forces the repopulation of the databases'
+    print '-c, --config=<configfile>  A config file containing the input'
+    print '                           parameters.'
     print ''
 
 

@@ -198,7 +198,11 @@ def getData(config):
             # the results
             multiVal = False
             multiStr = ""
-            sub_dict = {k: v for k, v in mvals.items() if pat.match(k)}
+            sub_dict = {}
+            for akey in mvals.keys():
+                if (pat.match(akey)):
+                    sub_dict[akey] = mvals[akey]
+
             if (len(sub_dict) > 0):
                 multiVal = True
                 tkeys = sub_dict.keys()
