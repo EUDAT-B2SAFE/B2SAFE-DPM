@@ -16,6 +16,7 @@ Most users will only be interested in deploying the DPM.
 This will prompt you for the following paths:
 
 * Root URI for the CGI scripts.
+* Root PATH for the CGI scripts (this is the directory in which the scripts live).
 * Root URI for the command line interface (which are CGI scripts typically accessed
   with curl from the command line).
 * Authentication method - currently EUDAT AAI is supported and a STANDALONE method.
@@ -36,6 +37,40 @@ URI.
 
 4. Make sure that the 'data' directory for the 'cgi' directory is writeable by
 the webserver to allow the web server to populate the policy database.
+
+
+## Using the DPM
+You can use the web interface to create a policy for replication (currently the
+  only supported policy). To create a policy follow these simple steps:
+
+1. Register to use the DPM. Select a community you belong to and a fill in your
+personal information. You will receive an email once your request has been processed.
+
+2. Once registered you will be able to create a policy by choosing the 'Create Polcy'
+tab. Fill in the required information for the replication policy and submit your
+policy for storage.
+
+3. To query policies to download use:
+curl "<CLI_URL>/querypolicy.py?community=<community>"
+
+This should result in a list of policy parameters where the parameters are:
+FETCH_URI, TIMESTAMP, CHECKSUMVALUE, "CHECKSUMALGORITHM".
+
+4. Use the FETCH_URL to download the policy:
+curl <FETCH_URI>
+
+5. You can upload log information associated to the policy using:
+curl "<CLI-URI>/updatepolicy.py?state=<state>&community=<community>&timestamp=<timestamp>&center=<center>&id=<uuid>"
+
+where:
+* state = the state of the policy: QUEUED, RUNNING, DONE, FAILED
+* community = the community the policy belongs to
+* timestamp = the timestamp for the log message
+* center = the host where the policy is executed
+* id = the uuid of the policy
+
+6. To find the list of deactivated policies run:
+curl "<CLI_URL>/querypolicy.py?community_id=<community>&deactivated=true"
 
 
 ## Building the web interface
@@ -74,6 +109,7 @@ parameters in a config file. The structure of the file should follow:
 
 [DEFAULT]
 CGI_URL=<root url to the cgi scripts>
+CGI_PATH=<root path to the cgi scripts>
 CLI_URL=<root url to the cgi scripts that provide the command line interface>
 ADMIN_USER=<the username or AAI persistent identifier for the admin user>
 ADMIN_NAME=<the firstname lastname of the admin user>
