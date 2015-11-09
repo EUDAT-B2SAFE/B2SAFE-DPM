@@ -72,6 +72,9 @@ where:
 6. To find the list of deactivated policies run:
 curl "<CLI_URL>/querypolicy.py?community_id=<community>&deactivated=true"
 
+This should return a list of deactivated policies. The list contains:
+<policy uuid>, <md5 value>, <md5 algorithm>
+
 
 ## Building the web interface
 This is only required for people interested in making changes to the scripts or
