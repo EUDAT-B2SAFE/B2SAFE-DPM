@@ -160,11 +160,11 @@ def loadData(config):
 
 
 if __name__ == '__main__':
-    # The config file
-    cfgfile = './config/policy.cfg'
+    # Read the configurations
+    top_config = ConfigParser.ConfigParser()
+    top_config.read("./policy_cli.cfg")
 
-    # Read the configs
     config = ConfigParser.ConfigParser()
-    config.read(cfgfile)
+    config.read(top_config.get('POLICY', 'policy_config'))
 
     loadData(config)

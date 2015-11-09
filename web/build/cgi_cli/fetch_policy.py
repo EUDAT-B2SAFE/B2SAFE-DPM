@@ -22,9 +22,11 @@ def fetchPolicy():
     policy_object_key = "policy_id"
     help_key = "help"
 
-    # Read the configurations
+    top_config = ConfigParser.ConfigParser()
+    top_config.read("./policy_cli.cfg")
+
     config = ConfigParser.ConfigParser()
-    config.read("config/policy.cfg")
+    config.read(top_config.get('POLICY', 'policy_config'))
 
     print "Content-Type: application/json charset=utf-8"
     print ""

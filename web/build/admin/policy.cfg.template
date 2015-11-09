@@ -57,14 +57,14 @@ community=community
 allowed_states=QUEUED, RUNNING, FAILED, FINISHED
 
 [DATABASE]
-name=data/policy.db
+name=${CGI_PATH}/data/policy.db
 fetch_string=${CLI_URL}/fetch_policy.py?policy_id
 default_visible=policy_name, policy_author, policy_ctime, policy_community
 skip_keys=policy_object
 last_index=last_index
-profile_name=data/profile.db
-resource_name=config/resources.db
-action_name=config/actions.db
+profile_name=${CGI_PATH}/data/profile.db
+resource_name=${CGI_PATH}/config/resources.db
+action_name=${CGI_PATH}/config/actions.db
 
 [HTML]
 not_registered=./errors/not_reg.html
@@ -76,16 +76,16 @@ type=${AUTHTYPE}
 user=${HTMLUSER}
 
 [EMAIL]
-accept_body=./config/accept_body.txt
-accept_subject=./config/accept_subject.txt
-reject_body=./config/reject_body.txt
-reject_subject=./config/reject_subject.txt
-close_body=./config/close_body.txt
-close_subject=./config/close_subject.txt
-header=./config/header.txt
+accept_body=${CGI_PATH}/config/accept_body.txt
+accept_subject=${CGI_PATH}/config/accept_subject.txt
+reject_body=${CGI_PATH}/config/reject_body.txt
+reject_subject=${CGI_PATH}/config/reject_subject.txt
+close_body=${CGI_PATH}/config/close_body.txt
+close_subject=${CGI_PATH}/config/close_subject.txt
+header=${CGI_PATH}/config/header.txt
 
 [DPM_ADMIN]
-admin_file=config/dpm_admin.txt
+admin_file=${CGI_PATH}/config/dpm_admin.txt
 
 [DATABASE_LOADING]
 resource_data=https://creg.eudat.eu/gocdbpi/public/?method=get_service_endpoint&service_type=b2safe.irods

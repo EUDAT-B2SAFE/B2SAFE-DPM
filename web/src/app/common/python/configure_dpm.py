@@ -496,6 +496,7 @@ def read_local_config(local_cfg):
     local_conf = ConfigParser.RawConfigParser()
     local_conf.read(local_cfg)
     cfg['cgi_url'] = local_conf.get("DEFAULT", "CGI_URL")
+    cfg['cgi_path'] = local_conf.get("DEFAULT", "CGI_PATH")
     cfg['cli_url'] = local_conf.get("DEFAULT", "CLI_URL")
     cfg['auth'] = local_conf.get("DEFAULT", "AUTH_TYPE")
     cfg['admin_name'] = local_conf.get("DEFAULT", "ADMIN_NAME")
@@ -509,12 +510,13 @@ def read_input(local_cfg):
     '''Read the input from the command line'''
     cgi_url = ''
     cli_url = ''
+    cgi_path = ''
     admin_user = ''
     admin_name = ''
     admin_email = ''
     auth = '1'
     root_url = ''
-    old_cfg = {'cgi_url': '', 'cli_url': '', 'root_url': '',
+    old_cfg = {'cgi_url': '', 'cli_url': '', 'root_url': '', 'cgi_path': '',
                'auth': '1', 'admin_user': 'dpmadmin', 'admin_name': '',
                'admin_email': ''}
 
@@ -530,9 +532,23 @@ def read_input(local_cfg):
             sys.exit()
         elif (len(cgi_url) == 0):
             if (len(old_cfg['cgi_url']) == 0):
-                print "You must supply a path or 'q' to quit."
+                print "You must supply a URI or 'q' to quit."
             else:
                 cgi_url = old_cfg['cgi_url']
+                break
+        else:
+            break
+
+    while (1):
+        print "Base PATH for the CGI scripts [%s]" % old_cfg['cgi_path']
+        cgi_path = raw_input()
+        if (cgi_path == 'q'):
+            sys.exit()
+        elif (len(cgi_path) == 0):
+            if (len(old_cfg['cgi_path']) == 0):
+                print "You must supply a path or 'q' to quit."
+            else:
+                cgi_path = old_cfg['cgi_path']
                 break
         else:
             break
@@ -640,6 +656,7 @@ def read_input(local_cfg):
     with file(local_cfg, "w") as fout:
         fout.write("[DEFAULT]\n")
         fout.write("CGI_URL=%s\n" % cgi_url)
+        fout.write("CGI_PATH=%s\n" % cgi_path)
         fout.write("CLI_URL=%s\n" % cli_url)
         fout.write("ADMIN_USER=%s\n" % admin_user)
         fout.write("ADMIN_NAME=%s\n" % admin_name)
@@ -648,6 +665,7 @@ def read_input(local_cfg):
         fout.write("ROOT_URL=%s\n" % root_url)
         fout.close()
     out_args = {'cgi_url': cgi_url, 'cli_url': cli_url, 'root_url': root_url,
+                'cgi_path': cgi_path,
                 'admin_user': admin_user, 'admin_name': admin_name,
                 'admin_email': admin_email, 'auth_type': auth_type}
     return out_args
@@ -664,8 +682,8 @@ def read_config(local_cfg):
     return cfgs
 
 
-def configure_files(cfgfile_tmpl, cfgfile, adminfile, local_cfg, deploy_dir,
-                    use_config):
+def configure_files(cfgfile_tmpl, cfgfile, clifile_tmpl, clifile, adminfile,
+                    local_cfg, deploy_dir, use_config):
     '''Configure the config, admin and javascript files'''
 
     lines = []
@@ -690,15 +708,29 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile, local_cfg, deploy_dir,
             if ("CLI_URL" in line):
                 can = string.Template(line)
                 line = can.substitute(CLI_URL=in_args['cli_url'])
+            if ("CGI_PATH" in line):
+                can = string.Template(line)
+                line = can.substitute(CGI_PATH=in_args['cgi_path'])
             if ("CGI_URL" in line):
                 can = string.Template(line)
                 line = can.substitute(CGI_URL=in_args['cgi_url'])
-            elif ("HTMLUSER" in line):
+            if ("HTMLUSER" in line):
                 can = string.Template(line)
                 line = can.substitute(HTMLUSER=in_args['admin_user'])
-            elif ("AUTHTYPE" in line):
+            if ("AUTHTYPE" in line):
                 can = string.Template(line)
                 line = can.substitute(AUTHTYPE=in_args['auth_type'])
+            fout.write("%s" % line)
+        fout.close()
+
+    with file(clifile_tmpl, 'r') as fin:
+        cli_lines = fin.readlines()
+        fin.close()
+    with file(clifile, 'w') as fout:
+        for line in cli_lines:
+            if ("CGI_PATH" in line):
+                can = string.Template(line)
+                line = can.substitute(CGI_PATH=in_args['cgi_path'])
             fout.write("%s" % line)
         fout.close()
 
@@ -729,7 +761,8 @@ def configure_files(cfgfile_tmpl, cfgfile, adminfile, local_cfg, deploy_dir,
                         line = can.safe_substitute(CGI_URL=in_args['cgi_url'])
                     fout.write(line)
                 fout.close()
-    return (in_args['cgi_url'], in_args['cli_url'], in_args['root_url'])
+    return (in_args['cgi_url'], in_args['cgi_path'], in_args['cli_url'],
+            in_args['root_url'])
 
 
 def configure_dbase(config, root_url):
@@ -761,7 +794,7 @@ def configure_dbase(config, root_url):
 def copy_files(target_dir, source_dirs):
     '''Copy all the files from the source directory to the target directory'''
 
-    skipfiles = ['policy.cfg.template']
+    skipfiles = ['policy.cfg.template', 'policy_cli.cfg.template']
     for sdir in source_dirs:
         for adir, dirs, files in os.walk(sdir):
             tdir = adir.replace('..', target_dir)
@@ -849,19 +882,31 @@ if __name__ == '__main__':
         os.path.abspath(os.path.join(
                         os.path.dirname(__file__), 'policy.cfg.template'))
 
+    clifile_tmpl = \
+        os.path.abspath(os.path.join(
+                        os.path.dirname(__file__), 'policy_cli.cfg.template'))
+
     cfgfile = \
         os.path.abspath(os.path.join(os.path.dirname(__file__),
                                      '%s/cgi/config/policy.cfg' %
                                      deploy_dir))
+    clifile = \
+        os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                     '%s/cgi_cli/policy_cli.cfg' % deploy_dir))
     adminfile = \
         os.path.abspath(os.path.join(os.path.dirname(__file__),
                                      '%s/cgi/config/dpm_admin.txt' %
                                      deploy_dir))
 
     # Configure the data files
-    cgi_url, cli_url, root_url = configure_files(cfgfile_tmpl, cfgfile,
-                                                 adminfile, local_cfg,
-                                                 deploy_dir, use_config)
+    cgi_url, cgi_path, cli_url, root_url = configure_files(cfgfile_tmpl,
+                                                           cfgfile,
+                                                           clifile_tmpl,
+                                                           clifile,
+                                                           adminfile,
+                                                           local_cfg,
+                                                           deploy_dir,
+                                                           use_config)
 
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
@@ -885,11 +930,14 @@ if __name__ == '__main__':
         elif (dbase == 'resource'):
             data_tag.append("%s_data" % dbase.strip())
 
+        print "db_name ", config.get('DATABASE', db_name_tag)
+        dbfile_t = config.get('DATABASE', db_name_tag).split('%s/' %
+                                                             cgi_path)[1]
+
         dbfile = \
             os.path.abspath(os.path.join(os.path.join(
                 os.path.dirname(__file__),
-                "%s/cgi/%s" % (deploy_dir,
-                               config.get("DATABASE", db_name_tag)))))
+                "%s/cgi/%s" % (deploy_dir, dbfile_t))))
         if (not os.path.isdir(os.path.dirname(dbfile))):
             os.makedirs(os.path.dirname(dbfile))
 
@@ -899,6 +947,5 @@ if __name__ == '__main__':
 
         populate(dbfile, dbschema, dbdata, dbase, force_flag)
 
-        # Print out what the user needs to do upon completion
-        print_done(deploy_dir, build_dirs, data_dir, root_url, cgi_url,
-                   cli_url)
+    # Print out what the user needs to do upon completion
+    print_done(deploy_dir, build_dirs, data_dir, root_url, cgi_url, cli_url)

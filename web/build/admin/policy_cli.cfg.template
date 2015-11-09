@@ -1,0 +1,2 @@
+[POLICY]
+policy_config=${CGI_PATH}/config/policy.cfg

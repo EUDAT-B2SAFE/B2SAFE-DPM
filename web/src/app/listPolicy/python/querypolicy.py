@@ -183,8 +183,11 @@ def runQuery():
     '''Function to query the policy files
     '''
     # get the database configs
+    top_config = ConfigParser.ConfigParser()
+    top_config.read("./policy_cli.cfg")
+
     config = ConfigParser.ConfigParser()
-    config.read("config/policy.cfg")
+    config.read(top_config.get('POLICY', 'policy_config'))
 
     community_id_key = "community_id"
     b_date_key = "begin_date"
