@@ -5,7 +5,10 @@ an SQLITE database. Please not the DPM has only been tested on Linux machines -
 you may experience problems installing on a Windows-based machine.
 
 ## Deploying the DPM
-Most users will only be interested in deploying the DPM.
+Most users will only be interested in deploying the DPM. The DPM makes use of a
+mailserver to send emails. By default the email host is set to localhost. If
+you want to change the host you need to edit the  updateAndEmail.py script to
+point to your email server.
 
 1. cd build/admin
 
