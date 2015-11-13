@@ -60,11 +60,16 @@ class PolicyParser():
         Create an xml document from text input
         """
 
+        self.logger.debug('Parsing xml doc from text')
         xmlschema = etree.XMLSchema(xmlSchemaDoc)
         root = etree.fromstring(xmlData)
         if not xmlschema(root):
-            self.logger.error(xmlschema.error_log).last_error
-            exit()
+            self.logger.error(xmlschema.error_log.last_error)
+            errorMessage = xmlschema.error_log.last_error.message
+            if errorMessage.startswith("Element '{http://eudat.eu/2013/policy}time'"):
+                self.timeErrorManager(root, xmlschema)
+            else:
+                exit()            
         self.parse(root)
 
     def parseFromFile(self, file, xmlSchemaDoc):
@@ -72,12 +77,17 @@ class PolicyParser():
         Create an xml document from file input
         """
 
+        self.logger.debug('Parsing xml doc from file ' + file)
         xmlschema = etree.XMLSchema(xmlSchemaDoc)
         tree = etree.parse(file)
-        if not xmlschema(tree):
-            self.logger.error(xmlschema.error_log).last_error
-            exit()
         root = tree.getroot()
+        if not xmlschema(root):
+            self.logger.error(xmlschema.error_log.last_error)
+            errorMessage = xmlschema.error_log.last_error.message
+            if errorMessage.startswith("Element '{http://eudat.eu/2013/policy}time'"):
+                self.timeErrorManager(root, xmlschema)
+            else:
+                exit()
         self.parse(root)
 
     def parseFromUrl(self, url, xmlSchemaDoc, checksum_algo=None, checksum_value=None):
@@ -85,6 +95,7 @@ class PolicyParser():
         Create an xml document from url input
         """
 
+        self.logger.debug('Getting xml doc from url ' + url)
         response = urllib2.urlopen(url)
         xmlData = response.read()
 
@@ -123,3 +134,23 @@ class PolicyParser():
             self.policy = ReplicationPolicy(policy, self.dpmNS, self.loggerName,
                                             self.debug)
             self.policy.parse()
+
+    def timeErrorManager(self, root, xmlschema):
+        """
+        Manage the extra year field in the time element
+        """
+
+        self.logger.debug('trying to fix year extra field in time element')
+        timeElemList = root.xpath('//b:time',
+                                 namespaces={'b':'http://eudat.eu/2013/policy'})
+        for timeElem in timeElemList:
+            self.logger.debug('Element: ' + etree.tostring(timeElem))
+            if len(timeElem.text.split()) < 6:
+                self.logger.debug('Adding missing field year')
+                timeElem.text = timeElem.text + ' *'
+                if not xmlschema(root):
+                    self.logger.error(xmlschema.error_log.last_error)
+                    exit()
+            else:
+                self.logger.debug('Impossible to fix the error')
+                exit()

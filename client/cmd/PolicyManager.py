@@ -9,6 +9,8 @@ import urllib2
 import json
 import logging
 import logging.handlers 
+import os
+import glob
 from crontab import CronTab
 from croniter import croniter
 from datetime import datetime
@@ -16,6 +18,7 @@ from datetime import date
 from PolicyParser import PolicyParser
 from PolicyRunner import PolicyRunner
 from ConfigLoader import ConfigLoader
+from ServerConnector import ServerConnector
 
 logger = logging.getLogger('PolicyManager')
 
@@ -92,6 +95,15 @@ def cleanScheduledPolicies(args):
     for job in jobList:
         logger.info('removing the job ' + job.comment)
         cron.remove(job)
+        # remove rule files from the local file system
+        path = os.path.join(os.path.dirname(sys.path[0]), 'rules')
+        rulePath = path + '/replicate.' + job.comment + '.r'
+        logger.debug('Removing the file: ' + rulePath)
+        try:
+            os.remove(rulePath)
+            logger.debug('File removed')
+        except OSError, e:
+            logger.exception('Impossible to remove the file')
 
     cron.write_to_user(user=True)
     logger.info('Policies removed')
@@ -107,7 +119,7 @@ def queryDpm(args, config, begin_date=None, end_date=None):
     username = config.SectionMap('DpmServer')['username']
     password = config.SectionMap('DpmServer')['password']
     server = config.SectionMap('DpmServer')['hostname']
-    url = '%s://%s%s?community_id=%s&center_id=%s' % \
+    url = '%s://%s%s?community_id=%s&site=%s' % \
           (config.SectionMap('DpmServer')['scheme'],
            config.SectionMap('DpmServer')['hostname'],
            config.SectionMap('DpmServer')['path'],
@@ -155,6 +167,59 @@ def queryDpm(args, config, begin_date=None, end_date=None):
             else:
                 logger.error('invalid policy location [%s]', url)
 
+def updatePolicyStatus(args):
+    """
+    Update the status of all the policies in the central DB
+    """
+    
+    debug = args.verbose
+    config = ConfigLoader(args.config)
+    setLoggingSystem(config, debug)
+    logger.info('Start to update the status of the policies') 
+    loggerName = 'PolicyManager'
+    conn = ServerConnector(args.config, args.test, loggerName, debug)
+    policies = conn.listPolicies()
+    if policies is not None:
+        for entry in policies:
+            url = str(entry[0])
+            ts = entry[1]
+            checksum_value = str(entry[2])
+            checksum_algo = str(entry[3])
+
+            if not url.endswith('.html'):
+                logger.info('Processing policy: %s [%s, %s, %s]', url, ts,
+                            checksum_value, checksum_algo)
+                pParser = PolicyParser(None, args.test, 'PolicyManager', debug)
+                xmlSchemaDoc = pParser.parseXmlSchema(args.schemaurl, args.schemapath)
+                pParser.parseFromUrl(url, xmlSchemaDoc, checksum_algo, checksum_value)
+                if not pParser.policy is None:
+                    id = pParser.policy.policyId
+                    state = getPolicyStatus(id, debug)
+                    conn.updateStatus(id, state)
+            else:
+                logger.error('invalid policy location [%s]', url)
+
+def getPolicyStatus(id, debug):
+    """
+    Get the status of a policy [QUEUED, RUNNING, DONE, FAILED]
+    """
+ 
+    rulePath = os.path.join(os.path.dirname(sys.path[0]), 'rules')
+    ruleFiles = glob.glob(rulePath +'/replicate.' + id + '*')
+    resPath = os.path.join(os.path.dirname(sys.path[0]), 'output')
+    resFiles = glob.glob(resPath +'/response.' + id + '*')
+    if ruleFiles is not None and len(ruleFiles) > 0:
+        status = 'QUEUED'
+        if resFiles is not None and len(resFiles) > 0:
+            status = 'DONE'
+    else:
+        status = 'FAILED'
+        if resFiles is not None and len(resFiles) > 0:
+            status = 'DONE'
+
+    return status
+
+
 def setLoggingSystem(config, debug):
     """
     Initialize the logging system
@@ -197,9 +262,12 @@ def main():
     parser_file.add_argument('-p', '--path', required=True, help='Path to the policy file')
     parser_file.set_defaults(func=parseFromFile)
 
-    parser_file = subparsers.add_parser('clean', help='Clean the expired policies from crontab')
-    parser_file.add_argument('-a', '--all', action='store_true', help='clean all the policies')
-    parser_file.set_defaults(func=cleanScheduledPolicies)
+    parser_clean = subparsers.add_parser('clean', help='Clean the expired policies from crontab')
+    parser_clean.add_argument('-a', '--all', action='store_true', help='clean all the policies')
+    parser_clean.set_defaults(func=cleanScheduledPolicies)
+
+    parser_update = subparsers.add_parser('update', help='Update policy status in the central DB')
+    parser_update.set_defaults(func=updatePolicyStatus)
 
     args = argp.parse_args()
     args.func(args)

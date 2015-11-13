@@ -17,11 +17,13 @@ class ReplicationPolicy(Policy):
         if loggerParentName: loggerName = loggerParentName + ".ReplicationPolicy"
         else: loggerName = "ReplicationPolicy"
         self.logger = logging.getLogger(loggerName)
+        self.loggerName = loggerName
 
         if debug:
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)        
+        self.debug = debug
 
         Policy.__init__(self, element, ns, loggerName, debug)
         self.dataset = None
@@ -50,7 +52,7 @@ class ReplicationPolicy(Policy):
             print('No datasets found')
         else:
             for dataset in datasets:
-                self.dataset = Dataset(dataset, self.ns)
+                self.dataset = Dataset(dataset, self.ns, self.loggerName, self.debug)
 
     def parseActions(self, actions):
 
@@ -84,7 +86,7 @@ class Dataset():
         self.logger.debug('Parsing the data set')
         self.collections = []
         for collectionElement in element.findall(ns+'collection'):
-            self.collections.append(Collection(collectionElement, ns))
+            self.collections.append(Collection(collectionElement, ns, loggerName, debug))
 
     def toString(self, prefix=''):
 
@@ -112,6 +114,7 @@ class Collection():
             self.logger.setLevel(logging.INFO)        
 
         self.id = element.get('id').strip()
+        self.logger.debug('Got collection id: ' + self.id)
         #process persistent identifier
         pid = element.findall(ns+'persistentIdentifier')
         if pid:
@@ -122,12 +125,17 @@ class Collection():
         #process location
         location = element.findall(ns+'location')
         if location:
-            loc = location[0].text.strip()
-            self.logger.debug('Got location %s', loc)
+            self.type = 'object path'
+            loc = Location(element, ns, loggerName, debug)
+            self.value = loc.location.path
+            self.locTriplet = '[%s, %s, %s]' % (loc.location.site,
+                                                loc.location.path, 
+                                                loc.location.resource)
+            self.logger.debug('Got path %s', self.locTriplet)
 
     def toString(self):
 
-        str = '%s [%s] %s' % (self.type, self.id,self.value)
+        str = '%s [%s] %s' % (self.type, self.id, self.value)
         return str
 
 """
@@ -166,11 +174,11 @@ class Action():
 
         #Process sources
         for source in element.findall(ns+'sources/'+ns+'source'):
-            self.sources.append(Location(source, ns))
+            self.sources.append(Location(source, nsi, loggerName, debug))
 
         #Process targets
         for target in element.findall(ns+'targets/'+ns+'target'):
-            self.targets.append(Location(target, ns))
+            self.targets.append(Location(target, ns, loggerName, debug))
 
         self.logger.debug('Got ' + self.toString())
 
@@ -179,7 +187,7 @@ class Action():
         str = '%sAction: %s [%s] running %s\n' % (prefix, self.name, self.type, self.trigger)
         str += '%s\tSources:\n' % (prefix)
         for source in self.sources:
-            str += '%s\t\tlocation [%s, %s, %s]\n' % (prefix, self.location.site, self.location.path, self.location.resource)
+            str += '%s\t\tlocation [%s, %s, %s]\n' % (prefix, source.location.site, source.location.path, source.location.resource)
         str += '%s\tTargets:\n' % (prefix)
         for target in self.targets:
             str += '%s\t\tlocation [%s, %s, %s]\n' % (prefix, target.location.site, target.location.path, target.location.resource)
@@ -196,6 +204,8 @@ class Location():
         if loggerParentName: loggerName = loggerParentName + ".Location"
         else: loggerName = "Location"
         self.logger = logging.getLogger(loggerName)
+        self.loggerName = loggerName
+        self.debug = debug
 
         if debug:
             self.logger.setLevel(logging.DEBUG)
@@ -203,6 +213,8 @@ class Location():
             self.logger.setLevel(logging.INFO)
 
         self.id = element.get('id')
+        if self.id is not None:
+            self.logger.debug('Got Location id: ' + self.id)
         for location in element.findall(ns+'location'):
             self.location = self.parseLocationType(location)
 
@@ -210,10 +222,11 @@ class Location():
     def parseLocationType(self, location):
 
         type = location.get('{http://www.w3.org/2001/XMLSchema-instance}type')
+        self.logger.debug('location type: ' + type)
         if type == 'irodsns:coordinates':
-            return IrodsLocation(location)
+            return IrodsLocation(location, self.loggerName, self.debug)
         else:
-            self.logger.errror('Unkown location type')
+            self.logger.error('Unkown location type')
             return None
 
 
