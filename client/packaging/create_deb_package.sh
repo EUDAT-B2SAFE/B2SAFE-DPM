@@ -46,18 +46,23 @@ mkdir -p $RPM_BUILD_ROOT${PACKAGE}
 rm -rf   $RPM_BUILD_ROOT${PACKAGE}/*
 
 # create package directory's
+mkdir -p $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/cmd
 mkdir -p $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/conf
-mkdir -p $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/lib
+mkdir -p $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/output
+mkdir -p $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/rules
+mkdir -p $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/test
 
 # copy files and images
+cp $RPM_SOURCE_DIR/cmd/*           $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/cmd
 cp $RPM_SOURCE_DIR/conf/*          $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/conf
-cp $RPM_SOURCE_DIR/lib/*           $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/lib
+cp $RPM_SOURCE_DIR/test/*          $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/test
 cp $RPM_SOURCE_DIR/../schema/*.xsd $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/conf
 
 # set mode of specific files
+chmod 700 $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/cmd/*.py
 chmod 600 $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/conf/*.ini
-chmod 700 $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/lib/*.py
 chmod 600 $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/conf/*.xsd
+chmod 600 $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/rules/*.xml
 
 # create packaging directory
 mkdir -p  $RPM_BUILD_ROOT${PACKAGE}/DEBIAN
@@ -82,8 +87,7 @@ cat > $RPM_BUILD_ROOT${PACKAGE}/DEBIAN/postinst << EOF
 # create symbolic links
 if [ -e "/var/lib/irods/iRODS/server/bin/cmd" ]
 then
-    ln -sf ${IRODS_PACKAGE_DIR}/lib/PolicyManager.py /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
-    ln -sf ${IRODS_PACKAGE_DIR}/lib/Upload.py /var/lib/irods/iRODS/server/bin/cmd/uploadPolicyState.py
+    ln -sf ${IRODS_PACKAGE_DIR}/cmd/PolicyManager.py /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
 fi
 
 # show package installation/configuration info 
