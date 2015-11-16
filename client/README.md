@@ -2,8 +2,7 @@
 
 The Data Policy Manager allows to define, store, monitor policies.
 A DPM policy is a set of actions applied to a set of data and triggered at a certain point in time.
-The Data Policy Manager (DPM) Client is a collection of python scripts running at each EUDAT data center.
-A DPM agent is a client to list and retrieve DPM policies, translate them into B2SAFE operations, schedule them and provide back the status of their enforcement.
+A DPM agent is a client to list and retrieve DPM policies, translate them into B2SAFE operations, schedule them and provide back the status of their enforcement. It is implemented through a collection of python scripts.
 
 Currently there is one main script: the *PolicyManager.py* python script.
 
