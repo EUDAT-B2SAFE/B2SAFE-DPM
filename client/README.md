@@ -1,12 +1,11 @@
-# Data Policy Manager Client #
+# Data Policy Manager agent #
 
+The Data Policy Manager allows to define, store, monitor policies.
+A DPM policy is a set of actions applied to a set of data and triggered at a certain point in time.
 The Data Policy Manager (DPM) Client is a collection of python scripts running at each EUDAT data center.
+A DPM agent is a client to list and retrieve DPM policies, translate them into B2SAFE operations, schedule them and provide back the status of their enforcement.
 
-Currently there are two main scrips:
- 1. The *PolicyManager.py* python script responsible for fetching policies from the DPM server.
- 2. The *Upload.py script*, responsible for uploading policy execution state to the DPM server.
-
-More information on both of these scripts can be found in the next sections.
+Currently there is one main script: the *PolicyManager.py* python script.
 
 Required Python Modules:
 
@@ -25,24 +24,25 @@ Required Python Modules:
 
 ## Configuration ##
 
-The DPM client scripts will be controlled via iRODS, by using the msiExecCmd
-iRODS command. We typically install the DPM scripts in a subdirectory under the
-`/opt/eudat/b2safe-dpm-client` and use a link in the `iRODS/service/bin/cmd`
-directory to point to the scripts.
+The DPM agent can be scheduled periodically relying on the local unix crontab or controlled via iRODS, by using the msiExecCmd iRODS command. 
+The typical install path is a subdirectory under the `/opt/eudat/b2safe-dpm-client` and linked in the `iRODS/service/bin/cmd` directory to point to the scripts.
 
 Such a organization would look something like this:
 ```
- iRODS/server/bin/cmd/runPolicyManager.py -> /opt/eudat/b2safe-dpm-client/lib/PolicyManager.py
- iRODS/server/bin/cmd/uploadPolicyState.py -> /opt/eudat/b2safe-dpm-client/lib/Upload.py
+ iRODS/server/bin/cmd/runPolicyManager.py -> /opt/eudat/b2safe-dpm-client/cmd/PolicyManager.py 
    
  /opt/eudat/b2safe-dpm-client/conf
- /opt/eudat/b2safe-dpm-client/lib
+ /opt/eudat/b2safe-dpm-client/cmd
  /opt/eudat/b2safe-dpm-client/packaging
+ /opt/eudat/b2safe-dpm-client/log
+ /opt/eudat/b2safe-dpm-client/test
+ /opt/eudat/b2safe-dpm-client/output
+ /opt/eudat/b2safe-dpm-client/rules
 ```
 
-Inside the `/opt/eudat/b2safe-dpm-client/conf` directory is a file called
-`config.ini`. This file holds center specific properties and should be
-configured for each center.
+Inside the `/opt/eudat/b2safe-dpm-client/conf` directory are two files
+1) `config.ini`: this file holds center specific properties and should be configured for each center.
+2) `usermap.json`: this file contains the map between the global (EUDAT wide) identity of the user and the local identity on the center's B2SAFE instance.
 
 ## PolicyManager.py ##
 
@@ -50,25 +50,35 @@ configured for each center.
 
 to get help on how to use the script run `./runPolicyManager.py -h`:
 ```
-    usage: runPolicyManager.py [-h] -T {periodic,hook} [-t] [-v] (-su SCHEMAURL | -sp SCHEMAPATH) {http,file} ...
+usage: PolicyManager.py [-h] -T {periodic,hook,cli} [-t] [-v] -c CONFIG
+                        (-su SCHEMAURL | -sp SCHEMAPATH)
+                        {http,file,clean,update} ...
 
-    EUDAT Data Policy Manager (DPM) client
+EUDAT Data Policy Manager (DPM) client
 
-    positional arguments:
-      {http,file}           sub-command help
-        http                Fetch policy over http
-        file                Fetch policy from a file
+positional arguments:
+  {http,file,clean,update}
+                        sub-command help
+    http                Fetch policy over http
+    file                Fetch policy from a file
+    clean               Clean the expired policies from crontab
+    update              Update policy status in the central DB
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      -T {periodic,hook}, --type {periodic,hook,cli}
-                            Specify if this invocation is triggered periodic,
-                            via an irods hook or via the command line
-      -t, --test            Test the DPM client (does not trigger an actual
-                            replication)
-      -v, --verbose         Run the DPM client in verbose mode
-      -su --schemaurl	    fetch policy schema over http
-      -sp --schemapath	    fetch policy schema from a file
+optional arguments:
+  -h, --help            show this help message and exit
+  -T {periodic,hook,cli}, --type {periodic,hook,cli}
+                        Specify if this invokation is triggered periodic or
+                        via an irods hook
+  -t, --test            Test the DPM client (does not trigger an actual
+                        replication)
+  -v, --verbose         Run the DPM client in verbose mode
+  -c CONFIG, --config CONFIG
+                        Path to config.ini
+  -su SCHEMAURL, --schemaurl SCHEMAURL
+                        The policy schema URL
+  -sp SCHEMAPATH, --schemapath SCHEMAPATH
+                        Path to the policy schema file
+
 ```
 Required parameters:
 
@@ -116,42 +126,12 @@ startPolicyManager {
 INPUT null
 OUTPUT ruleExecOut
 ```
-If this rule is stored in a file called 'queuePolicyManager.r', you can start this rule with the 'irule -vF queuePolicyManager.r' command
-and check it status via 'iqstat -l'.
+If this rule is stored in a file called 'queuePolicyManager.r', you can start this rule with the 'irule -vF  queuePolicyManager.r' command and check it status via 'iqstat -l'.
 
-## Upload.py ##
-
-iRODS api hooks, configured on core.re.
-
-Update policy state during replication policy execution:
-```
-acPostProcForPut {
-    ON($objPath like "\*.replicate") {
-        #Set replication policy state when queing the policy
-        *config = "/opt/eudat/b2safe-dpm-client/conf/config.ini"
-        msiExecCmd("uploadPolicyState.py", "-c *config -d $objPath -S QUEUED", "null", "null", "null", *out);
-
-        delay("<PLUSET>1m</PLUSET>") {
-                #Set replication policy state when starting policy execution
-                *config = "/opt/eudat/b2safe-dpm-client/conf/config.ini"
-                msiExecCmd("uploadPolicyState.py", "-c *config -d $objPath -S RUNNING", "null", "null", "null", *out);
-                processReplicationCommandFile($objPath);
-        }
-    }
-}
-```
-Update policy state after a replication policy is finished:
-```
-acPostProcForObjRename(*sourceObject,*destObject) {
-    ON($objPath like "\*.replicate\*") {
-            *config = "/opt/eudat/b2safe-dpm-client/conf/config.ini"
-            msiExecCmd("uploadPolicyState.py", "-c *config -s *sourceObject -d *destObject", "null", "null", "null", *out);
-    }
-}
-```
 ### Data send to the DPM server ###
 
-Data uploads to the server HTTP API endpoint have the following format and will be send as form-www/encoded name,value pairs:
+The `update` positional command tells to the PolicyManager to check if the expected list of policies is accepted from the local sites, already enforced or never scheduled. Then the status of each policy is updated in the central DPM DB.
+Data uploads have the following format and will be send as form-www/encoded name,value pairs:
 ```
     {
         'id': policyId,                 policy uid, extracted from .replicate file
