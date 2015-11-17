@@ -1,4 +1,4 @@
-# Data Policy Manager (B2Save-DPM)
+# Data Policy Manager (B2Safe-DPM)
 This package contains the code for the data policy manager. The DPM consists of
 a web interface for creating and managing the policies. The policies are defined
 in an abstract language. Client scripts exist that allow users to download the
