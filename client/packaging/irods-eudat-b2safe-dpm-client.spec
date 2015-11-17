@@ -46,13 +46,19 @@ exit 0
 # put images in correct place
 %install
 rm -rf %{buildroot}
+mkdir -p $RPM_BUILD_ROOT%{_irodsPackage}/cmd
 mkdir -p $RPM_BUILD_ROOT%{_irodsPackage}/conf
-mkdir -p $RPM_BUILD_ROOT%{_irodsPackage}/lib
+mkdir -p $RPM_BUILD_ROOT%{_irodsPackage}/rules
+mkdir -p $RPM_BUILD_ROOT%{_irodsPackage}/output
+mkdir -p $RPM_BUILD_ROOT%{_irodsPackage}/test
 
+cp $RPM_SOURCE_DIR/client/cmd/* $RPM_BUILD_ROOT%{_irodsPackage}/cmd
 cp $RPM_SOURCE_DIR/client/conf/* $RPM_BUILD_ROOT%{_irodsPackage}/conf
-cp $RPM_SOURCE_DIR/client/lib/* $RPM_BUILD_ROOT%{_irodsPackage}/lib
+cp $RPM_SOURCE_DIR/client/test/* $RPM_BUILD_ROOT%{_irodsPackage}/test
 cp $RPM_SOURCE_DIR/schema/*.xsd $RPM_BUILD_ROOT%{_irodsPackage}/conf
 
+touch $RPM_BUILD_ROOT%{_irodsPackage}/cmd/toBeExcludedFile.pyc
+touch $RPM_BUILD_ROOT%{_irodsPackage}/cmd/toBeExcludedFile.pyo
  
 
 # cleanup
@@ -65,13 +71,20 @@ rm -rf %{buildroot}
 # default attributes
 %defattr(-,%{_irodsUID},%{_irodsUID},-)
 # files
-%{_irodsPackage}/lib
+# exclude .pyc and .py files
+%exclude %{_irodsPackage}/cmd/*.pyc
+%exclude %{_irodsPackage}/cmd/*.pyo
+%{_irodsPackage}/cmd
 %{_irodsPackage}/conf
+%{_irodsPackage}/output
+%{_irodsPackage}/rules
+%{_irodsPackage}/test
 # attributes on files and directory's
 %attr(-,%{_irodsUID},%{_irodsGID})   %{_irodsPackage}
+%attr(700,%{_irodsUID},%{_irodsGID}) %{_irodsPackage}/cmd/*.py
 %attr(600,%{_irodsUID},%{_irodsGID}) %{_irodsPackage}/conf/*.ini
 %attr(600,%{_irodsUID},%{_irodsGID}) %{_irodsPackage}/conf/*.xsd
-%attr(700,%{_irodsUID},%{_irodsGID}) %{_irodsPackage}/lib/*.py
+%attr(600,%{_irodsUID},%{_irodsGID}) %{_irodsPackage}/test/*.xml
 %doc
 # config files
 %config(noreplace) %{_irodsPackage}/conf/config.ini
@@ -80,8 +93,7 @@ rm -rf %{buildroot}
 # symbolic link creation
 if [ -e "/var/lib/irods/iRODS/server/bin/cmd" ]
 then
-    ln -sf %{_irodsPackage}/lib/PolicyManager.py /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
-    ln -sf %{_irodsPackage}/lib/Upload.py /var/lib/irods/iRODS/server/bin/cmd/uploadPolicyState.py
+    ln -sf %{_irodsPackage}/cmd/PolicyManager.py /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
 fi
 # only show info on first installation
 if [ "$1" = "1" ]
@@ -105,7 +117,6 @@ then
     if [ -e "/var/lib/irods/iRODS/server/bin/cmd" -a "$1" -eq "0"  ]
     then
         rm -f /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
-        rm -f /var/lib/irods/iRODS/server/bin/cmd/uploadPolicyState.py
     fi
 fi
 %changelog
