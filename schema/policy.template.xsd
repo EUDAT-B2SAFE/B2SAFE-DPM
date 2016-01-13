@@ -1,245 +1,232 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:irodsns="http://eudat.eu/2013/iRODS-policy" xmlns:tns="http://eudat.eu/2013/policy" 
-xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" 
-elementFormDefault="qualified" targetNamespace="http://eudat.eu/2013/policy">
-
-  <xs:import namespace="http://eudat.eu/2013/iRODS-policy" schemaLocation="iRODS-policy.xsd"/>
-  
-  <xs:element name="policy">
-    <xs:annotation>
-      <xs:documentation>the policy core consists of the policy target
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:irodsns="http://eudat.eu/2013/iRODS-policy" xmlns:tns="http://eudat.eu/2013/policy" xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://eudat.eu/2013/policy">
+ <xs:import namespace="http://eudat.eu/2013/iRODS-policy" schemaLocation="iRODS-policy.xsd"/>
+ <xs:element name="policy">
+  <xs:annotation>
+   <xs:documentation>the policy core consists of the policy target
             (=data set) and the actions (=replication) to apply. A trigger should be
             defined, which could be another action or a time. A set of action
             targets (e.g. the destination of a replication) will be also defined
             The data sets can be identified through a set of  PIDs. The only people
             entitled to apply a policy on that data set should be the owners and the
             administrators of the storage archive which hosts the data set.</xs:documentation>
-    </xs:annotation>
-    <xs:complexType>
+  </xs:annotation>
+  <xs:complexType>
+   <xs:sequence>
+    <xs:element name="dataset" minOccurs="0">
+     <xs:annotation>
+      <xs:documentation>the dataset represents a set of collections, which are the target of the policy</xs:documentation>
+     </xs:annotation>
+     <xs:complexType>
       <xs:sequence>
-        <xs:element name="dataset">
-          <xs:annotation>
-            <xs:documentation>the dataset represents a set of collections, which are the target of the policy</xs:documentation>
-          </xs:annotation>
-          <xs:complexType>
-            <xs:sequence>
-              <xs:element maxOccurs="unbounded" minOccurs="1" name="collection" type="tns:locationPoint">
-                <xs:annotation>
-                  <xs:documentation>the collection represents a set of objects. They can be defined by a single identifier.
+       <xs:element maxOccurs="unbounded" minOccurs="1" name="collection" type="tns:locationPoint">
+        <xs:annotation>
+         <xs:documentation>the collection represents a set of objects. They can be defined by a single identifier.
                                         Or by a set of coordinates, such for example the name of the hosting site and the absolute path.</xs:documentation>
-                </xs:annotation>
-              </xs:element>
-              <xs:any minOccurs="0"/>
-            </xs:sequence>
-          </xs:complexType>
-        </xs:element>
-        <xs:element name="actions">
-          <xs:annotation>
-            <xs:documentation>the element actions represents a set of actions. 
+        </xs:annotation>
+       </xs:element>
+       <xs:any minOccurs="0"/>
+      </xs:sequence>
+     </xs:complexType>
+    </xs:element>
+    <xs:element name="actions">
+     <xs:annotation>
+      <xs:documentation>the element actions represents a set of actions. 
                             Each action has the dataset as default data source, but each single action can replace it with its
                             own data source.</xs:documentation>
-          </xs:annotation>
-          <xs:complexType>
-            <xs:sequence>
-              <xs:element maxOccurs="unbounded" minOccurs="1" name="action">
-                <xs:annotation>
-                  <xs:documentation>the action represents the task to be performed. it is defined by type and trigger.
-                                        For example, there could be actions of type "replication", or "integrity check", 
-                                        or "pid assignment". And the trigger to start the action could be a date, a time interval,
+     </xs:annotation>
+     <xs:complexType>
+      <xs:sequence>
+       <xs:element maxOccurs="unbounded" minOccurs="1" name="action">
+        <xs:annotation>
+         <xs:documentation>the action represents the task to be performed. it is defined by type and trigger.
+                                        For example, there could be actions of type &quot;replication&quot;, or &quot;integrity check&quot;, 
+                                        or &quot;pid assignment&quot;. And the trigger to start the action could be a date, a time interval,
                                         a change in the dataset or even another action. In fact it is possible to concatenate
                                         multiple actions, using the name of a previous action as a trigger.</xs:documentation>
-                </xs:annotation>
-                <xs:complexType>
-                  <xs:sequence>
-                    <xs:element name="type" type="tns:actionType">
-                      <xs:annotation>
-                        <xs:documentation>the type defines the action</xs:documentation>
-                      </xs:annotation>
-                    </xs:element>
-                    <xs:element name="trigger" type="tns:triggerType">
-                      <xs:annotation>
-                        <xs:documentation>the trigger defines the way to activate an action, it could be a date, a time interval,
-                                                    a dataset change or another action.</xs:documentation>
-                      </xs:annotation>
-                    </xs:element>
-                    <xs:element minOccurs="0" name="sources">
-                      <xs:annotation>
-                        <xs:documentation>the element sources represents a set of locations, which are the data sources for
-                                                    the action.</xs:documentation>
-                      </xs:annotation>
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element maxOccurs="unbounded" minOccurs="0" name="source" type="tns:locationPoint">
-                            <xs:annotation>
-                              <xs:documentation>a data source for the action.</xs:documentation>
-                            </xs:annotation>
-                          </xs:element>
-                          <xs:any minOccurs="0"/>
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
-                    <xs:element name="targets">
-                      <xs:annotation>
-                        <xs:documentation>the element targets represents a set of locations, which are the data destinations
-                                                    for the action.</xs:documentation>
-                      </xs:annotation>
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element maxOccurs="unbounded" minOccurs="0" name="target" type="tns:locationPoint">
-                            <xs:annotation>
-                              <xs:documentation>a data destination for the action.</xs:documentation>
-                            </xs:annotation>
-                          </xs:element>
-                          <xs:any minOccurs="0"/>
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
-                    <xs:any minOccurs="0"/>
-                  </xs:sequence>
-                  <xs:attribute name="name" type="xs:string" use="optional"/>
-                  <xs:attribute name="id" type="xs:integer" use="optional"/>
-                </xs:complexType>
-              </xs:element>
-              <xs:any minOccurs="0"/>
-            </xs:sequence>
-          </xs:complexType>
-        </xs:element>
-        <xs:any minOccurs="0"/>
-      </xs:sequence>
-      <xs:attribute name="uniqueid" type="xs:string" use="required"/>
-      <xs:attribute name="name" type="xs:string" use="required"/>
-      <xs:attribute name="version" type="xs:string" use="required"/>
-      <xs:attribute name="author" type="xs:string" use="required"/>
-    </xs:complexType>
-  </xs:element>
-  
-  <xs:complexType name="locationPoint">
-    <xs:choice maxOccurs="1" minOccurs="0">
-      <xs:element name="persistentIdentifier">
-        <xs:annotation>
-          <xs:documentation>the persistentIdentifier represents an identifier, which should be persistent over the time.
-              It is usually an alphanumeric string. Further restrictions depend on the type.</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-          <xs:simpleContent>
-            <xs:extension base="xs:string">
-              <xs:attribute name="type" type="xs:string" use="required"/>
-            </xs:extension>
-          </xs:simpleContent>
+         <xs:sequence>
+          <xs:element name="type" type="tns:actionType">
+           <xs:annotation>
+            <xs:documentation>the type defines the action</xs:documentation>
+           </xs:annotation>
+          </xs:element>
+          <xs:element name="trigger" type="tns:triggerType">
+           <xs:annotation>
+            <xs:documentation>the trigger defines the way to activate an action, it could be a date, a time interval,
+                                                    a dataset change or another action.</xs:documentation>
+           </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" name="sources">
+           <xs:annotation>
+            <xs:documentation>the element sources represents a set of locations, which are the data sources for
+                                                    the action.</xs:documentation>
+           </xs:annotation>
+           <xs:complexType>
+            <xs:sequence>
+             <xs:element maxOccurs="unbounded" minOccurs="0" name="source" type="tns:locationPoint">
+              <xs:annotation>
+               <xs:documentation>a data source for the action.</xs:documentation>
+              </xs:annotation>
+             </xs:element>
+             <xs:any minOccurs="0"/>
+            </xs:sequence>
+           </xs:complexType>
+          </xs:element>
+          <xs:element name="targets">
+           <xs:annotation>
+            <xs:documentation>the element targets represents a set of locations, which are the data destinations
+                                                    for the action.</xs:documentation>
+           </xs:annotation>
+           <xs:complexType>
+            <xs:sequence>
+             <xs:element maxOccurs="unbounded" minOccurs="0" name="target" type="tns:locationPoint">
+              <xs:annotation>
+               <xs:documentation>a data destination for the action.</xs:documentation>
+              </xs:annotation>
+             </xs:element>
+             <xs:any minOccurs="0"/>
+            </xs:sequence>
+           </xs:complexType>
+          </xs:element>
+          <xs:any minOccurs="0"/>
+         </xs:sequence>
+         <xs:attribute name="name" type="xs:string" use="optional"/>
+         <xs:attribute name="id" type="xs:integer" use="optional"/>
         </xs:complexType>
-      </xs:element>
-      <xs:element name="location" type="tns:locationType">
-        <xs:annotation>
-          <xs:documentation>the location is a set of coordinates that defines a position in the space.
-            Since it is an abstract type element, there can be many different implementations.</xs:documentation>
-        </xs:annotation>
-      </xs:element>
-    </xs:choice>
-    <xs:attribute name="id" type="xs:integer" use="optional"/>
-    <xs:attribute name="ref" type="xs:integer" use="optional"/>
+       </xs:element>
+       <xs:any minOccurs="0"/>
+      </xs:sequence>
+     </xs:complexType>
+    </xs:element>
+    <xs:any minOccurs="0"/>
+   </xs:sequence>
+   <xs:attribute name="uniqueid" type="xs:string" use="required"/>
+   <xs:attribute name="name" type="xs:string" use="required"/>
+   <xs:attribute name="version" type="xs:string" use="required"/>
+   <xs:attribute name="author" type="xs:string" use="required"/>
   </xs:complexType>
-  
-  <xs:complexType abstract="true" name="locationType"/>
-  
-  <xs:simpleType name="actionValueType">
+ </xs:element>
+ <xs:complexType name="locationPoint">
+  <xs:choice maxOccurs="1" minOccurs="0">
+   <xs:element name="persistentIdentifier">
     <xs:annotation>
-      <xs:documentation>This is the list of "atomic" actions which is expected to be implemented 
-        at the policy enforcement level</xs:documentation>
+     <xs:documentation>the persistentIdentifier represents an identifier, which should be persistent over the time.
+              It is usually an alphanumeric string. Further restrictions depend on the type.</xs:documentation>
     </xs:annotation>
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="update PID URL"/>
-      <xs:enumeration value="update PID checksum"/>
-      <xs:enumeration value="update PID child"/>
-      <xs:enumeration value="search PID by URL"/>
-      <xs:enumeration value="search URL by PID"/>
-      <xs:enumeration value="search ROR by PID"/>
-      <xs:enumeration value="create PID"/>
-      <xs:enumeration value="get checksum by path"/>
-      <xs:enumeration value="replicate"/>
-      <xs:enumeration value="check replicas"/>
-      <xs:enumeration value="remove object"/>
-      <xs:enumeration value="copy object"/>
-      <xs:enumeration value="compare objects by checksum"/>
-      <xs:enumeration value=""/>
-    </xs:restriction>
-  </xs:simpleType>
-  
-  <xs:complexType name="actionType">
-    <xs:simpleContent>
-      <xs:extension base="tns:actionValueType">
-        <xs:attribute name="policyID" use="optional">
-          <xs:simpleType>
-            <xs:annotation>
-              <xs:documentation>This is the reference (uuid) to a policy document within the policy manager scope.</xs:documentation>
-            </xs:annotation>
-            <xs:restriction base="xs:string">
-              <xs:pattern value="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"/>
-            </xs:restriction>
-          </xs:simpleType>
-        </xs:attribute>
+    <xs:complexType>
+     <xs:simpleContent>
+      <xs:extension base="xs:string">
+       <xs:attribute name="type" type="xs:string" use="required"/>
       </xs:extension>
-    </xs:simpleContent>
-  </xs:complexType>
-  
-  <xs:complexType name="triggerType">
+     </xs:simpleContent>
+    </xs:complexType>
+   </xs:element>
+   <xs:element name="location" type="tns:locationType">
     <xs:annotation>
-      <xs:documentation>This is the main trigger type for the action.
+     <xs:documentation>the location is a set of coordinates that defines a position in the space.
+            Since it is an abstract type element, there can be many different implementations.</xs:documentation>
+    </xs:annotation>
+   </xs:element>
+  </xs:choice>
+  <xs:attribute name="id" type="xs:integer" use="optional"/>
+  <xs:attribute name="ref" type="xs:integer" use="optional"/>
+ </xs:complexType>
+ <xs:complexType abstract="true" name="locationType"/>
+ <xs:simpleType name="actionValueType">
+  <xs:annotation>
+   <xs:documentation>This is the list of &quot;atomic&quot; actions which is expected to be implemented 
+        at the policy enforcement level</xs:documentation>
+  </xs:annotation>
+  <xs:restriction base="xs:string">
+   <xs:enumeration value="update PID URL"/>
+   <xs:enumeration value="update PID checksum"/>
+   <xs:enumeration value="update PID child"/>
+   <xs:enumeration value="search PID by URL"/>
+   <xs:enumeration value="search URL by PID"/>
+   <xs:enumeration value="search ROR by PID"/>
+   <xs:enumeration value="create PID"/>
+   <xs:enumeration value="get checksum by path"/>
+   <xs:enumeration value="replicate"/>
+   <xs:enumeration value="check replicas"/>
+   <xs:enumeration value="remove object"/>
+   <xs:enumeration value="copy object"/>
+   <xs:enumeration value="compare objects by checksum"/>
+   <xs:enumeration value=""/>
+  </xs:restriction>
+ </xs:simpleType>
+ <xs:complexType name="actionType">
+  <xs:simpleContent>
+   <xs:extension base="tns:actionValueType">
+    <xs:attribute name="policyID" use="optional">
+     <xs:simpleType>
+      <xs:annotation>
+       <xs:documentation>This is the reference (uuid) to a policy document within the policy manager scope.</xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:string">
+       <xs:pattern value="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"/>
+      </xs:restriction>
+     </xs:simpleType>
+    </xs:attribute>
+   </xs:extension>
+  </xs:simpleContent>
+ </xs:complexType>
+ <xs:complexType name="triggerType">
+  <xs:annotation>
+   <xs:documentation>This is the main trigger type for the action.
                 It can be another action, a date, or a periodic time interval.
                 The repeat-counter element represents the number of times, the action has to be repeated.
                 While its attribute interval-minutes is the interval in minutes between the repetitions.</xs:documentation>
-    </xs:annotation>
-    <xs:sequence>
-      <xs:choice>
-        <xs:element name="action" type="tns:triggerActionType"/>
-        <xs:element name="time" type="tns:triggerTimeType"/>
-        <xs:element name="runonce">
-          <xs:complexType/>
-        </xs:element>
-      </xs:choice>
-      <xs:element maxOccurs="1" minOccurs="0" name="repeat-counter">
-        <xs:complexType>
-          <xs:simpleContent>
-            <xs:extension base="xs:integer">
-              <xs:attribute name="interval-minutes" type="xs:integer" use="required"/>
-            </xs:extension>
-          </xs:simpleContent>
-        </xs:complexType>
-      </xs:element>
-    </xs:sequence>
-  </xs:complexType>
-  
-  <xs:simpleType name="triggerActionValueType">
-    <xs:annotation>
-      <xs:documentation>This is the list of "atomic" events which are expected to be triggered 
-              at the policy enforcement level</xs:documentation>
-    </xs:annotation>
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="create object"/>
-      <xs:enumeration value="modify object"/>
-      <xs:enumeration value="remove object"/>
-      <xs:enumeration value="replicate"/>
-      <xs:enumeration value="check replicas"/>
-      <xs:enumeration value=""/>
-    </xs:restriction>
-  </xs:simpleType>
-  
-  <xs:complexType name="triggerActionType">
-    <xs:simpleContent>
-      <xs:extension base="tns:triggerActionValueType">
-        <xs:attribute name="ref" type="xs:integer" use="optional"/>
+  </xs:annotation>
+  <xs:sequence>
+   <xs:choice>
+    <xs:element name="action" type="tns:triggerActionType"/>
+    <xs:element name="time" type="tns:triggerTimeType"/>
+    <xs:element name="runonce">
+     <xs:complexType/>
+    </xs:element>
+   </xs:choice>
+   <xs:element maxOccurs="1" minOccurs="0" name="repeat-counter">
+    <xs:complexType>
+     <xs:simpleContent>
+      <xs:extension base="xs:integer">
+       <xs:attribute name="interval-minutes" type="xs:integer" use="required"/>
       </xs:extension>
-    </xs:simpleContent>
-  </xs:complexType>
-  
-  <xs:simpleType name="triggerTimeType">
-    <xs:annotation>
-      <xs:documentation>This represents a cron-like expression to specify a date or a period:
+     </xs:simpleContent>
+    </xs:complexType>
+   </xs:element>
+  </xs:sequence>
+ </xs:complexType>
+ <xs:simpleType name="triggerActionValueType">
+  <xs:annotation>
+   <xs:documentation>This is the list of &quot;atomic&quot; events which are expected to be triggered 
+              at the policy enforcement level</xs:documentation>
+  </xs:annotation>
+  <xs:restriction base="xs:string">
+   <xs:enumeration value="create object"/>
+   <xs:enumeration value="modify object"/>
+   <xs:enumeration value="remove object"/>
+   <xs:enumeration value="replicate"/>
+   <xs:enumeration value="check replicas"/>
+   <xs:enumeration value=""/>
+  </xs:restriction>
+ </xs:simpleType>
+ <xs:complexType name="triggerActionType">
+  <xs:simpleContent>
+   <xs:extension base="tns:triggerActionValueType">
+    <xs:attribute name="ref" type="xs:integer" use="optional"/>
+   </xs:extension>
+  </xs:simpleContent>
+ </xs:complexType>
+ <xs:simpleType name="triggerTimeType">
+  <xs:annotation>
+   <xs:documentation>This represents a cron-like expression to specify a date or a period:
           SECONDS / MINUTES / HOURS / DAY OF MONTH / MONTH / DAY OF WEEK / YEAR (OPTIONAL)
       </xs:documentation>
-    </xs:annotation>
-    <xs:restriction base="xs:string">
-      <xs:pattern value="(((([0-9]|[0-5][0-9])(-([0-9]|[0-5][0-9]))?,)*([0-9]|[0-5][0-9])(-([0-9]|[0-5][0-9]))?)|(([\*]|[0-9]|[0-5][0-9])/([0-9]|[0-5][0-9]))|([\?])|([\*]))[\s](((([0-9]|[0-5][0-9])(-([0-9]|[0-5][0-9]))?,)*([0-9]|[0-5][0-9])(-([0-9]|[0-5][0-9]))?)|(([\*]|[0-9]|[0-5][0-9])/([0-9]|[0-5][0-9]))|([\?])|([\*]))[\s](((([0-9]|[0-1][0-9]|[2][0-3])(-([0-9]|[0-1][0-9]|[2][0-3]))?,)*([0-9]|[0-1][0-9]|[2][0-3])(-([0-9]|[0-1][0-9]|[2][0-3]))?)|(([\*]|[0-9]|[0-1][0-9]|[2][0-3])/([0-9]|[0-1][0-9]|[2][0-3]))|([\?])|([\*]))[\s](((([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1])(-([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1]))?,)*([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1])(-([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1]))?(C)?)|(([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1])/([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1])(C)?)|(L(-[0-9])?)|(L(-[1-2][0-9])?)|(L(-[3][0-1])?)|(LW)|([1-9]W)|([1-3][0-9]W)|([\?])|([\*]))[\s](((([1-9]|0[1-9]|1[0-2])(-([1-9]|0[1-9]|1[0-2]))?,)*([1-9]|0[1-9]|1[0-2])(-([1-9]|0[1-9]|1[0-2]))?)|(([1-9]|0[1-9]|1[0-2])/([1-9]|0[1-9]|1[0-2]))|(((JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(-(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))?,)*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(-(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))?)|((JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)/(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))|([\?])|([\*]))[\s]((([1-7](-([1-7]))?,)*([1-7])(-([1-7]))?)|([1-7]/([1-7]))|(((MON|TUE|WED|THU|FRI|SAT|SUN)(-(MON|TUE|WED|THU|FRI|SAT|SUN))?,)*(MON|TUE|WED|THU|FRI|SAT|SUN)(-(MON|TUE|WED|THU|FRI|SAT|SUN))?(C)?)|((MON|TUE|WED|THU|FRI|SAT|SUN)/(MON|TUE|WED|THU|FRI|SAT|SUN)(C)?)|(([1-7]|(MON|TUE|WED|THU|FRI|SAT|SUN))?(L|LW)?)|(([1-7]|MON|TUE|WED|THU|FRI|SAT|SUN)#([1-7])?)|([\?])|([\*]))([\s]?(([\*])?|(19[7-9][0-9])|(20[0-9][0-9]))?| (((19[7-9][0-9])|(20[0-9][0-9]))/((19[7-9][0-9])|(20[0-9][0-9])))?| ((((19[7-9][0-9])|(20[0-9][0-9]))(-((19[7-9][0-9])|(20[0-9][0-9])))?,)*((19[7-9][0-9])|(20[0-9][0-9]))(-((19[7-9][0-9])|(20[0-9][0-9])))?)?)"/>
-    </xs:restriction>
-  </xs:simpleType>
-  
+  </xs:annotation>
+  <xs:restriction base="xs:string">
+   <xs:pattern value="(((([0-9]|[0-5][0-9])(-([0-9]|[0-5][0-9]))?,)*([0-9]|[0-5][0-9])(-([0-9]|[0-5][0-9]))?)|(([\*]|[0-9]|[0-5][0-9])/([0-9]|[0-5][0-9]))|([\?])|([\*]))[\s](((([0-9]|[0-5][0-9])(-([0-9]|[0-5][0-9]))?,)*([0-9]|[0-5][0-9])(-([0-9]|[0-5][0-9]))?)|(([\*]|[0-9]|[0-5][0-9])/([0-9]|[0-5][0-9]))|([\?])|([\*]))[\s](((([0-9]|[0-1][0-9]|[2][0-3])(-([0-9]|[0-1][0-9]|[2][0-3]))?,)*([0-9]|[0-1][0-9]|[2][0-3])(-([0-9]|[0-1][0-9]|[2][0-3]))?)|(([\*]|[0-9]|[0-1][0-9]|[2][0-3])/([0-9]|[0-1][0-9]|[2][0-3]))|([\?])|([\*]))[\s](((([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1])(-([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1]))?,)*([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1])(-([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1]))?(C)?)|(([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1])/([1-9]|[0][1-9]|[1-2][0-9]|[3][0-1])(C)?)|(L(-[0-9])?)|(L(-[1-2][0-9])?)|(L(-[3][0-1])?)|(LW)|([1-9]W)|([1-3][0-9]W)|([\?])|([\*]))[\s](((([1-9]|0[1-9]|1[0-2])(-([1-9]|0[1-9]|1[0-2]))?,)*([1-9]|0[1-9]|1[0-2])(-([1-9]|0[1-9]|1[0-2]))?)|(([1-9]|0[1-9]|1[0-2])/([1-9]|0[1-9]|1[0-2]))|(((JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(-(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))?,)*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(-(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))?)|((JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)/(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))|([\?])|([\*]))[\s]((([1-7](-([1-7]))?,)*([1-7])(-([1-7]))?)|([1-7]/([1-7]))|(((MON|TUE|WED|THU|FRI|SAT|SUN)(-(MON|TUE|WED|THU|FRI|SAT|SUN))?,)*(MON|TUE|WED|THU|FRI|SAT|SUN)(-(MON|TUE|WED|THU|FRI|SAT|SUN))?(C)?)|((MON|TUE|WED|THU|FRI|SAT|SUN)/(MON|TUE|WED|THU|FRI|SAT|SUN)(C)?)|(([1-7]|(MON|TUE|WED|THU|FRI|SAT|SUN))?(L|LW)?)|(([1-7]|MON|TUE|WED|THU|FRI|SAT|SUN)#([1-7])?)|([\?])|([\*]))([\s]?(([\*])?|(19[7-9][0-9])|(20[0-9][0-9]))?| (((19[7-9][0-9])|(20[0-9][0-9]))/((19[7-9][0-9])|(20[0-9][0-9])))?| ((((19[7-9][0-9])|(20[0-9][0-9]))(-((19[7-9][0-9])|(20[0-9][0-9])))?,)*((19[7-9][0-9])|(20[0-9][0-9]))(-((19[7-9][0-9])|(20[0-9][0-9])))?)?)"/>
+  </xs:restriction>
+ </xs:simpleType>
 </xs:schema>
