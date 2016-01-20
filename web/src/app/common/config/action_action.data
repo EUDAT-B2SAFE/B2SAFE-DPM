@@ -1,78 +1,13 @@
-update pid url|modify object|pid assignment|source
-update pid url|date|pid assignment|source
-update pid url|period|pid assignment|source
-update pid checksum|check replicas|integrity check|source
-update pid checksum|date|integrity check|source
-update pid checksum|period|integrity check|source
-update pid child|create object|pid assignment|source
-update pid child|date|pid assignment|source
-update pid child|period|pid assignment|source
-search pid by url|check replicas|integrity check|source
-search pid by url|date|integrity check|source
-search pid by url|period|integrity check|source
-search pid by pid|check replicas|integrity check|source
-search pid by pid|date|integrity check|source
-search pid by pid|period|integrity check|source
-search ror by pid|check replicas|integrity check|source
-search ror by pid|date|integrity check|source
-search ror by pid|period|integrity check|source
-create pid|create object|pid assignment|source
-create pid|date|pid assignment|source
-create pid|period|pid assignment|source
-get checksum by path|check replicas|integrity check|source
-get checksum by path|date|integrity check|source
-get checksum by path|period|integrity check|source
-replicate|replicate|replication|source
-replicate|date|replication|source
-replicate|period|replication|source
-check replicas|check replicas|integrity check|source
-check replicas|date|integrity check|source
-check replicas|period|integrity check|source
-remove object|remove object|manage object|source
-remove object|date|manage object|source
-remove object|period|manage object|source
-copy object|modify object|manage object|source
-copy object|date|manage object|source
-copy object|period|manage object|source
-compare objects by checksum|check replicas|integrity check|source
-compare objects by checksum|date|integrity check|source
-compare objects by checksum|period|integrity check|source
-update pid url|modify object|pid assignment|target
-update pid url|date|pid assignment|target
-update pid url|period|pid assignment|target
-update pid checksum|check replicas|integrity check|target
-update pid checksum|date|integrity check|target
-update pid checksum|period|integrity check|target
-update pid child|create object|pid assignment|target
-update pid child|date|pid assignment|target
-update pid child|period|pid assignment|target
-search pid by url|check replicas|integrity check|target
-search pid by url|date|integrity check|target
-search pid by url|period|integrity check|target
-search pid by pid|check replicas|integrity check|target
-search pid by pid|date|integrity check|target
-search pid by pid|period|integrity check|target
-search ror by pid|check replicas|integrity check|target
-search ror by pid|date|integrity check|target
-search ror by pid|period|integrity check|target
-create pid|create object|pid assignment|target
-create pid|date|pid assignment|target
-create pid|period|pid assignment|target
-get checksum by path|check replicas|integrity check|target
-get checksum by path|date|integrity check|target
-get checksum by path|period|integrity check|target
-replicate|replicate|replication|target
-replicate|date|replication|target
-replicate|period|replication|target
-check replicas|check replicas|integrity check|target
-check replicas|date|integrity check|target
-check replicas|period|integrity check|target
-remove object|remove object|manage object|target
-remove object|date|manage object|target
-remove object|period|manage object|target
-copy object|modify object|manage object|target
-copy object|date|manage object|target
-copy object|period|manage object|target
-compare objects by checksum|check replicas|integrity check|target
-compare objects by checksum|date|integrity check|target
-compare objects by checksum|period|integrity check|target
+update PID URL
+update PID checksum
+update PID child
+search PID by URL
+search URL by PID
+search ROR by PID
+create PID
+get checksum by path
+replicate
+check replicas
+remove object
+copy object
+compare objects by checksum

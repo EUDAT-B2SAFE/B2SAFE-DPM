@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 #
-# Generated Thu Mar  6 07:43:10 2014 by generateDS.py version 2.12b.
+# Generated Mon Jan 11 17:02:43 2016 by generateDS.py version 2.12b.
 #
 
 import sys
+import getopt
 import re as re_
 import base64
 import datetime as datetime_
@@ -1067,9 +1068,10 @@ class triggerType(GeneratedsSuper):
     in minutes between the repetitions."""
     subclass = None
     superclass = None
-    def __init__(self, action=None, time=None, repeat_counter=None):
+    def __init__(self, action=None, time=None, runonce=None, repeat_counter=None):
         self.action = action
         self.time = time
+        self.runonce = runonce
         self.repeat_counter = repeat_counter
     def factory(*args_, **kwargs_):
         if triggerType.subclass:
@@ -1081,6 +1083,8 @@ class triggerType(GeneratedsSuper):
     def set_action(self, action): self.action = action
     def get_time(self): return self.time
     def set_time(self, time): self.time = time
+    def get_runonce(self): return self.runonce
+    def set_runonce(self, runonce): self.runonce = runonce
     def get_repeat_counter(self): return self.repeat_counter
     def set_repeat_counter(self, repeat_counter): self.repeat_counter = repeat_counter
     def validate_triggerTimeType(self, value):
@@ -1090,6 +1094,7 @@ class triggerType(GeneratedsSuper):
         if (
             self.action is not None or
             self.time is not None or
+            self.runonce is not None or
             self.repeat_counter is not None
         ):
             return True
@@ -1123,6 +1128,8 @@ class triggerType(GeneratedsSuper):
         if self.time is not None:
             showIndent(outfile, level, pretty_print)
             outfile.write('<%stime>%s</%stime>%s' % (namespace_, self.gds_format_string(quote_xml(self.time).encode(ExternalEncoding), input_name='time'), namespace_, eol_))
+        if self.runonce is not None:
+            self.runonce.export(outfile, level, namespace_, name_='runonce', pretty_print=pretty_print)
         if self.repeat_counter is not None:
             self.repeat_counter.export(outfile, level, namespace_, name_='repeat-counter', pretty_print=pretty_print)
     def exportLiteral(self, outfile, level, name_='triggerType'):
@@ -1143,6 +1150,12 @@ class triggerType(GeneratedsSuper):
         if self.time is not None:
             showIndent(outfile, level)
             outfile.write('time=%s,\n' % quote_python(self.time).encode(ExternalEncoding))
+        if self.runonce is not None:
+            showIndent(outfile, level)
+            outfile.write('runonce=model_.runonceType(\n')
+            self.runonce.exportLiteral(outfile, level, name_='runonce')
+            showIndent(outfile, level)
+            outfile.write('),\n')
         if self.repeat_counter is not None:
             showIndent(outfile, level)
             outfile.write('repeat_counter=model_.repeat_counterType(\n')
@@ -1168,6 +1181,10 @@ class triggerType(GeneratedsSuper):
             time_ = self.gds_validate_string(time_, node, 'time')
             self.time = time_
             self.validate_triggerTimeType(self.time)    # validate type triggerTimeType
+        elif nodeName_ == 'runonce':
+            obj_ = runonceType.factory()
+            obj_.build(child_)
+            self.runonce = obj_
         elif nodeName_ == 'repeat-counter':
             obj_ = repeat_counterType.factory()
             obj_.build(child_)
@@ -2045,6 +2062,67 @@ class persistentIdentifierType(GeneratedsSuper):
 # end class persistentIdentifierType
 
 
+class runonceType(GeneratedsSuper):
+    subclass = None
+    superclass = None
+    def __init__(self):
+        pass
+    def factory(*args_, **kwargs_):
+        if runonceType.subclass:
+            return runonceType.subclass(*args_, **kwargs_)
+        else:
+            return runonceType(*args_, **kwargs_)
+    factory = staticmethod(factory)
+    def hasContent_(self):
+        if (
+
+        ):
+            return True
+        else:
+            return False
+    def export(self, outfile, level, namespace_='tns:', name_='runonceType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+        if pretty_print:
+            eol_ = '\n'
+        else:
+            eol_ = ''
+        showIndent(outfile, level, pretty_print)
+        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
+        already_processed = set()
+        self.exportAttributes(outfile, level, already_processed, namespace_, name_='runonceType')
+        if self.hasContent_():
+            outfile.write('>%s' % (eol_, ))
+            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='runonceType', pretty_print=pretty_print)
+            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
+        else:
+            outfile.write('/>%s' % (eol_, ))
+    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='runonceType'):
+        pass
+    def exportChildren(self, outfile, level, namespace_='tns:', name_='runonceType', fromsubclass_=False, pretty_print=True):
+        pass
+    def exportLiteral(self, outfile, level, name_='runonceType'):
+        level += 1
+        already_processed = set()
+        self.exportLiteralAttributes(outfile, level, already_processed, name_)
+        if self.hasContent_():
+            self.exportLiteralChildren(outfile, level, name_)
+    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
+        pass
+    def exportLiteralChildren(self, outfile, level, name_):
+        pass
+    def build(self, node):
+        already_processed = set()
+        self.buildAttributes(node, node.attrib, already_processed)
+        for child in node:
+            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
+            self.buildChildren(child, node, nodeName_)
+        return self
+    def buildAttributes(self, node, attrs, already_processed):
+        pass
+    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
+        pass
+# end class runonceType
+
+
 class repeat_counterType(GeneratedsSuper):
     subclass = None
     superclass = None
@@ -2867,17 +2945,78 @@ class persistentIdentifierType7(GeneratedsSuper):
 # end class persistentIdentifierType7
 
 
-class repeat_counterType8(GeneratedsSuper):
+class runonceType8(GeneratedsSuper):
+    subclass = None
+    superclass = None
+    def __init__(self):
+        pass
+    def factory(*args_, **kwargs_):
+        if runonceType8.subclass:
+            return runonceType8.subclass(*args_, **kwargs_)
+        else:
+            return runonceType8(*args_, **kwargs_)
+    factory = staticmethod(factory)
+    def hasContent_(self):
+        if (
+
+        ):
+            return True
+        else:
+            return False
+    def export(self, outfile, level, namespace_='tns:', name_='runonceType8', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+        if pretty_print:
+            eol_ = '\n'
+        else:
+            eol_ = ''
+        showIndent(outfile, level, pretty_print)
+        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
+        already_processed = set()
+        self.exportAttributes(outfile, level, already_processed, namespace_, name_='runonceType8')
+        if self.hasContent_():
+            outfile.write('>%s' % (eol_, ))
+            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='runonceType8', pretty_print=pretty_print)
+            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
+        else:
+            outfile.write('/>%s' % (eol_, ))
+    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='runonceType8'):
+        pass
+    def exportChildren(self, outfile, level, namespace_='tns:', name_='runonceType8', fromsubclass_=False, pretty_print=True):
+        pass
+    def exportLiteral(self, outfile, level, name_='runonceType8'):
+        level += 1
+        already_processed = set()
+        self.exportLiteralAttributes(outfile, level, already_processed, name_)
+        if self.hasContent_():
+            self.exportLiteralChildren(outfile, level, name_)
+    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
+        pass
+    def exportLiteralChildren(self, outfile, level, name_):
+        pass
+    def build(self, node):
+        already_processed = set()
+        self.buildAttributes(node, node.attrib, already_processed)
+        for child in node:
+            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
+            self.buildChildren(child, node, nodeName_)
+        return self
+    def buildAttributes(self, node, attrs, already_processed):
+        pass
+    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
+        pass
+# end class runonceType8
+
+
+class repeat_counterType9(GeneratedsSuper):
     subclass = None
     superclass = None
     def __init__(self, interval_minutes=None, valueOf_=None):
         self.interval_minutes = _cast(int, interval_minutes)
         self.valueOf_ = valueOf_
     def factory(*args_, **kwargs_):
-        if repeat_counterType8.subclass:
-            return repeat_counterType8.subclass(*args_, **kwargs_)
+        if repeat_counterType9.subclass:
+            return repeat_counterType9.subclass(*args_, **kwargs_)
         else:
-            return repeat_counterType8(*args_, **kwargs_)
+            return repeat_counterType9(*args_, **kwargs_)
     factory = staticmethod(factory)
     def get_interval_minutes(self): return self.interval_minutes
     def set_interval_minutes(self, interval_minutes): self.interval_minutes = interval_minutes
@@ -2890,7 +3029,7 @@ class repeat_counterType8(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='repeat-counterType8', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='repeat-counterType9', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -2898,21 +3037,21 @@ class repeat_counterType8(GeneratedsSuper):
         showIndent(outfile, level, pretty_print)
         outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
         already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='repeat-counterType8')
+        self.exportAttributes(outfile, level, already_processed, namespace_, name_='repeat-counterType9')
         if self.hasContent_():
             outfile.write('>')
             outfile.write(str(self.valueOf_).encode(ExternalEncoding))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='repeat-counterType8', pretty_print=pretty_print)
+            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='repeat-counterType9', pretty_print=pretty_print)
             outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
         else:
             outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='repeat-counterType8'):
+    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='repeat-counterType9'):
         if self.interval_minutes is not None and 'interval_minutes' not in already_processed:
             already_processed.add('interval_minutes')
             outfile.write(' interval-minutes="%s"' % self.gds_format_integer(self.interval_minutes, input_name='interval-minutes'))
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='repeat-counterType8', fromsubclass_=False, pretty_print=True):
+    def exportChildren(self, outfile, level, namespace_='tns:', name_='repeat-counterType9', fromsubclass_=False, pretty_print=True):
         pass
-    def exportLiteral(self, outfile, level, name_='repeat-counterType8'):
+    def exportLiteral(self, outfile, level, name_='repeat-counterType9'):
         level += 1
         already_processed = set()
         self.exportLiteralAttributes(outfile, level, already_processed, name_)
@@ -2945,13 +3084,14 @@ class repeat_counterType8(GeneratedsSuper):
                 raise_parse_error(node, 'Bad integer attribute: %s' % exp)
     def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
         pass
-# end class repeat_counterType8
+# end class repeat_counterType9
 
 
 GDSClassesMapping = {
     'target': locationPoint,
     'collection': locationPoint,
-    'repeat-counter': repeat_counterType8,
+    'runonce': runonceType8,
+    'repeat-counter': repeat_counterType9,
     'site': siteType,
     'persistentIdentifier': persistentIdentifierType7,
     'dataset': datasetType2,
@@ -3095,7 +3235,9 @@ __all__ = [
     "persistentIdentifierType7",
     "policy",
     "repeat_counterType",
-    "repeat_counterType8",
+    "repeat_counterType9",
+    "runonceType",
+    "runonceType8",
     "siteType",
     "sourcesType",
     "sourcesType5",

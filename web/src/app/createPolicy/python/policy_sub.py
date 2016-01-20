@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 #
-# Generated Thu Mar  6 07:43:11 2014 by generateDS.py version 2.12b.
+# Generated Mon Jan 11 17:02:43 2016 by generateDS.py version 2.12b.
 #
 
 import sys
 
-import ??? as supermod
+import policy_lib as supermod
 
 etree_ = None
 Verbose_import_ = False
@@ -103,8 +103,8 @@ supermod.actionType.subclass = actionTypeSub
 
 
 class triggerTypeSub(supermod.triggerType):
-    def __init__(self, action=None, time=None, repeat_counter=None):
-        super(triggerTypeSub, self).__init__(action, time, repeat_counter, )
+    def __init__(self, action=None, time=None, runonce=None, repeat_counter=None):
+        super(triggerTypeSub, self).__init__(action, time, runonce, repeat_counter, )
 supermod.triggerType.subclass = triggerTypeSub
 # end class triggerTypeSub
 
@@ -165,6 +165,13 @@ supermod.persistentIdentifierType.subclass = persistentIdentifierTypeSub
 # end class persistentIdentifierTypeSub
 
 
+class runonceTypeSub(supermod.runonceType):
+    def __init__(self):
+        super(runonceTypeSub, self).__init__()
+supermod.runonceType.subclass = runonceTypeSub
+# end class runonceTypeSub
+
+
 class repeat_counterTypeSub(supermod.repeat_counterType):
     def __init__(self, interval_minutes=None, valueOf_=None):
         super(repeat_counterTypeSub, self).__init__(interval_minutes, valueOf_, )
@@ -221,11 +228,18 @@ supermod.persistentIdentifierType7.subclass = persistentIdentifierType7Sub
 # end class persistentIdentifierType7Sub
 
 
-class repeat_counterType8Sub(supermod.repeat_counterType8):
+class runonceType8Sub(supermod.runonceType8):
+    def __init__(self):
+        super(runonceType8Sub, self).__init__()
+supermod.runonceType8.subclass = runonceType8Sub
+# end class runonceType8Sub
+
+
+class repeat_counterType9Sub(supermod.repeat_counterType9):
     def __init__(self, interval_minutes=None, valueOf_=None):
-        super(repeat_counterType8Sub, self).__init__(interval_minutes, valueOf_, )
-supermod.repeat_counterType8.subclass = repeat_counterType8Sub
-# end class repeat_counterType8Sub
+        super(repeat_counterType9Sub, self).__init__(interval_minutes, valueOf_, )
+supermod.repeat_counterType9.subclass = repeat_counterType9Sub
+# end class repeat_counterType9Sub
 
 
 def get_root_tag(node):

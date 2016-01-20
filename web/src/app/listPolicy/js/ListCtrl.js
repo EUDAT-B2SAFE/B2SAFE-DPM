@@ -24,8 +24,6 @@ function listCtrl($scope, $sce, $http, $route,
         for (i = 0; i < keys.length; i++) {
             dkeys[keys[i].name] = keys[i].idx;
         }
-        // console.log("dkeys is " + JSON.stringify(dkeys));
-        // console.log("data is " + JSON.stringify(this.pol_data));
         $scope.policy.name = this.pol_data.pol_vals[dkeys.policy_name].name;
         $scope.policy.version = this.pol_data.pol_vals[dkeys.policy_version].name;
         $scope.policy.author = this.pol_data.pol_vals[dkeys.policy_author].name;
@@ -156,17 +154,16 @@ function listCtrl($scope, $sce, $http, $route,
                 var data = results.data;
                 uuids = clearArray(uuids);
                 for (i = 0; i < data.length; i++) {
+                  console.log(' data is ' + JSON.stringify(data[i]) + ' i ' + i);
                     var ddvals = [];
                     var is_visible = false;
                     for (j = 0; j < data[i].length; j++) {
                       if (j === 6) {
                         dat = new Date(parseInt(data[i][j][0])*1000);
-                        data[i][j][0] = dat.getFullYear() + '-' +
-                        dat.getMonth() + '-' + dat.getDate();
+                        data[i][j][0] = displayDate(dat);
                       }
-                        is_visible = (data[i][j][1] === 'true');
-                        ddvals.push({name: data[i][j][0],
-                            visible: is_visible});
+                      is_visible = (data[i][j][1] === 'true');
+                      ddvals.push({name: data[i][j][0], visible: is_visible});
                     }
                     // Set flag indicating whether to show removed
                     // policy to false by default.
@@ -259,8 +256,8 @@ function listCtrl($scope, $sce, $http, $route,
                             for (j = 0; j < data[i].length; j++) {
                                 if (j === 6) {
                                   var dat = new Date(parseInt(data[i][j][0])*1000);
-                                  data[i][j][0] = dat.getFullYear() + '-' +
-                                  dat.getMonth() + '-' + dat.getDate();
+                                  console.log('date is ' + displayDate(dat));
+                                  data[i][j][0] = displayDate(dat);
                                 }
                                 ddvals.push({name: data[i][j][0],
                                     visible: $scope.policy_columns[j].visible});
@@ -367,4 +364,18 @@ function listCtrl($scope, $sce, $http, $route,
        showLog.name = true;
        $scope.$parent.changeLoc(url);
     };
+}
+
+function displayDate(date) {
+  var returnDate = '';
+  var month = parseInt(date.getMonth()) + 1;
+  var day = date.getDate();
+  if (month < 10) {
+    month = '0' + month;
+  }
+  if (day < 10) {
+    day = '0' + date.getDate();
+  }
+  returnDate = date.getFullYear() + '-' + month + '-' + day;
+  return returnDate;
 }

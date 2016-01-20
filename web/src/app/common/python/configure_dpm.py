@@ -38,11 +38,8 @@ def create_tables(conn, config, dbtype):
     elif (dbtype == 'action'):
         cur.execute(config.get("CREATE", "trigger"))
         cur.execute(config.get("CREATE", "type"))
-        cur.execute(config.get("CREATE", "operation"))
         cur.execute(config.get("CREATE", "persistentid"))
-        cur.execute(config.get("CREATE", "locationtype"))
         cur.execute(config.get("CREATE", "organisation"))
-        cur.execute(config.get("CREATE", "action"))
     elif (dbtype == 'profile'):
         cur.execute(config.get("CREATE", "dpm_page"))
         cur.execute(config.get("CREATE", "roles"))
@@ -55,7 +52,7 @@ def create_tables(conn, config, dbtype):
 
 
 def get_next_profile_indexes(conn, config):
-    '''Function to get the ntext unused indexes for the profile tables
+    '''Function to get the next unused indexes for the profile tables
     '''
     cur = conn.cursor()
     next_indexes = {}
@@ -94,21 +91,13 @@ def get_next_actions_indexes(conn, config):
     next_indexes = {}
     next_indexes['type'] = 0
     next_indexes['trigger'] = 0
-    next_indexes['operation'] = 0
     next_indexes['persistentid'] = 0
     next_indexes['organisation'] = 0
-    next_indexes['locationtype'] = 0
-    next_indexes['action'] = 0
 
     cur.execute(config.get("QUERY", "max_trigger"))
     max_triggers = cur.fetchall()
     if (len(max_triggers) > 0):
         next_indexes['triggers'] = max_triggers[0][0] + 1
-
-    cur.execute(config.get("QUERY", "max_operation"))
-    max_operation = cur.fetchall()
-    if (len(max_operation) > 0):
-        next_indexes['operation'] = max_operation[0][0] + 1
 
     cur.execute(config.get("QUERY", "max_type"))
     max_type = cur.fetchall()
@@ -120,20 +109,10 @@ def get_next_actions_indexes(conn, config):
     if (len(max_persistentID) > 0):
         next_indexes['persistentid'] = max_persistentID[0][0] + 1
 
-    cur.execute(config.get("QUERY", "max_locationtype"))
-    max_location = cur.fetchall()
-    if (len(max_location) > 0):
-        next_indexes['locationtype'] = max_location[0][0] + 1
-
     cur.execute(config.get("QUERY", "max_organisation"))
     max_organisation = cur.fetchall()
     if (len(max_organisation) > 0):
         next_indexes['organisation'] = max_organisation[0][0] + 1
-
-    cur.execute(config.get("QUERY", "max_action"))
-    max_action = cur.fetchall()
-    if (len(max_action) > 0):
-        next_indexes['action'] = max_action[0][0] + 1
 
     return next_indexes
 
@@ -372,56 +351,24 @@ def fill_action(conn, config, next_indexes, data):
     cur = conn.cursor()
     atype_count = 0
     atrigger_count = 0
-    aoperation_count = 0
-    alocation_count = 0
-    action_count = 0
 
-    # Fill the action tables from the ascii file
+    # Fill the action type table table from the ascii file
     for row in file(data["action_action_data"], "r"):
-        atype, atrigger, aoperation, alocation = row.split('|')
-        atype = atype.strip()
-        atrigger = atrigger.strip()
-        aoperation = aoperation.strip()
-        alocation = alocation.strip()
-
+        atype = row.strip()
         atype_IOK, atype_count = fill_table(cur, config, "type",
                                             next_indexes["type"], atype)
         if (atype_IOK):
             next_indexes['type'] = atype_count
 
+    # Fill the action trigger table from the ascii file
+    for row in file(data['action_trigger_data'], 'r'):
+        atrigger = row.strip()
         atrigger_IOK, atrigger_count = fill_table(cur, config,
                                                   "trigger",
                                                   next_indexes["trigger"],
                                                   atrigger)
         if (atrigger_IOK):
             next_indexes['trigger'] = atrigger_count
-
-        aoperation_IOK, aoperation_count = \
-            fill_table(cur, config, "operation", next_indexes["operation"],
-                       aoperation)
-        if (aoperation_IOK):
-            next_indexes['operation'] = aoperation_count
-
-        alocation_IOK, alocation_count = \
-            fill_table(cur, config, "locationtype",
-                       next_indexes["locationtype"], alocation)
-        if (alocation_IOK):
-            next_indexes['locationtype'] = alocation_count
-
-        cur.execute(config.get("QUERY", "action"),
-                    (atype_count-1, atrigger_count-1,
-                    aoperation_count-1, alocation_count-1))
-        actions = cur.fetchall()
-        if (len(actions) == 0):
-            cur.execute(config.get("INSERT", "action"),
-                        (next_indexes['action'], atype_count-1,
-                        atrigger_count-1,
-                        aoperation_count-1, alocation_count-1))
-            action_count = next_indexes['action']
-            action_count += 1
-            next_indexes['action'] = action_count
-        else:
-            action_count = int(actions[0][0]) + 1
 
     conn.commit()
 
@@ -458,6 +405,8 @@ def populate(dbfile, dbschema, dbdata, dbtype, force_flag):
             return
     else:
         print 'Uploading data to the %s database' % dbtype
+        if (not os.path.isdir(os.path.dirname(dbfile))):
+            os.makedirs(os.path.dirname(dbfile))
 
     # Get the resource information from the GOCDB
 
@@ -921,6 +870,7 @@ if __name__ == '__main__':
 
         if (dbase == 'action'):
             data_tag.append("%s_action_data" % dbase.strip())
+            data_tag.append("%s_trigger_data" % dbase.strip())
             data_tag.append("%s_org_data" % dbase.strip())
         elif (dbase == 'profile'):
             data_tag.append("%s_community" % dbase.strip())

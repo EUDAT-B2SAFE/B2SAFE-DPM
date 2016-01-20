@@ -1,6 +1,6 @@
 dpmApp.service('data_action', function() {
-    var actions = {types:[],
-        operations:[], triggers:[]};
+  'use strict';
+    var actions = {types:[], triggers:[]};
     return {
         getActions: function() {
             return actions;

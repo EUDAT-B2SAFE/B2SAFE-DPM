@@ -1,13 +1,21 @@
 function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
         pristineFlags, invalidFlags, $http, page) {
+
     $scope.setSubmitted = function(validObj) {
-        var flago = submitFlag.getObj();
-        flago.fieldsOK = checkFields(validObj, pristineFlags, invalidFlags,
-                flago, policy);
-        flago.active = true;
-        flago.submitted = true;
-        submitFlag.setObj(flago);
-        $scope.submitted = flago.submitted;
+      console.log('valid objs: is ' + JSON.stringify(validObj));
+      console.log('type ' + validObj.type.$pristine);
+      console.log('trigger ' + validObj.trigger.$pristine);
+      //console.log('srccoll ' + validObj.srcid.$pristine);
+      console.log('tgtcoll ' + validObj.tgtid.$pristine);
+
+      var flago = submitFlag.getObj();
+      console.log('submitting policy ' + JSON.stringify(policy));
+      flago.fieldsOK = checkFields(validObj, pristineFlags, invalidFlags,
+              flago, policy);
+      flago.active = true;
+      flago.submitted = true;
+      submitFlag.setObj(flago);
+      $scope.submitted = flago.submitted;
     };
     $scope.submitForm = function () {
         var flago = submitFlag.getObj();
@@ -27,28 +35,30 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
         // We can now set the id for the policy before sending to the
         // database
         policy.id = policy.uuid;
-        $http.post("${CGI_URL}/storePolicy.py", JSON.stringify(policy),
-                {headers: "Content-Type: application/x-www-form-urlencoded"})
+        console.log('storing the policy ' + JSON.stringify(policy));
+        $http.post('${CGI_URL}/storePolicy.py', JSON.stringify(policy),
+                {headers: 'Content-Type: application/x-www-form-urlencoded'})
             .then(function(results) {
                 var data = results.data;
                 if (data.policy_exists) {
-                    alert("The policy exists in the database");
+                    alert('The policy exists in the database');
                 } else {
-                    alert("Policy successfully stored in the database");
+                    alert('Policy successfully stored in the database');
                 }
                 // Reset the policy and reload the page which puts us on
                 // the default page - the policy listing
-                var new_policy = {};
-                new_policy = resetPolicy(policy);
-                $scope.policy = new_policy;
+                var newPolicy = {};
+                newPolicy = resetPolicy(policy);
+                $scope.policy = newPolicy;
                 // alert("scope is " + JSON.stringify($scope.policy));
                 $window.location.reload();
             },
             function(data, status, headers, config) {
-                alert("error is " + data);
+                alert('error is ' + data);
             });
     };
 
+    // TODO: We will need to alter this as it's not correct 5/Jan/16
     $scope.collDefined = function() {
       var collFlag = false;
       var i = 0;
@@ -61,6 +71,7 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
       return collFlag;
     };
 
+    // TODO: We will need to alter this as it's not correct - AH 5/Jan/16
     $scope.pidDefined = function() {
       var pidFlag = false;
       var i = 0;
@@ -72,5 +83,4 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
       }
       return pidFlag;
     };
-
 }

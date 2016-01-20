@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import getopt
 import sys
 import json
 import cgi
@@ -15,7 +14,7 @@ def usage():
     print "help=help                Prints this help"
     print ""
 
-def getKeys(config):
+def get_keys(config):
     '''Function to extract the policy schema keys
     '''
 
@@ -24,36 +23,36 @@ def getKeys(config):
 
     # Keys to skip
     skip_keys = [x.strip() for x in config.get("DATABASE", "skip_keys").split(',')]
-    sections = ["POLICY_SCHEMA", "DATASETS_SCHEMA", "ACTIONS_SCHEMA",
-            "TARGETS_SCHEMA", "SOURCES_SCHEMA"]
+    sections = ["POLICY_SCHEMA", "ACTIONS_SCHEMA", "SOURCES_SCHEMA",
+                "TARGETS_SCHEMA"]
     keys = []
     for section in sections:
         for option in config.options(section):
             val = config.get(section, option)
-            if (val in skip_keys):
+            if val in skip_keys:
                 continue
-            if (val in visible_keys):
+            if val in visible_keys:
                 keys.append((val, "true"))
             else:
                 keys.append((val, "false"))
     return keys
 
-def returnResults(keys):
+def return_results(keys):
     '''Function to return the results'''
     print "Content-Type: application/json charset=utf-8"
     print ""
     print json.dumps(keys)
 
 if __name__ == '__main__':
-    cfgfile = './config/policy.cfg'
+    CFG_FILE = './config/policy.cfg'
 
-    fields = cgi.FieldStorage()
-    if (fields.has_key("help")):
+    FIELDS = cgi.FieldStorage()
+    if "help" in FIELDS:
         usage()
         sys.exit()
 
     # Read the configs
-    config = ConfigParser.ConfigParser()
-    config.read(cfgfile)
-    keys = getKeys(config)
-    returnResults(keys)
+    POLICY_CONFIG = ConfigParser.ConfigParser()
+    POLICY_CONFIG.read(CFG_FILE)
+    POLICY_KEYS = get_keys(POLICY_CONFIG)
+    return_results(POLICY_KEYS)

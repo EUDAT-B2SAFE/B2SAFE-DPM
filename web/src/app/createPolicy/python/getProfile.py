@@ -8,6 +8,7 @@ import csv
 import sqlite3
 import ConfigParser
 
+
 def usage():
     '''Function describing the script usage
     '''
@@ -17,11 +18,13 @@ def usage():
     print "?help=help              Prints this help"
     print ""
 
+
 def openDatabase(dbfile):
     '''Open the database file
     '''
     conn = sqlite3.connect(dbfile)
     return conn
+
 
 def getAdmins(config):
     '''Function to load the DPM admin username
@@ -37,6 +40,7 @@ def getAdmins(config):
     fh.close()
     return dpm_admins
 
+
 def queryProfile(conn, username):
     '''Function to return the user profile if it exists
     '''
@@ -48,16 +52,16 @@ def queryProfile(conn, username):
 
     cur = conn.cursor()
     cur.execute('''select email from user where name = ?''',
-            (username,))
+                (username,))
     u_email = cur.fetchone()[0]
-    
-    cur.execute('''select community.name from community, user, status, 
-            user_community where user.name = ? and 
+
+    cur.execute('''select community.name from community, user, status,
+            user_community where user.name = ? and
             user.user_id = user_community.user_id and
             user_community.status_id = status.status_id and
             status.status = 'approved' and
             user_community.community_id = community.community_id''',
-            (username,))
+                (username,))
     communities = cur.fetchall()
     conn.commit()
     u_comm = []
@@ -72,12 +76,13 @@ def queryProfile(conn, username):
     user_profile["profile"].append(u_comm_d)
     return user_profile
 
+
 def getProfile(config):
     '''Function to return the username
     '''
     print "Content-Type: application/json charset=utf-8"
     print ""
-    
+
     username = ''
     dpmAdmin = False
     user_profile = {}
@@ -97,13 +102,13 @@ def getProfile(config):
                 dpmAdmin = True
                 user_profile['profile'] = [admin]
                 cur = conn.cursor()
-                cur.execute('''select community.name from community 
+                cur.execute('''select community.name from community
                         where community.name <> 'all' ''')
                 results = cur.fetchall()
                 communities = []
                 for res in results:
                     communities.append(res[0])
- 
+
                 user_profile['profile'].append({'communities': communities})
                 break
 
@@ -115,13 +120,12 @@ def getProfile(config):
 if __name__ == '__main__':
     cfgfile = "./config/policy.cfg"
 
-    fields = cgi.FieldStorage();
-    if (fields.has_key("help")):
+    fields = cgi.FieldStorage()
+    if ("help" in fields):
         usage()
         sys.exit()
-    
+
     # Read the config file
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
     getProfile(config)
-

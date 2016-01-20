@@ -1,55 +1,47 @@
 var policy = function() {
-    var action = {name: "--- Select an Action ---"};
-    var type = {name: "--- Select a Type ---"};
-    var trigger = {name: "--- Select a Trigger ---"};
-    var source_system = {name: "--- Select a System ---"};
-    var source_site = {name: "--- Select a Site ---"};
-    var source_resource = {name: "--- Select a Resource ---"};
-    var target_system = {name: "--- Select a System ---"};
-    var target_site = {name: "--- Select a Site ---"};
-    var target_resource = {name: "--- Select a Resource ---"};
-    var loctype = {name: "--- Select a Location type ---"};
-    var source_organisation = new Array({name: "--- Select an Organisation ---"});
-    var target_organisation = {name: "--- Select an Organisation ---"};
-    var weekday = {name: "*"};
-    var day = {name: "*"};
-    var month ={name: "*"};
-    var hour = {name: "*"};
-    var minute = {name: "*"};
-
-    var period = {weekday: weekday, month: month, day: day, hour: hour,
-        minute: minute};
+    var source_type = {name: '--- Select a Type ---'};
+    var target_type = {name: '--- Select a Type ---'};
+    var type = {name: '--- Select a Type ---'};
+    var trigger = {name: '--- Select ---'};
+    var trigger_period = '';
+    var source_site = {name: '--- Select ---'};
+    var source_system = {name: 'iRODS'};
+    var source_resource = {name: ''};
+    var target_system = {name: 'iRODS'};
+    var target_site = {name: '--- Select ---'};
+    var target_resource = {name: ''};
+    var source_organisation = {name: 'EUDAT'};
+    var target_organisation = {name: 'EUDAT'};
+    var source_identifier = {name: ''};
+    var target_identifier = {name: ''};
 
     var sources = new Array({
-        loctype: loctype,
+        identifier: source_identifier,
+        type: source_type,
         organisation: source_organisation,
         system: source_system,
-        site: source_site,
-        path: '',
+        hostname: source_site,
         resource: source_resource
     });
-    var target = {
-        loctype: loctype,
+
+    var targets = new Array({
+        identifier: target_identifier,
+        type: target_type,
         organisation: target_organisation,
         system: target_system,
-        site: target_site,
-        path: "",
+        hostname: target_site,
         resource: target_resource
-    };
-    var collections = new Array({name: "", type: {name: ""}});
+    });
 
-    var policyObj = {name: "", id: "",
-        version: "1.0", uuid: "", author: "", community: "",
-        collections: collections,
-        action: action,
+    var policyObj = {name: '', id: '',
+        version: '1.0', uuid: '', author: '', community: '',
         type: type,
         trigger: trigger,
-        trigger_date: "",
-        trigger_period: period,
+        trigger_period: trigger_period,
         sources: sources,
-        target: target};
+        targets: targets};
     return policyObj;
 };
 
 // create a factory to generate a policy object
-dpmApp.factory("policy", policy);
+dpmApp.factory('policy', policy);

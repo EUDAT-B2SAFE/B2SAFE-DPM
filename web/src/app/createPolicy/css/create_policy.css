@@ -7,6 +7,28 @@ div#policydetails {
 span#error {
     background-color: yellow;
 }
+div.whenblock {
+  width: 50%;
+  float: left;
+}
+div.stepblock {
+  width: 50%;
+  float: left;
+}
+div.collblock {
+  width: 40%;
+  float: left;
+}
+
+div.pidblock {
+  width: 60%;
+  float: left;
+}
+div.hostblock {
+  width: 40%;
+  float: left;
+}
+
 /*
 div#sources {
     width: 50%;
@@ -84,7 +106,7 @@ div#pers {
     margin-top: 5%;
     margin-left: auto;
     margin-right: auto;
-/*    background-color: #F7F7F7; 
+/*    background-color: #F7F7F7;
     border: 1px solid #E5601E; */
 }
 
@@ -161,8 +183,65 @@ input.text, select{
     margin-bottom: 0%;
 }
 
-select#period {
-    width: 8%;
+input#identifier {
+  width: 500px;
+  height: 22px;
+}
+
+input.path {
+  width: 500px;
+  height: 22px;
+}
+
+select#whensel {
+  width: 150px;
+  height: 22px;
+  padding: 0px 6px;
+  -webkit-border-radius: 0px;
+  -moz-border-radius: 0px;
+  border-radius: 0px;
+  margin-top: 0%;
+  float: left;
+}
+
+select#colltype {
+  width: 150px;
+  height: 22px;
+  padding: 0px 6px;
+  -webkit-border-radius: 0px;
+  -moz-border-radius: 0px;
+  border-radius: 0px;
+  margin-top: 0%;
+}
+
+input.period {
+  width: 150px;
+  height: 22px;
+  padding: 0px 6px;
+  -webkit-border-radius: 0px;
+  -moz-border-radius: 0px;
+  border-radius: 0px;
+  margin-top: 0%;
+}
+
+div#period-space {
+  width: 20px;
+  height: 22px;
+  float: left;
+}
+
+div#action-period {
+  float: left;
+}
+
+select.host {
+  width: 230px;
+  height: 22px;
+  padding: 0px 6px;
+  -webkit-border-radius: 0px;
+  -moz-border-radius: 0px;
+  border-radius: 0px;
+  margin-top: 0px;
 }
 
 button#previouspage {

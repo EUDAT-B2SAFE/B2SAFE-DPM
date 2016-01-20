@@ -4,55 +4,66 @@ function checkFields(validObj, pristineFlagsObj, invalidFlagsObj, flago,
 
     if (validObj) {
         fieldsOK = true;
-        // We have to ignore the pristine flag in the case of
-        // a person submitting and goes back to update the form
-        // so we use our own flags
-        if (!flago.submitted) {
-            pristineFlagsObj.action.action = validObj.action.$pristine;
-            pristineFlagsObj.action.type = validObj.type.$pristine;
-            pristineFlagsObj.action.trigger = validObj.trigger.$pristine;
-            pristineFlagsObj.target.organisation = validObj.tgtorganisation.$pristine;
-            // pristineFlagsObj.target.location_type = validObj.location_type.$pristine;
-            pristineFlagsObj.target.system = validObj.tgtsystem.$pristine;
-            pristineFlagsObj.target.site = validObj.tgtsite.$pristine;
-            pristineFlagsObj.target.resource = validObj.tgtresource.$pristine;
+        if (pristineFlagsObj.action.type) {
+          fieldsOK = false;
         }
-
+        if (pristineFlagsObj.action.trigger) {
+          fieldsOK = false;
+        }
+        if (policy.trigger.name === 'date/time') {
+          if (pristineFlagsObj.action.period || invalidFlagsObj.action.period) {
+            fieldsOK = false;
+          }
+        }
+        for (var i = 0; i < pristineFlagsObj.sources.length; i++) {
+          if (policy.sources[i].type.name === 'collection'){
+            fieldsOK = checkCollValid(pristineFlagsObj, invalidFlagsObj,
+              policy, 'sources', i);
+            if (! fieldsOK) {
+              break;
+            }
+          } else if (policy.sources[i].type.name === 'pid') {
+            fieldsOK = true;
+          }
+        }
+        for (i = 0; i < pristineFlagsObj.targets.length; i++) {
+          if (policy.targets[i].type.name === 'collection') {
+            fieldsOK = checkCollValid(pristineFlagsObj, invalidFlagsObj,
+              policy, 'targets', i);
+            if (! fieldsOK) {
+              break;
+            }
+          } else if (policy.targets[i].type.name === 'pid') {
+            fieldsOK = true;
+          }
+        }
         // Loop over all the flags for the dataset pid. On the first true
         // set the valid flag to false and break out
-        var i;
-        for (i=0; i < pristineFlagsObj.dataset.length; i++) {
-            if (policy.collections[i].type.name === "pid") {
-              if (pristineFlagsObj.dataset[i].pid === true ||
-                  pristineFlagsObj.dataset[i].coll === true ||
-                  invalidFlagsObj.dataset[i].pid === true ||
-                  invalidFlagsObj.dataset[i].coll === true) {
-                    fieldsOK = false;
-                    break;
-              }
-            } else if (policy.collections[i].type.name === "collection") {
-              if (pristineFlagsObj.sources[i].organisation === true ||
-                  pristineFlagsObj.sources[i].system === true ||
-                  pristineFlagsObj.sources[i].site === true ||
-                  pristineFlagsObj.sources[i].resource === true ||
-                  invalidFlagsObj.source[i].organisation === true ||
-                  invalidFlagsObj.source[i].system === true ||
-                  invalidFlagsObj.source[i].site === true ||
-                  invalidFlagsObj.source[i].resource === true) {
-                    fieldsOK = false;
-                    break;
-                  }
-            }
-        }
-
-        if (pristineFlagsObj.action.action || validObj.action.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.action.type || validObj.type.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.action.trigger || validObj.trigger.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.target.organisation || validObj.tgtorganisation.$invalid) fieldsOK = false;
-        // if (pristineFlagsObj.target.location_type || validObj.location_type.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.target.system || validObj.tgtsystem.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.target.site || validObj.tgtsite.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.target.resource || validObj.tgtresource.$invalid) fieldsOK = false;
+        console.log('policy is ' + JSON.stringify(policy));
+        console.log('source is ' + JSON.stringify(policy.sources[0]));
+        console.log('target is ' + JSON.stringify(policy.targets[0]));
     }
     return fieldsOK;
+}
+
+function checkCollValid(pristineFlags, invalidFlags, policy, location, index) {
+  var fieldsOK = true;
+  if (pristineFlags[location][index].location_type ||
+    pristineFlags[location][index].site) {
+      console.log('location ' + pristineFlags[location][index].location_type);
+      console.log('site ' + pristineFlags[location][index].site);
+    fieldsOK = false;
+  }
+  if (policy[location][index].type.name === 'collection') {
+    if (invalidFlags[location][index].coll ||
+      pristineFlags[location][index].coll) {
+        fieldsOK = false;
+    }
+  } else if (policy[location][index].type.name === 'pid') {
+    if (invalidFlags[location][index].pid ||
+      pristineFlags[location][index].pid) {
+        fieldsOK = false;
+    }
+  }
+  return fieldsOK;
 }

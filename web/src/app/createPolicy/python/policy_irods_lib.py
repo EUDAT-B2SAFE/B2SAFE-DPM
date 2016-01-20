@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Generated Thu Mar  6 07:43:42 2014 by generateDS.py version 2.12b.
+# Generated Mon Jan 11 17:05:53 2016 by generateDS.py version 2.12b.
 #
 
 import sys
@@ -659,7 +659,7 @@ class policy(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='policy', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='policy', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -811,7 +811,7 @@ class locationPoint(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='locationPoint', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='locationPoint', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -939,7 +939,7 @@ class locationType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='locationType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='locationType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1014,7 +1014,7 @@ class actionType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='actionType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='actionType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1077,9 +1077,10 @@ class triggerType(GeneratedsSuper):
     in minutes between the repetitions."""
     subclass = None
     superclass = None
-    def __init__(self, action=None, time=None, repeat_counter=None):
+    def __init__(self, action=None, time=None, runonce=None, repeat_counter=None):
         self.action = action
         self.time = time
+        self.runonce = runonce
         self.repeat_counter = repeat_counter
     def factory(*args_, **kwargs_):
         if triggerType.subclass:
@@ -1091,6 +1092,8 @@ class triggerType(GeneratedsSuper):
     def set_action(self, action): self.action = action
     def get_time(self): return self.time
     def set_time(self, time): self.time = time
+    def get_runonce(self): return self.runonce
+    def set_runonce(self, runonce): self.runonce = runonce
     def get_repeat_counter(self): return self.repeat_counter
     def set_repeat_counter(self, repeat_counter): self.repeat_counter = repeat_counter
     def validate_triggerTimeType(self, value):
@@ -1100,12 +1103,13 @@ class triggerType(GeneratedsSuper):
         if (
             self.action is not None or
             self.time is not None or
+            self.runonce is not None or
             self.repeat_counter is not None
         ):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='triggerType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='triggerType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1133,6 +1137,8 @@ class triggerType(GeneratedsSuper):
         if self.time is not None:
             showIndent(outfile, level, pretty_print)
             outfile.write('<%stime>%s</%stime>%s' % (namespace_, self.gds_format_string(quote_xml(self.time).encode(ExternalEncoding), input_name='time'), namespace_, eol_))
+        if self.runonce is not None:
+            self.runonce.export(outfile, level, namespace_, name_='runonce', pretty_print=pretty_print)
         if self.repeat_counter is not None:
             self.repeat_counter.export(outfile, level, namespace_, name_='repeat-counter', pretty_print=pretty_print)
     def exportLiteral(self, outfile, level, name_='triggerType'):
@@ -1153,6 +1159,12 @@ class triggerType(GeneratedsSuper):
         if self.time is not None:
             showIndent(outfile, level)
             outfile.write('time=%s,\n' % quote_python(self.time).encode(ExternalEncoding))
+        if self.runonce is not None:
+            showIndent(outfile, level)
+            outfile.write('runonce=model_.runonceType(\n')
+            self.runonce.exportLiteral(outfile, level, name_='runonce')
+            showIndent(outfile, level)
+            outfile.write('),\n')
         if self.repeat_counter is not None:
             showIndent(outfile, level)
             outfile.write('repeat_counter=model_.repeat_counterType(\n')
@@ -1178,6 +1190,10 @@ class triggerType(GeneratedsSuper):
             time_ = self.gds_validate_string(time_, node, 'time')
             self.time = time_
             self.validate_triggerTimeType(self.time)    # validate type triggerTimeType
+        elif nodeName_ == 'runonce':
+            obj_ = runonceType.factory()
+            obj_.build(child_)
+            self.runonce = obj_
         elif nodeName_ == 'repeat-counter':
             obj_ = repeat_counterType.factory()
             obj_.build(child_)
@@ -1208,7 +1224,7 @@ class triggerActionType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='triggerActionType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='triggerActionType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1300,7 +1316,7 @@ class coordinates(locationType):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='coordinates', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='coordinates', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1415,7 +1431,7 @@ class siteType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='siteType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='siteType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1499,7 +1515,7 @@ class datasetType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='datasetType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='datasetType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1603,7 +1619,7 @@ class actionsType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='actionsType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='actionsType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1720,7 +1736,7 @@ class actionType1(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='actionType1', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='actionType1', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1876,7 +1892,7 @@ class sourcesType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='sourcesType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='sourcesType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1980,7 +1996,7 @@ class targetsType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='targetsType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='targetsType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -2078,7 +2094,7 @@ class persistentIdentifierType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='persistentIdentifierType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='persistentIdentifierType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -2133,6 +2149,67 @@ class persistentIdentifierType(GeneratedsSuper):
 # end class persistentIdentifierType
 
 
+class runonceType(GeneratedsSuper):
+    subclass = None
+    superclass = None
+    def __init__(self):
+        pass
+    def factory(*args_, **kwargs_):
+        if runonceType.subclass:
+            return runonceType.subclass(*args_, **kwargs_)
+        else:
+            return runonceType(*args_, **kwargs_)
+    factory = staticmethod(factory)
+    def hasContent_(self):
+        if (
+
+        ):
+            return True
+        else:
+            return False
+    def export(self, outfile, level, namespace_='tns:', name_='runonceType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+        if pretty_print:
+            eol_ = '\n'
+        else:
+            eol_ = ''
+        showIndent(outfile, level, pretty_print)
+        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
+        already_processed = set()
+        self.exportAttributes(outfile, level, already_processed, namespace_, name_='runonceType')
+        if self.hasContent_():
+            outfile.write('>%s' % (eol_, ))
+            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='runonceType', pretty_print=pretty_print)
+            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
+        else:
+            outfile.write('/>%s' % (eol_, ))
+    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='runonceType'):
+        pass
+    def exportChildren(self, outfile, level, namespace_='tns:', name_='runonceType', fromsubclass_=False, pretty_print=True):
+        pass
+    def exportLiteral(self, outfile, level, name_='runonceType'):
+        level += 1
+        already_processed = set()
+        self.exportLiteralAttributes(outfile, level, already_processed, name_)
+        if self.hasContent_():
+            self.exportLiteralChildren(outfile, level, name_)
+    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
+        pass
+    def exportLiteralChildren(self, outfile, level, name_):
+        pass
+    def build(self, node):
+        already_processed = set()
+        self.buildAttributes(node, node.attrib, already_processed)
+        for child in node:
+            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
+            self.buildChildren(child, node, nodeName_)
+        return self
+    def buildAttributes(self, node, attrs, already_processed):
+        pass
+    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
+        pass
+# end class runonceType
+
+
 class repeat_counterType(GeneratedsSuper):
     subclass = None
     superclass = None
@@ -2156,7 +2233,7 @@ class repeat_counterType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='repeat-counterType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='repeat-counterType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -2237,7 +2314,7 @@ class siteType2(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='siteType2', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='siteType2', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -2295,6 +2372,7 @@ class siteType2(GeneratedsSuper):
 GDSClassesMapping = {
     'target': locationPoint,
     'collection': locationPoint,
+    'runonce': runonceType,
     'repeat-counter': repeat_counterType,
     'site': siteType2,
     'persistentIdentifier': persistentIdentifierType,
@@ -2343,7 +2421,7 @@ def parse(inFileName, silence=False):
         sys.stdout.write('<?xml version="1.0" ?>\n')
         rootObj.export(
             sys.stdout, 0, name_=rootTag,
-            namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"',
+            namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"',
             pretty_print=True)
     return rootObj
 
@@ -2387,7 +2465,7 @@ def parseString(inString, silence=False):
         sys.stdout.write('<?xml version="1.0" ?>\n')
         rootObj.export(
             sys.stdout, 0, name_="coordinates",
-            namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"')
+            namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"')
     return rootObj
 
 
@@ -2435,6 +2513,7 @@ __all__ = [
     "persistentIdentifierType",
     "policy",
     "repeat_counterType",
+    "runonceType",
     "siteType",
     "siteType2",
     "sourcesType",

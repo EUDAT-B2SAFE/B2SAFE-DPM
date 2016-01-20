@@ -20,16 +20,16 @@ def usage():
     print ""
 
 
-def getAdmins(config):
+def get_admins(config):
     '''Function to load the DPM admin username
     '''
     dpm_admins = []
-    fh = file(config.get("DPM_ADMIN", "admin_file"), "r")
-    csv_obj = csv.reader(fh)
+    file_handle = file(config.get("DPM_ADMIN", "admin_file"), "r")
+    csv_obj = csv.reader(file_handle)
     for dpm_admin in csv_obj:
         username = dpm_admin[1].strip()
         dpm_admins.append(username)
-    fh.close()
+    file_handle.close()
     return dpm_admins
 
 
@@ -39,30 +39,32 @@ def match_multi(expr, item):
     return res is not None
 
 
-def getData(config):
-    '''Function to return the policies from the database
-    '''
-    dpmAdmin = False
-
-    # Get the username from the env
+def get_user(config):
+    '''Get the user from the environment'''
     username = ''
-    if (config.get("AUTHENTICATION", "type") == "AAI"):
+    if config.get("AUTHENTICATION", "type") == "AAI":
         username = os.environ["REMOTE_USER"]
-    elif (config.get("AUTHENTICATION", "type") == "STANDALONE"):
-        if (config.has_option("HTMLENV", "user")):
+    elif config.get("AUTHENTICATION", "type") == "STANDALONE":
+        if config.has_option("HTMLENV", "user"):
             username = config.get("HTMLENV", "user")
+    return username
 
+def get_communities(config, username):
+    '''Get the communities from the database. If the user is an
+    admin return all the communities'''
+
+    dpm_admin = False
     # Get the communities for the user from the database
     conn = sqlite3.connect(config.get("DATABASE", "profile_name"))
     cur = conn.cursor()
 
     # If the user is a DPM admin then we need to be able to see all policies
-    admins = getAdmins(config)
-    if (username in admins):
-        dpmAdmin = True
+    admins = get_admins(config)
+    if username in admins:
+        dpm_admin = True
 
     res = []
-    if (dpmAdmin):
+    if dpm_admin:
         cur.execute('''select community.name from community''')
         res = cur.fetchall()
     else:
@@ -77,30 +79,78 @@ def getData(config):
     for ares in res:
         communities.append(ares[0])
 
+    return communities
+
+def get_columns(config):
+    '''Get the columns to display'''
+
+    columns = []
     # Read the configs and get database keys
     visible_keys = [x.strip() for x in config.get("DATABASE",
-                    "default_visible").split(',')]
+                                                  "default_visible").split(',')]
 
     # Keys to skip
     skip_keys = [x.strip() for x in config.get("DATABASE",
-                 "skip_keys").split(',')]
-    sections = ["POLICY_SCHEMA", "DATASETS_SCHEMA", "ACTIONS_SCHEMA",
-                "TARGETS_SCHEMA", "SOURCES_SCHEMA"]
+                                               "skip_keys").split(',')]
+    sections = ["POLICY_SCHEMA", "ACTIONS_SCHEMA", "SOURCES_SCHEMA",
+                "TARGETS_SCHEMA"]
     columns = []
     for section in sections:
         for option in config.options(section):
             val = config.get(section, option)
-            if (val in skip_keys):
+            if val in skip_keys:
                 continue
-            if (val in visible_keys):
+            if val in visible_keys:
                 columns.append((val, "true"))
             else:
                 columns.append((val, "false"))
+    return columns
+
+def get_last_index(cursor):
+    '''Return the index of the last policy stored in the database'''
+
+    last_index = None
+    cursor.execute("select value from policies where key = 'last_index'")
+    result = cursor.fetchone()
+    if result is not None and len(result) > 0:
+        last_idx = result[0]
+
+    if last_idx is not None:
+        last_index = int(last_idx)
+    else:
+        last_index = 0
+    return last_index
+
+def get_mcolls(cursor, in_array):
+    '''Get the collections with multiple values
+    '''
+    mcolls = []
+    # print 'in get_mcolls ', in_array
+    for mcol in in_array:
+        cursor.execute('''select key from policies where key regexp ?''',
+                       (mcol,))
+        tcol = [x[0] for x in cursor.fetchall()]
+        tcol.sort(key=lambda x: int(x.split('_')[-2]))
+        mcolls = mcolls + tcol
+    return mcolls
+
+def get_data(config):
+    '''Function to return the policies from the database
+    '''
+
+    # Get the username from the env
+    username = get_user(config)
+
+    # Get the communities from the Database
+    communities = get_communities(config, username)
+
+    # Get the columns to display
+    columns = get_columns(config)
 
     # Open the database (first time around it's not really an error the db
     # doesn't exist)
     dbfile = config.get("DATABASE", "name").strip()
-    if (not os.path.isfile(dbfile)):
+    if not os.path.isfile(dbfile):
         sys.stderr.write("Warning: Database %s does not exist\n" % dbfile)
         sys.exit(-100)
 
@@ -108,22 +158,13 @@ def getData(config):
     cur = conn.cursor()
 
     data = []
-    last_idx = None
-
-    cur.execute("select value from policies where key = 'last_index'")
-    result = cur.fetchone()
-    if (result is not None and len(result) > 0):
-        last_idx = result[0]
-
-    if (last_idx is not None):
-        last_index = int(last_idx)
-    else:
-        last_index = 0
+    last_index = get_last_index(cur)
 
     # print "last_index is ", last_index
     for idx in range(0, last_index+1):
         col_names = []
-        col_multi = []
+        src_multi = []
+        tgt_multi = []
         dvals = []
         community_key = ''
 
@@ -133,34 +174,29 @@ def getData(config):
         acount = 0
         time_idx = -1
         for acol in columns:
-            if ("policy_ctime" in acol):
+            if "policy_ctime" in acol:
                 time_idx = acount
             acount += 1
-            if ("policy_community" in acol):
+            if "policy_community" in acol:
                 community_key = "%s_%s" % (acol[0], idx)
-            if ("collection_persistentIdentifier" in acol[0] or
-                    "src_location_resource" in acol[0] or
-                    "src_location_site" in acol[0] or
-                    "src_location_type" in acol[0] or
-                    "src_location_path" in acol[0] or
-                    "src_location_site_type" in acol[0]):
-                col_multi.append("%s_[0-9]+_%s" % (acol[0], idx))
+            if "src_" in acol[0]:
+                src_multi.append("\\b%s_[0-9]+_%s\\b" % (acol[0], idx))
+            elif "tgt_" in acol[0]:
+                tgt_multi.append("\\b%s_[0-9]+_%s\\b" % (acol[0], idx))
             else:
                 col_names.append("%s_%s" % (acol[0], idx))
 
-        # print "col_multi ", col_multi
+        # print "src_multi ", src_multi
+        # print "tgt_multi ", tgt_multi
         # print "col_names ", col_names
 
         # Get the keys from the database for the multi-elements
         mcolls = []
         conn.create_function("regexp", 2, match_multi)
         cur = conn.cursor()
-        for mcol in col_multi:
-            cur.execute('''select key from policies where key regexp ?''',
-                        (mcol,))
-            tcol = [x[0] for x in cur.fetchall()]
-            tcol.sort(key=lambda x: int(x.split('_')[-2]))
-            mcolls = mcolls + tcol
+        mcolls = get_mcolls(cur, src_multi)
+        mcolls = mcolls + get_mcolls(cur, tgt_multi)
+
         # Get the data from the database
         vals = {}
         for col_name in col_names:
@@ -176,44 +212,52 @@ def getData(config):
                         (mcoll,))
             mvals[mcoll] = cur.fetchall()[0][0]
 
-        # print "vals ", vals
-        # print "mvals ", mvals
+        #print "vals ", vals
+        #print "mvals ", mvals
 
         # Check if the user belongs to the policy community
         # if not skip the policy
-        if (community_key in vals):
-            if (vals[community_key] not in communities):
+        if community_key in vals:
+            if vals[community_key] not in communities:
                 continue
 
         # Loop over the columns and store the values
-        # print "columns ", columns
+        #print "columns ", columns
         for cid in range(0, len(columns)):
             # print "column ", columns[cid]
             pat = re.compile('%s_[0-9]+_{0,1}[0-9]*' % columns[cid][0])
             for key in vals.keys():
-                if (pat.match(key)):
+                if pat.match(key):
                     dvals.append((vals[key], columns[cid][1]))
                     break
             # Loop over the columns with multivalues and concatenate
             # the results
-            multiVal = False
-            multiStr = ""
+            multiple_values = False
+            multi_string = ""
             sub_dict = {}
             for akey in mvals.keys():
-                if (pat.match(akey)):
+                if pat.match(akey):
                     sub_dict[akey] = mvals[akey]
 
-            if (len(sub_dict) > 0):
-                multiVal = True
+            if len(sub_dict) > 0:
+                multiple_values = True
+                #print 'sub_dict ', sub_dict
                 tkeys = sub_dict.keys()
+                # print 'tkeys ', tkeys
                 tkeys.sort(key=lambda x: int(x.split('_')[-2]))
                 for key in tkeys:
-                    if (len(multiStr) == 0):
-                        multiStr = mvals[key]
+                    # print 'key ', key
+                    # print 'mvals ', mvals[key]
+                    if len(multi_string) == 0:
+                        if mvals[key] is not None:
+                            multi_string = mvals[key]
                     else:
-                        multiStr = "%s, %s" % (multiStr, mvals[key])
-            if (multiVal):
-                dvals.append((multiStr, columns[cid][1]))
+                        if mvals[key] is not None:
+                            multi_string = "%s, %s" % (multi_string, mvals[key])
+                        else:
+                            multi_string = "%s, " % (multi_string)
+            if multiple_values:
+                dvals.append((multi_string, columns[cid][1]))
 
         data.append(dvals)
 
@@ -222,19 +266,19 @@ def getData(config):
     print json.dumps(data)
 
 if __name__ == '__main__':
-    cfgfile = "./config/policy.cfg"
+    CFG_FILE = "./config/policy.cfg"
 
-    fields = cgi.FieldStorage()
+    FIELDS = cgi.FieldStorage()
 
-    if ("help" in fields):
+    if "help" in FIELDS:
         usage()
         sys.exit()
 
     # Read the configs
-    config = ConfigParser.ConfigParser()
-    config.read(cfgfile)
+    POLICY_CONFIG = ConfigParser.ConfigParser()
+    POLICY_CONFIG.read(CFG_FILE)
 
     print "Content-Type: application/json charset=utf-8"
     print ""
 
-    getData(config)
+    get_data(POLICY_CONFIG)
