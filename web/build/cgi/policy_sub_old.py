@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 #
-# Generated Mon Jan 11 17:05:53 2016 by generateDS.py version 2.12b.
+# Generated Thu Mar  6 07:43:11 2014 by generateDS.py version 2.12b.
 #
 
 import sys
 
-import policy_irods_lib as supermod
+import policy_lib as supermod
 
 etree_ = None
 Verbose_import_ = False
@@ -89,8 +89,8 @@ supermod.locationPoint.subclass = locationPointSub
 
 
 class locationTypeSub(supermod.locationType):
-    def __init__(self, extensiontype_=None):
-        super(locationTypeSub, self).__init__(extensiontype_, )
+    def __init__(self):
+        super(locationTypeSub, self).__init__()
 supermod.locationType.subclass = locationTypeSub
 # end class locationTypeSub
 
@@ -103,8 +103,8 @@ supermod.actionType.subclass = actionTypeSub
 
 
 class triggerTypeSub(supermod.triggerType):
-    def __init__(self, action=None, time=None, runonce=None, repeat_counter=None):
-        super(triggerTypeSub, self).__init__(action, time, runonce, repeat_counter, )
+    def __init__(self, action=None, time=None, repeat_counter=None):
+        super(triggerTypeSub, self).__init__(action, time, repeat_counter, )
 supermod.triggerType.subclass = triggerTypeSub
 # end class triggerTypeSub
 
@@ -119,31 +119,8 @@ supermod.triggerActionType.subclass = triggerActionTypeSub
 class coordinatesSub(supermod.coordinates):
     def __init__(self, site=None, path=None, resource=None, anytypeobjs_=None):
         super(coordinatesSub, self).__init__(site, path, resource, anytypeobjs_, )
-
-    def export(self, outfile, level, namespace_='tns:',
-               name_='coordinates',
-               namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"',
-               pretty_print=True):
-        # We need to fix the superclass namespaces when exporting the
-        # xml file
-        super(coordinatesSub, self).export(outfile, level, 'tns:',
-                name_, 'xmlns:tns="http://eudat.eu/2013/policy"',
-                True)
-    def exportChildren(self, outfile, level, namespace_='irodsns:',
-            name_='coordinates', fromsubclass=False, pretty_print=True):
-        # We need to fix the children name spaces for the exported xml
-        # file
-        super(coordinatesSub, self).exportChildren(outfile, level,
-                'irodsns:', name_, fromsubclass, pretty_print)
 supermod.coordinates.subclass = coordinatesSub
 # end class coordinatesSub
-
-
-class siteTypeSub(supermod.siteType):
-    def __init__(self, type_=None, valueOf_=None):
-        super(siteTypeSub, self).__init__(type_, valueOf_, )
-supermod.siteType.subclass = siteTypeSub
-# end class siteTypeSub
 
 
 class datasetTypeSub(supermod.datasetType):
@@ -188,13 +165,6 @@ supermod.persistentIdentifierType.subclass = persistentIdentifierTypeSub
 # end class persistentIdentifierTypeSub
 
 
-class runonceTypeSub(supermod.runonceType):
-    def __init__(self):
-        super(runonceTypeSub, self).__init__()
-supermod.runonceType.subclass = runonceTypeSub
-# end class runonceTypeSub
-
-
 class repeat_counterTypeSub(supermod.repeat_counterType):
     def __init__(self, interval_minutes=None, valueOf_=None):
         super(repeat_counterTypeSub, self).__init__(interval_minutes, valueOf_, )
@@ -202,18 +172,60 @@ supermod.repeat_counterType.subclass = repeat_counterTypeSub
 # end class repeat_counterTypeSub
 
 
-class siteType2Sub(supermod.siteType2):
+class siteTypeSub(supermod.siteType):
     def __init__(self, type_=None, valueOf_=None):
-        super(siteType2Sub, self).__init__(type_, valueOf_, )
-    def export(self, outfile, level, namespace_='irodsns:',
-            name_='siteType2',
-            namespacedef_='xmlns:irodsns="http://eudat.eu/2013/iRODS-policy"',
-            pretty_print=True):
-        # Need to modify the namespace of the exported XML
-        super(siteType2Sub, self).export(outfile, level, 'irodsns:',
-                name_, '', True)
-supermod.siteType2.subclass = siteType2Sub
-# end class siteType2Sub
+        super(siteTypeSub, self).__init__(type_, valueOf_, )
+supermod.siteType.subclass = siteTypeSub
+# end class siteTypeSub
+
+
+class datasetType2Sub(supermod.datasetType2):
+    def __init__(self, collection=None, anytypeobjs_=None):
+        super(datasetType2Sub, self).__init__(collection, anytypeobjs_, )
+supermod.datasetType2.subclass = datasetType2Sub
+# end class datasetType2Sub
+
+
+class actionsType3Sub(supermod.actionsType3):
+    def __init__(self, action=None, anytypeobjs_=None):
+        super(actionsType3Sub, self).__init__(action, anytypeobjs_, )
+supermod.actionsType3.subclass = actionsType3Sub
+# end class actionsType3Sub
+
+
+class actionType4Sub(supermod.actionType4):
+    def __init__(self, name=None, id=None, type_=None, trigger=None, sources=None, targets=None, anytypeobjs_=None):
+        super(actionType4Sub, self).__init__(name, id, type_, trigger, sources, targets, anytypeobjs_, )
+supermod.actionType4.subclass = actionType4Sub
+# end class actionType4Sub
+
+
+class sourcesType5Sub(supermod.sourcesType5):
+    def __init__(self, source=None, anytypeobjs_=None):
+        super(sourcesType5Sub, self).__init__(source, anytypeobjs_, )
+supermod.sourcesType5.subclass = sourcesType5Sub
+# end class sourcesType5Sub
+
+
+class targetsType6Sub(supermod.targetsType6):
+    def __init__(self, target=None, anytypeobjs_=None):
+        super(targetsType6Sub, self).__init__(target, anytypeobjs_, )
+supermod.targetsType6.subclass = targetsType6Sub
+# end class targetsType6Sub
+
+
+class persistentIdentifierType7Sub(supermod.persistentIdentifierType7):
+    def __init__(self, type_=None, valueOf_=None):
+        super(persistentIdentifierType7Sub, self).__init__(type_, valueOf_, )
+supermod.persistentIdentifierType7.subclass = persistentIdentifierType7Sub
+# end class persistentIdentifierType7Sub
+
+
+class repeat_counterType8Sub(supermod.repeat_counterType8):
+    def __init__(self, interval_minutes=None, valueOf_=None):
+        super(repeat_counterType8Sub, self).__init__(interval_minutes, valueOf_, )
+supermod.repeat_counterType8.subclass = repeat_counterType8Sub
+# end class repeat_counterType8Sub
 
 
 def get_root_tag(node):
@@ -230,8 +242,8 @@ def parse(inFilename, silence=False):
     rootNode = doc.getroot()
     rootTag, rootClass = get_root_tag(rootNode)
     if rootClass is None:
-        rootTag = 'coordinates'
-        rootClass = supermod.coordinates
+        rootTag = 'policy'
+        rootClass = supermod.policy
     rootObj = rootClass.factory()
     rootObj.build(rootNode)
     # Enable Python to collect the space used by the DOM.
@@ -240,7 +252,7 @@ def parse(inFilename, silence=False):
         sys.stdout.write('<?xml version="1.0" ?>\n')
         rootObj.export(
             sys.stdout, 0, name_=rootTag,
-            namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"',
+            namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"',
             pretty_print=True)
     return rootObj
 
@@ -250,8 +262,8 @@ def parseEtree(inFilename, silence=False):
     rootNode = doc.getroot()
     rootTag, rootClass = get_root_tag(rootNode)
     if rootClass is None:
-        rootTag = 'coordinates'
-        rootClass = supermod.coordinates
+        rootTag = 'policy'
+        rootClass = supermod.policy
     rootObj = rootClass.factory()
     rootObj.build(rootNode)
     # Enable Python to collect the space used by the DOM.
@@ -274,8 +286,8 @@ def parseString(inString, silence=False):
     rootNode = doc.getroot()
     rootTag, rootClass = get_root_tag(rootNode)
     if rootClass is None:
-        rootTag = 'coordinates'
-        rootClass = supermod.coordinates
+        rootTag = 'policy'
+        rootClass = supermod.policy
     rootObj = rootClass.factory()
     rootObj.build(rootNode)
     # Enable Python to collect the space used by the DOM.
@@ -284,7 +296,7 @@ def parseString(inString, silence=False):
         sys.stdout.write('<?xml version="1.0" ?>\n')
         rootObj.export(
             sys.stdout, 0, name_=rootTag,
-            namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"')
+            namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"')
     return rootObj
 
 
@@ -294,7 +306,7 @@ def parseLiteral(inFilename, silence=False):
     roots = get_root_tag(rootNode)
     rootClass = roots[1]
     if rootClass is None:
-        rootClass = supermod.coordinates
+        rootClass = supermod.policy
     rootObj = rootClass.factory()
     rootObj.build(rootNode)
     # Enable Python to collect the space used by the DOM.
@@ -302,8 +314,8 @@ def parseLiteral(inFilename, silence=False):
     if not silence:
         sys.stdout.write('#from ??? import *\n\n')
         sys.stdout.write('import ??? as model_\n\n')
-        sys.stdout.write('rootObj = model_.coordinates(\n')
-        rootObj.exportLiteral(sys.stdout, 0, name_="coordinates")
+        sys.stdout.write('rootObj = model_.policy(\n')
+        rootObj.exportLiteral(sys.stdout, 0, name_="policy")
         sys.stdout.write(')\n')
     return rootObj
 

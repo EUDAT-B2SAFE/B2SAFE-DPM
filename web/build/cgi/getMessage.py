@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-import cgi
-import os
 import ConfigParser
 import json
 import sys
+
 
 def getMessage(config):
     '''Function to get the base email message
@@ -21,19 +20,19 @@ def getMessage(config):
         msg_subject_base = file(config.get("EMAIL", "accept_subject"), 'r').read()
         msg = msg_base % (vals["role"], vals["community"])
         subject = msg_subject_base % (vals["community"], vals["role"])
- 
+
     elif (vals["approval"] == "decline"):
         msg_base = file(config.get("EMAIL", "reject_body"), 'r').read()
         msg_subject_base = file(config.get("EMAIL", "reject_subject"), 'r').read()
         msg = msg_base % (vals["role"], vals["community"])
         subject = msg_subject_base % (vals["community"], vals["role"])
- 
+
     elif (vals["approval"] == "close"):
         msg_base = file(config.get("EMAIL", "close_body"), 'r').read()
         msg_subject_base = file(config.get("EMAIL", "close_subject"), 'r').read()
         msg = msg_base % (vals["role"], vals["community"])
         subject = msg_subject_base % (vals["role"], vals["community"])
-    
+
     email = {}
     email["msg"] = msg
     email["subject"] = subject

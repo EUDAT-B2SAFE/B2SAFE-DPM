@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Generated Mon Jan 11 17:02:43 2016 by generateDS.py version 2.12b.
+# Generated Thu Mar  6 07:43:42 2014 by generateDS.py version 2.12b.
 #
 
 import sys
@@ -659,7 +659,7 @@ class policy(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='policy', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='policy', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -811,7 +811,7 @@ class locationPoint(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='locationPoint', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='locationPoint', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -922,14 +922,16 @@ class locationPoint(GeneratedsSuper):
 class locationType(GeneratedsSuper):
     subclass = None
     superclass = None
-    def __init__(self):
-        pass
+    def __init__(self, extensiontype_=None):
+        self.extensiontype_ = extensiontype_
     def factory(*args_, **kwargs_):
         if locationType.subclass:
             return locationType.subclass(*args_, **kwargs_)
         else:
             return locationType(*args_, **kwargs_)
     factory = staticmethod(factory)
+    def get_extensiontype_(self): return self.extensiontype_
+    def set_extensiontype_(self, extensiontype_): self.extensiontype_ = extensiontype_
     def hasContent_(self):
         if (
 
@@ -937,7 +939,7 @@ class locationType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='locationType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='locationType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -953,6 +955,10 @@ class locationType(GeneratedsSuper):
         else:
             outfile.write('/>%s' % (eol_, ))
     def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='locationType'):
+        if self.extensiontype_ is not None and 'xsi:type' not in already_processed:
+            already_processed.add('xsi:type')
+            outfile.write(' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"')
+            outfile.write(' xsi:type="%s"' % self.extensiontype_)
         pass
     def exportChildren(self, outfile, level, namespace_='tns:', name_='locationType', fromsubclass_=False, pretty_print=True):
         pass
@@ -974,7 +980,10 @@ class locationType(GeneratedsSuper):
             self.buildChildren(child, node, nodeName_)
         return self
     def buildAttributes(self, node, attrs, already_processed):
-        pass
+        value = find_attr_value_('xsi:type', node)
+        if value is not None and 'xsi:type' not in already_processed:
+            already_processed.add('xsi:type')
+            self.extensiontype_ = value
     def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
         pass
 # end class locationType
@@ -1005,7 +1014,7 @@ class actionType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='actionType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='actionType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1068,10 +1077,9 @@ class triggerType(GeneratedsSuper):
     in minutes between the repetitions."""
     subclass = None
     superclass = None
-    def __init__(self, action=None, time=None, runonce=None, repeat_counter=None):
+    def __init__(self, action=None, time=None, repeat_counter=None):
         self.action = action
         self.time = time
-        self.runonce = runonce
         self.repeat_counter = repeat_counter
     def factory(*args_, **kwargs_):
         if triggerType.subclass:
@@ -1083,8 +1091,6 @@ class triggerType(GeneratedsSuper):
     def set_action(self, action): self.action = action
     def get_time(self): return self.time
     def set_time(self, time): self.time = time
-    def get_runonce(self): return self.runonce
-    def set_runonce(self, runonce): self.runonce = runonce
     def get_repeat_counter(self): return self.repeat_counter
     def set_repeat_counter(self, repeat_counter): self.repeat_counter = repeat_counter
     def validate_triggerTimeType(self, value):
@@ -1094,13 +1100,12 @@ class triggerType(GeneratedsSuper):
         if (
             self.action is not None or
             self.time is not None or
-            self.runonce is not None or
             self.repeat_counter is not None
         ):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='triggerType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='triggerType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1128,8 +1133,6 @@ class triggerType(GeneratedsSuper):
         if self.time is not None:
             showIndent(outfile, level, pretty_print)
             outfile.write('<%stime>%s</%stime>%s' % (namespace_, self.gds_format_string(quote_xml(self.time).encode(ExternalEncoding), input_name='time'), namespace_, eol_))
-        if self.runonce is not None:
-            self.runonce.export(outfile, level, namespace_, name_='runonce', pretty_print=pretty_print)
         if self.repeat_counter is not None:
             self.repeat_counter.export(outfile, level, namespace_, name_='repeat-counter', pretty_print=pretty_print)
     def exportLiteral(self, outfile, level, name_='triggerType'):
@@ -1150,12 +1153,6 @@ class triggerType(GeneratedsSuper):
         if self.time is not None:
             showIndent(outfile, level)
             outfile.write('time=%s,\n' % quote_python(self.time).encode(ExternalEncoding))
-        if self.runonce is not None:
-            showIndent(outfile, level)
-            outfile.write('runonce=model_.runonceType(\n')
-            self.runonce.exportLiteral(outfile, level, name_='runonce')
-            showIndent(outfile, level)
-            outfile.write('),\n')
         if self.repeat_counter is not None:
             showIndent(outfile, level)
             outfile.write('repeat_counter=model_.repeat_counterType(\n')
@@ -1181,10 +1178,6 @@ class triggerType(GeneratedsSuper):
             time_ = self.gds_validate_string(time_, node, 'time')
             self.time = time_
             self.validate_triggerTimeType(self.time)    # validate type triggerTimeType
-        elif nodeName_ == 'runonce':
-            obj_ = runonceType.factory()
-            obj_.build(child_)
-            self.runonce = obj_
         elif nodeName_ == 'repeat-counter':
             obj_ = repeat_counterType.factory()
             obj_.build(child_)
@@ -1215,7 +1208,7 @@ class triggerActionType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='triggerActionType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='triggerActionType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1307,7 +1300,7 @@ class coordinates(locationType):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='coordinates', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='coordinates', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1353,7 +1346,7 @@ class coordinates(locationType):
         super(coordinates, self).exportLiteralChildren(outfile, level, name_)
         if self.site is not None:
             showIndent(outfile, level)
-            outfile.write('site=model_.siteType(\n')
+            outfile.write('site=model_.siteType2(\n')
             self.site.exportLiteral(outfile, level, name_='site')
             showIndent(outfile, level)
             outfile.write('),\n')
@@ -1380,7 +1373,7 @@ class coordinates(locationType):
         super(coordinates, self).buildAttributes(node, attrs, already_processed)
     def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
         if nodeName_ == 'site':
-            obj_ = siteType.factory()
+            obj_ = siteType2.factory()
             obj_.build(child_)
             self.site = obj_
         elif nodeName_ == 'path':
@@ -1397,6 +1390,84 @@ class coordinates(locationType):
                 self.set_anytypeobjs_(obj_)
         super(coordinates, self).buildChildren(child_, node, nodeName_, True)
 # end class coordinates
+
+
+class siteType(GeneratedsSuper):
+    subclass = None
+    superclass = None
+    def __init__(self, type_=None, valueOf_=None):
+        self.type_ = _cast(None, type_)
+        self.valueOf_ = valueOf_
+    def factory(*args_, **kwargs_):
+        if siteType.subclass:
+            return siteType.subclass(*args_, **kwargs_)
+        else:
+            return siteType(*args_, **kwargs_)
+    factory = staticmethod(factory)
+    def get_type(self): return self.type_
+    def set_type(self, type_): self.type_ = type_
+    def get_valueOf_(self): return self.valueOf_
+    def set_valueOf_(self, valueOf_): self.valueOf_ = valueOf_
+    def hasContent_(self):
+        if (
+            self.valueOf_
+        ):
+            return True
+        else:
+            return False
+    def export(self, outfile, level, namespace_='tns:', name_='siteType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
+        if pretty_print:
+            eol_ = '\n'
+        else:
+            eol_ = ''
+        showIndent(outfile, level, pretty_print)
+        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
+        already_processed = set()
+        self.exportAttributes(outfile, level, already_processed, namespace_, name_='siteType')
+        if self.hasContent_():
+            outfile.write('>')
+            outfile.write(str(self.valueOf_).encode(ExternalEncoding))
+            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='siteType', pretty_print=pretty_print)
+            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
+        else:
+            outfile.write('/>%s' % (eol_, ))
+    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='siteType'):
+        if self.type_ is not None and 'type_' not in already_processed:
+            already_processed.add('type_')
+            outfile.write(' type=%s' % (self.gds_format_string(quote_attrib(self.type_).encode(ExternalEncoding), input_name='type'), ))
+    def exportChildren(self, outfile, level, namespace_='tns:', name_='siteType', fromsubclass_=False, pretty_print=True):
+        pass
+    def exportLiteral(self, outfile, level, name_='siteType'):
+        level += 1
+        already_processed = set()
+        self.exportLiteralAttributes(outfile, level, already_processed, name_)
+        if self.hasContent_():
+            self.exportLiteralChildren(outfile, level, name_)
+        showIndent(outfile, level)
+        outfile.write('valueOf_ = """%s""",\n' % (self.valueOf_,))
+    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
+        if self.type_ is not None and 'type_' not in already_processed:
+            already_processed.add('type_')
+            showIndent(outfile, level)
+            outfile.write('type_="%s",\n' % (self.type_,))
+    def exportLiteralChildren(self, outfile, level, name_):
+        pass
+    def build(self, node):
+        already_processed = set()
+        self.buildAttributes(node, node.attrib, already_processed)
+        self.valueOf_ = get_all_text_(node)
+        for child in node:
+            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
+            self.buildChildren(child, node, nodeName_)
+        return self
+    def buildAttributes(self, node, attrs, already_processed):
+        value = find_attr_value_('type', node)
+        if value is not None and 'type' not in already_processed:
+            already_processed.add('type')
+            self.type_ = value
+    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
+        pass
+# end class siteType
 
 
 class datasetType(GeneratedsSuper):
@@ -1428,7 +1499,7 @@ class datasetType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='datasetType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='datasetType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1532,7 +1603,7 @@ class actionsType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='actionsType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='actionsType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1649,7 +1720,7 @@ class actionType1(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='actionType1', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='actionType1', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1805,7 +1876,7 @@ class sourcesType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='sourcesType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='sourcesType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -1909,7 +1980,7 @@ class targetsType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='targetsType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='targetsType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -2007,7 +2078,7 @@ class persistentIdentifierType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='persistentIdentifierType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='persistentIdentifierType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -2062,67 +2133,6 @@ class persistentIdentifierType(GeneratedsSuper):
 # end class persistentIdentifierType
 
 
-class runonceType(GeneratedsSuper):
-    subclass = None
-    superclass = None
-    def __init__(self):
-        pass
-    def factory(*args_, **kwargs_):
-        if runonceType.subclass:
-            return runonceType.subclass(*args_, **kwargs_)
-        else:
-            return runonceType(*args_, **kwargs_)
-    factory = staticmethod(factory)
-    def hasContent_(self):
-        if (
-
-        ):
-            return True
-        else:
-            return False
-    def export(self, outfile, level, namespace_='tns:', name_='runonceType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        showIndent(outfile, level, pretty_print)
-        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
-        already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='runonceType')
-        if self.hasContent_():
-            outfile.write('>%s' % (eol_, ))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='runonceType', pretty_print=pretty_print)
-            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
-        else:
-            outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='runonceType'):
-        pass
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='runonceType', fromsubclass_=False, pretty_print=True):
-        pass
-    def exportLiteral(self, outfile, level, name_='runonceType'):
-        level += 1
-        already_processed = set()
-        self.exportLiteralAttributes(outfile, level, already_processed, name_)
-        if self.hasContent_():
-            self.exportLiteralChildren(outfile, level, name_)
-    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
-        pass
-    def exportLiteralChildren(self, outfile, level, name_):
-        pass
-    def build(self, node):
-        already_processed = set()
-        self.buildAttributes(node, node.attrib, already_processed)
-        for child in node:
-            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
-            self.buildChildren(child, node, nodeName_)
-        return self
-    def buildAttributes(self, node, attrs, already_processed):
-        pass
-    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
-        pass
-# end class runonceType
-
-
 class repeat_counterType(GeneratedsSuper):
     subclass = None
     superclass = None
@@ -2146,7 +2156,7 @@ class repeat_counterType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='repeat-counterType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='repeat-counterType', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -2204,17 +2214,17 @@ class repeat_counterType(GeneratedsSuper):
 # end class repeat_counterType
 
 
-class siteType(GeneratedsSuper):
+class siteType2(GeneratedsSuper):
     subclass = None
     superclass = None
     def __init__(self, type_=None, valueOf_=None):
         self.type_ = _cast(None, type_)
         self.valueOf_ = valueOf_
     def factory(*args_, **kwargs_):
-        if siteType.subclass:
-            return siteType.subclass(*args_, **kwargs_)
+        if siteType2.subclass:
+            return siteType2.subclass(*args_, **kwargs_)
         else:
-            return siteType(*args_, **kwargs_)
+            return siteType2(*args_, **kwargs_)
     factory = staticmethod(factory)
     def get_type(self): return self.type_
     def set_type(self, type_): self.type_ = type_
@@ -2227,7 +2237,7 @@ class siteType(GeneratedsSuper):
             return True
         else:
             return False
-    def export(self, outfile, level, namespace_='tns:', name_='siteType', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
+    def export(self, outfile, level, namespace_='tns:', name_='siteType2', namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"', pretty_print=True):
         if pretty_print:
             eol_ = '\n'
         else:
@@ -2235,21 +2245,21 @@ class siteType(GeneratedsSuper):
         showIndent(outfile, level, pretty_print)
         outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
         already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='siteType')
+        self.exportAttributes(outfile, level, already_processed, namespace_, name_='siteType2')
         if self.hasContent_():
             outfile.write('>')
             outfile.write(str(self.valueOf_).encode(ExternalEncoding))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='siteType', pretty_print=pretty_print)
+            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='siteType2', pretty_print=pretty_print)
             outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
         else:
             outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='siteType'):
+    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='siteType2'):
         if self.type_ is not None and 'type_' not in already_processed:
             already_processed.add('type_')
             outfile.write(' type=%s' % (self.gds_format_string(quote_attrib(self.type_).encode(ExternalEncoding), input_name='type'), ))
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='siteType', fromsubclass_=False, pretty_print=True):
+    def exportChildren(self, outfile, level, namespace_='tns:', name_='siteType2', fromsubclass_=False, pretty_print=True):
         pass
-    def exportLiteral(self, outfile, level, name_='siteType'):
+    def exportLiteral(self, outfile, level, name_='siteType2'):
         level += 1
         already_processed = set()
         self.exportLiteralAttributes(outfile, level, already_processed, name_)
@@ -2279,829 +2289,23 @@ class siteType(GeneratedsSuper):
             self.type_ = value
     def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
         pass
-# end class siteType
-
-
-class datasetType2(GeneratedsSuper):
-    subclass = None
-    superclass = None
-    def __init__(self, collection=None, anytypeobjs_=None):
-        if collection is None:
-            self.collection = []
-        else:
-            self.collection = collection
-        self.anytypeobjs_ = anytypeobjs_
-    def factory(*args_, **kwargs_):
-        if datasetType2.subclass:
-            return datasetType2.subclass(*args_, **kwargs_)
-        else:
-            return datasetType2(*args_, **kwargs_)
-    factory = staticmethod(factory)
-    def get_collection(self): return self.collection
-    def set_collection(self, collection): self.collection = collection
-    def add_collection(self, value): self.collection.append(value)
-    def insert_collection(self, index, value): self.collection[index] = value
-    def get_anytypeobjs_(self): return self.anytypeobjs_
-    def set_anytypeobjs_(self, anytypeobjs_): self.anytypeobjs_ = anytypeobjs_
-    def hasContent_(self):
-        if (
-            self.collection or
-            self.anytypeobjs_ is not None
-        ):
-            return True
-        else:
-            return False
-    def export(self, outfile, level, namespace_='tns:', name_='datasetType2', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        showIndent(outfile, level, pretty_print)
-        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
-        already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='datasetType2')
-        if self.hasContent_():
-            outfile.write('>%s' % (eol_, ))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='datasetType2', pretty_print=pretty_print)
-            showIndent(outfile, level, pretty_print)
-            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
-        else:
-            outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='datasetType2'):
-        pass
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='datasetType2', fromsubclass_=False, pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        for collection_ in self.collection:
-            collection_.export(outfile, level, namespace_, name_='collection', pretty_print=pretty_print)
-        if self.anytypeobjs_ is not None:
-            self.anytypeobjs_.export(outfile, level, namespace_, pretty_print=pretty_print)
-    def exportLiteral(self, outfile, level, name_='datasetType2'):
-        level += 1
-        already_processed = set()
-        self.exportLiteralAttributes(outfile, level, already_processed, name_)
-        if self.hasContent_():
-            self.exportLiteralChildren(outfile, level, name_)
-    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
-        pass
-    def exportLiteralChildren(self, outfile, level, name_):
-        showIndent(outfile, level)
-        outfile.write('collection=[\n')
-        level += 1
-        for collection_ in self.collection:
-            showIndent(outfile, level)
-            outfile.write('model_.locationPoint(\n')
-            collection_.exportLiteral(outfile, level, name_='locationPoint')
-            showIndent(outfile, level)
-            outfile.write('),\n')
-        level -= 1
-        showIndent(outfile, level)
-        outfile.write('],\n')
-        if self.anytypeobjs_ is not None:
-            showIndent(outfile, level)
-            outfile.write('anytypeobjs_=model_.anytypeobjs_(\n')
-            self.anytypeobjs_.exportLiteral(outfile, level)
-            showIndent(outfile, level)
-            outfile.write('),\n')
-    def build(self, node):
-        already_processed = set()
-        self.buildAttributes(node, node.attrib, already_processed)
-        for child in node:
-            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
-            self.buildChildren(child, node, nodeName_)
-        return self
-    def buildAttributes(self, node, attrs, already_processed):
-        pass
-    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
-        if nodeName_ == 'collection':
-            obj_ = locationPoint.factory()
-            obj_.build(child_)
-            self.collection.append(obj_)
-        else:
-            obj_ = self.gds_build_any(child_, 'datasetType2')
-            if obj_ is not None:
-                self.set_anytypeobjs_(obj_)
-# end class datasetType2
-
-
-class actionsType3(GeneratedsSuper):
-    subclass = None
-    superclass = None
-    def __init__(self, action=None, anytypeobjs_=None):
-        if action is None:
-            self.action = []
-        else:
-            self.action = action
-        self.anytypeobjs_ = anytypeobjs_
-    def factory(*args_, **kwargs_):
-        if actionsType3.subclass:
-            return actionsType3.subclass(*args_, **kwargs_)
-        else:
-            return actionsType3(*args_, **kwargs_)
-    factory = staticmethod(factory)
-    def get_action(self): return self.action
-    def set_action(self, action): self.action = action
-    def add_action(self, value): self.action.append(value)
-    def insert_action(self, index, value): self.action[index] = value
-    def get_anytypeobjs_(self): return self.anytypeobjs_
-    def set_anytypeobjs_(self, anytypeobjs_): self.anytypeobjs_ = anytypeobjs_
-    def hasContent_(self):
-        if (
-            self.action or
-            self.anytypeobjs_ is not None
-        ):
-            return True
-        else:
-            return False
-    def export(self, outfile, level, namespace_='tns:', name_='actionsType3', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        showIndent(outfile, level, pretty_print)
-        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
-        already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='actionsType3')
-        if self.hasContent_():
-            outfile.write('>%s' % (eol_, ))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='actionsType3', pretty_print=pretty_print)
-            showIndent(outfile, level, pretty_print)
-            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
-        else:
-            outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='actionsType3'):
-        pass
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='actionsType3', fromsubclass_=False, pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        for action_ in self.action:
-            action_.export(outfile, level, namespace_, name_='action', pretty_print=pretty_print)
-        if self.anytypeobjs_ is not None:
-            self.anytypeobjs_.export(outfile, level, namespace_, pretty_print=pretty_print)
-    def exportLiteral(self, outfile, level, name_='actionsType3'):
-        level += 1
-        already_processed = set()
-        self.exportLiteralAttributes(outfile, level, already_processed, name_)
-        if self.hasContent_():
-            self.exportLiteralChildren(outfile, level, name_)
-    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
-        pass
-    def exportLiteralChildren(self, outfile, level, name_):
-        showIndent(outfile, level)
-        outfile.write('action=[\n')
-        level += 1
-        for action_ in self.action:
-            showIndent(outfile, level)
-            outfile.write('model_.actionType4(\n')
-            action_.exportLiteral(outfile, level, name_='actionType4')
-            showIndent(outfile, level)
-            outfile.write('),\n')
-        level -= 1
-        showIndent(outfile, level)
-        outfile.write('],\n')
-        if self.anytypeobjs_ is not None:
-            showIndent(outfile, level)
-            outfile.write('anytypeobjs_=model_.anytypeobjs_(\n')
-            self.anytypeobjs_.exportLiteral(outfile, level)
-            showIndent(outfile, level)
-            outfile.write('),\n')
-    def build(self, node):
-        already_processed = set()
-        self.buildAttributes(node, node.attrib, already_processed)
-        for child in node:
-            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
-            self.buildChildren(child, node, nodeName_)
-        return self
-    def buildAttributes(self, node, attrs, already_processed):
-        pass
-    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
-        if nodeName_ == 'action':
-            obj_ = actionType4.factory()
-            obj_.build(child_)
-            self.action.append(obj_)
-        else:
-            obj_ = self.gds_build_any(child_, 'actionsType3')
-            if obj_ is not None:
-                self.set_anytypeobjs_(obj_)
-# end class actionsType3
-
-
-class actionType4(GeneratedsSuper):
-    subclass = None
-    superclass = None
-    def __init__(self, name=None, id=None, type_=None, trigger=None, sources=None, targets=None, anytypeobjs_=None):
-        self.name = _cast(None, name)
-        self.id = _cast(int, id)
-        self.type_ = type_
-        self.trigger = trigger
-        self.sources = sources
-        self.targets = targets
-        self.anytypeobjs_ = anytypeobjs_
-    def factory(*args_, **kwargs_):
-        if actionType4.subclass:
-            return actionType4.subclass(*args_, **kwargs_)
-        else:
-            return actionType4(*args_, **kwargs_)
-    factory = staticmethod(factory)
-    def get_type(self): return self.type_
-    def set_type(self, type_): self.type_ = type_
-    def get_trigger(self): return self.trigger
-    def set_trigger(self, trigger): self.trigger = trigger
-    def get_sources(self): return self.sources
-    def set_sources(self, sources): self.sources = sources
-    def get_targets(self): return self.targets
-    def set_targets(self, targets): self.targets = targets
-    def get_anytypeobjs_(self): return self.anytypeobjs_
-    def set_anytypeobjs_(self, anytypeobjs_): self.anytypeobjs_ = anytypeobjs_
-    def get_name(self): return self.name
-    def set_name(self, name): self.name = name
-    def get_id(self): return self.id
-    def set_id(self, id): self.id = id
-    def hasContent_(self):
-        if (
-            self.type_ is not None or
-            self.trigger is not None or
-            self.sources is not None or
-            self.targets is not None or
-            self.anytypeobjs_ is not None
-        ):
-            return True
-        else:
-            return False
-    def export(self, outfile, level, namespace_='tns:', name_='actionType4', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        showIndent(outfile, level, pretty_print)
-        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
-        already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='actionType4')
-        if self.hasContent_():
-            outfile.write('>%s' % (eol_, ))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='actionType4', pretty_print=pretty_print)
-            showIndent(outfile, level, pretty_print)
-            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
-        else:
-            outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='actionType4'):
-        if self.name is not None and 'name' not in already_processed:
-            already_processed.add('name')
-            outfile.write(' name=%s' % (self.gds_format_string(quote_attrib(self.name).encode(ExternalEncoding), input_name='name'), ))
-        if self.id is not None and 'id' not in already_processed:
-            already_processed.add('id')
-            outfile.write(' id="%s"' % self.gds_format_integer(self.id, input_name='id'))
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='actionType4', fromsubclass_=False, pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        if self.type_ is not None:
-            self.type_.export(outfile, level, namespace_, name_='type', pretty_print=pretty_print)
-        if self.trigger is not None:
-            self.trigger.export(outfile, level, namespace_, name_='trigger', pretty_print=pretty_print)
-        if self.sources is not None:
-            self.sources.export(outfile, level, namespace_, name_='sources', pretty_print=pretty_print)
-        if self.targets is not None:
-            self.targets.export(outfile, level, namespace_, name_='targets', pretty_print=pretty_print)
-        if self.anytypeobjs_ is not None:
-            self.anytypeobjs_.export(outfile, level, namespace_, pretty_print=pretty_print)
-    def exportLiteral(self, outfile, level, name_='actionType4'):
-        level += 1
-        already_processed = set()
-        self.exportLiteralAttributes(outfile, level, already_processed, name_)
-        if self.hasContent_():
-            self.exportLiteralChildren(outfile, level, name_)
-    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
-        if self.name is not None and 'name' not in already_processed:
-            already_processed.add('name')
-            showIndent(outfile, level)
-            outfile.write('name="%s",\n' % (self.name,))
-        if self.id is not None and 'id' not in already_processed:
-            already_processed.add('id')
-            showIndent(outfile, level)
-            outfile.write('id=%d,\n' % (self.id,))
-    def exportLiteralChildren(self, outfile, level, name_):
-        if self.type_ is not None:
-            showIndent(outfile, level)
-            outfile.write('type_=model_.actionType(\n')
-            self.type_.exportLiteral(outfile, level, name_='type')
-            showIndent(outfile, level)
-            outfile.write('),\n')
-        if self.trigger is not None:
-            showIndent(outfile, level)
-            outfile.write('trigger=model_.triggerType(\n')
-            self.trigger.exportLiteral(outfile, level, name_='trigger')
-            showIndent(outfile, level)
-            outfile.write('),\n')
-        if self.sources is not None:
-            showIndent(outfile, level)
-            outfile.write('sources=model_.sourcesType5(\n')
-            self.sources.exportLiteral(outfile, level, name_='sources')
-            showIndent(outfile, level)
-            outfile.write('),\n')
-        if self.targets is not None:
-            showIndent(outfile, level)
-            outfile.write('targets=model_.targetsType6(\n')
-            self.targets.exportLiteral(outfile, level, name_='targets')
-            showIndent(outfile, level)
-            outfile.write('),\n')
-        if self.anytypeobjs_ is not None:
-            showIndent(outfile, level)
-            outfile.write('anytypeobjs_=model_.anytypeobjs_(\n')
-            self.anytypeobjs_.exportLiteral(outfile, level)
-            showIndent(outfile, level)
-            outfile.write('),\n')
-    def build(self, node):
-        already_processed = set()
-        self.buildAttributes(node, node.attrib, already_processed)
-        for child in node:
-            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
-            self.buildChildren(child, node, nodeName_)
-        return self
-    def buildAttributes(self, node, attrs, already_processed):
-        value = find_attr_value_('name', node)
-        if value is not None and 'name' not in already_processed:
-            already_processed.add('name')
-            self.name = value
-        value = find_attr_value_('id', node)
-        if value is not None and 'id' not in already_processed:
-            already_processed.add('id')
-            try:
-                self.id = int(value)
-            except ValueError, exp:
-                raise_parse_error(node, 'Bad integer attribute: %s' % exp)
-    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
-        if nodeName_ == 'type':
-            obj_ = actionType.factory()
-            obj_.build(child_)
-            self.type_ = obj_
-        elif nodeName_ == 'trigger':
-            obj_ = triggerType.factory()
-            obj_.build(child_)
-            self.trigger = obj_
-        elif nodeName_ == 'sources':
-            obj_ = sourcesType5.factory()
-            obj_.build(child_)
-            self.sources = obj_
-        elif nodeName_ == 'targets':
-            obj_ = targetsType6.factory()
-            obj_.build(child_)
-            self.targets = obj_
-        else:
-            obj_ = self.gds_build_any(child_, 'actionType4')
-            if obj_ is not None:
-                self.set_anytypeobjs_(obj_)
-# end class actionType4
-
-
-class sourcesType5(GeneratedsSuper):
-    subclass = None
-    superclass = None
-    def __init__(self, source=None, anytypeobjs_=None):
-        if source is None:
-            self.source = []
-        else:
-            self.source = source
-        self.anytypeobjs_ = anytypeobjs_
-    def factory(*args_, **kwargs_):
-        if sourcesType5.subclass:
-            return sourcesType5.subclass(*args_, **kwargs_)
-        else:
-            return sourcesType5(*args_, **kwargs_)
-    factory = staticmethod(factory)
-    def get_source(self): return self.source
-    def set_source(self, source): self.source = source
-    def add_source(self, value): self.source.append(value)
-    def insert_source(self, index, value): self.source[index] = value
-    def get_anytypeobjs_(self): return self.anytypeobjs_
-    def set_anytypeobjs_(self, anytypeobjs_): self.anytypeobjs_ = anytypeobjs_
-    def hasContent_(self):
-        if (
-            self.source or
-            self.anytypeobjs_ is not None
-        ):
-            return True
-        else:
-            return False
-    def export(self, outfile, level, namespace_='tns:', name_='sourcesType5', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        showIndent(outfile, level, pretty_print)
-        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
-        already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='sourcesType5')
-        if self.hasContent_():
-            outfile.write('>%s' % (eol_, ))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='sourcesType5', pretty_print=pretty_print)
-            showIndent(outfile, level, pretty_print)
-            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
-        else:
-            outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='sourcesType5'):
-        pass
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='sourcesType5', fromsubclass_=False, pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        for source_ in self.source:
-            source_.export(outfile, level, namespace_, name_='source', pretty_print=pretty_print)
-        if self.anytypeobjs_ is not None:
-            self.anytypeobjs_.export(outfile, level, namespace_, pretty_print=pretty_print)
-    def exportLiteral(self, outfile, level, name_='sourcesType5'):
-        level += 1
-        already_processed = set()
-        self.exportLiteralAttributes(outfile, level, already_processed, name_)
-        if self.hasContent_():
-            self.exportLiteralChildren(outfile, level, name_)
-    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
-        pass
-    def exportLiteralChildren(self, outfile, level, name_):
-        showIndent(outfile, level)
-        outfile.write('source=[\n')
-        level += 1
-        for source_ in self.source:
-            showIndent(outfile, level)
-            outfile.write('model_.locationPoint(\n')
-            source_.exportLiteral(outfile, level, name_='locationPoint')
-            showIndent(outfile, level)
-            outfile.write('),\n')
-        level -= 1
-        showIndent(outfile, level)
-        outfile.write('],\n')
-        if self.anytypeobjs_ is not None:
-            showIndent(outfile, level)
-            outfile.write('anytypeobjs_=model_.anytypeobjs_(\n')
-            self.anytypeobjs_.exportLiteral(outfile, level)
-            showIndent(outfile, level)
-            outfile.write('),\n')
-    def build(self, node):
-        already_processed = set()
-        self.buildAttributes(node, node.attrib, already_processed)
-        for child in node:
-            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
-            self.buildChildren(child, node, nodeName_)
-        return self
-    def buildAttributes(self, node, attrs, already_processed):
-        pass
-    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
-        if nodeName_ == 'source':
-            obj_ = locationPoint.factory()
-            obj_.build(child_)
-            self.source.append(obj_)
-        else:
-            obj_ = self.gds_build_any(child_, 'sourcesType5')
-            if obj_ is not None:
-                self.set_anytypeobjs_(obj_)
-# end class sourcesType5
-
-
-class targetsType6(GeneratedsSuper):
-    subclass = None
-    superclass = None
-    def __init__(self, target=None, anytypeobjs_=None):
-        if target is None:
-            self.target = []
-        else:
-            self.target = target
-        self.anytypeobjs_ = anytypeobjs_
-    def factory(*args_, **kwargs_):
-        if targetsType6.subclass:
-            return targetsType6.subclass(*args_, **kwargs_)
-        else:
-            return targetsType6(*args_, **kwargs_)
-    factory = staticmethod(factory)
-    def get_target(self): return self.target
-    def set_target(self, target): self.target = target
-    def add_target(self, value): self.target.append(value)
-    def insert_target(self, index, value): self.target[index] = value
-    def get_anytypeobjs_(self): return self.anytypeobjs_
-    def set_anytypeobjs_(self, anytypeobjs_): self.anytypeobjs_ = anytypeobjs_
-    def hasContent_(self):
-        if (
-            self.target or
-            self.anytypeobjs_ is not None
-        ):
-            return True
-        else:
-            return False
-    def export(self, outfile, level, namespace_='tns:', name_='targetsType6', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        showIndent(outfile, level, pretty_print)
-        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
-        already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='targetsType6')
-        if self.hasContent_():
-            outfile.write('>%s' % (eol_, ))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='targetsType6', pretty_print=pretty_print)
-            showIndent(outfile, level, pretty_print)
-            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
-        else:
-            outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='targetsType6'):
-        pass
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='targetsType6', fromsubclass_=False, pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        for target_ in self.target:
-            target_.export(outfile, level, namespace_, name_='target', pretty_print=pretty_print)
-        if self.anytypeobjs_ is not None:
-            self.anytypeobjs_.export(outfile, level, namespace_, pretty_print=pretty_print)
-    def exportLiteral(self, outfile, level, name_='targetsType6'):
-        level += 1
-        already_processed = set()
-        self.exportLiteralAttributes(outfile, level, already_processed, name_)
-        if self.hasContent_():
-            self.exportLiteralChildren(outfile, level, name_)
-    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
-        pass
-    def exportLiteralChildren(self, outfile, level, name_):
-        showIndent(outfile, level)
-        outfile.write('target=[\n')
-        level += 1
-        for target_ in self.target:
-            showIndent(outfile, level)
-            outfile.write('model_.locationPoint(\n')
-            target_.exportLiteral(outfile, level, name_='locationPoint')
-            showIndent(outfile, level)
-            outfile.write('),\n')
-        level -= 1
-        showIndent(outfile, level)
-        outfile.write('],\n')
-        if self.anytypeobjs_ is not None:
-            showIndent(outfile, level)
-            outfile.write('anytypeobjs_=model_.anytypeobjs_(\n')
-            self.anytypeobjs_.exportLiteral(outfile, level)
-            showIndent(outfile, level)
-            outfile.write('),\n')
-    def build(self, node):
-        already_processed = set()
-        self.buildAttributes(node, node.attrib, already_processed)
-        for child in node:
-            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
-            self.buildChildren(child, node, nodeName_)
-        return self
-    def buildAttributes(self, node, attrs, already_processed):
-        pass
-    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
-        if nodeName_ == 'target':
-            obj_ = locationPoint.factory()
-            obj_.build(child_)
-            self.target.append(obj_)
-        else:
-            obj_ = self.gds_build_any(child_, 'targetsType6')
-            if obj_ is not None:
-                self.set_anytypeobjs_(obj_)
-# end class targetsType6
-
-
-class persistentIdentifierType7(GeneratedsSuper):
-    subclass = None
-    superclass = None
-    def __init__(self, type_=None, valueOf_=None):
-        self.type_ = _cast(None, type_)
-        self.valueOf_ = valueOf_
-    def factory(*args_, **kwargs_):
-        if persistentIdentifierType7.subclass:
-            return persistentIdentifierType7.subclass(*args_, **kwargs_)
-        else:
-            return persistentIdentifierType7(*args_, **kwargs_)
-    factory = staticmethod(factory)
-    def get_type(self): return self.type_
-    def set_type(self, type_): self.type_ = type_
-    def get_valueOf_(self): return self.valueOf_
-    def set_valueOf_(self, valueOf_): self.valueOf_ = valueOf_
-    def hasContent_(self):
-        if (
-            self.valueOf_
-        ):
-            return True
-        else:
-            return False
-    def export(self, outfile, level, namespace_='tns:', name_='persistentIdentifierType7', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        showIndent(outfile, level, pretty_print)
-        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
-        already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='persistentIdentifierType7')
-        if self.hasContent_():
-            outfile.write('>')
-            outfile.write(str(self.valueOf_).encode(ExternalEncoding))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='persistentIdentifierType7', pretty_print=pretty_print)
-            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
-        else:
-            outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='persistentIdentifierType7'):
-        if self.type_ is not None and 'type_' not in already_processed:
-            already_processed.add('type_')
-            outfile.write(' type=%s' % (self.gds_format_string(quote_attrib(self.type_).encode(ExternalEncoding), input_name='type'), ))
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='persistentIdentifierType7', fromsubclass_=False, pretty_print=True):
-        pass
-    def exportLiteral(self, outfile, level, name_='persistentIdentifierType7'):
-        level += 1
-        already_processed = set()
-        self.exportLiteralAttributes(outfile, level, already_processed, name_)
-        if self.hasContent_():
-            self.exportLiteralChildren(outfile, level, name_)
-        showIndent(outfile, level)
-        outfile.write('valueOf_ = """%s""",\n' % (self.valueOf_,))
-    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
-        if self.type_ is not None and 'type_' not in already_processed:
-            already_processed.add('type_')
-            showIndent(outfile, level)
-            outfile.write('type_="%s",\n' % (self.type_,))
-    def exportLiteralChildren(self, outfile, level, name_):
-        pass
-    def build(self, node):
-        already_processed = set()
-        self.buildAttributes(node, node.attrib, already_processed)
-        self.valueOf_ = get_all_text_(node)
-        for child in node:
-            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
-            self.buildChildren(child, node, nodeName_)
-        return self
-    def buildAttributes(self, node, attrs, already_processed):
-        value = find_attr_value_('type', node)
-        if value is not None and 'type' not in already_processed:
-            already_processed.add('type')
-            self.type_ = value
-    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
-        pass
-# end class persistentIdentifierType7
-
-
-class runonceType8(GeneratedsSuper):
-    subclass = None
-    superclass = None
-    def __init__(self):
-        pass
-    def factory(*args_, **kwargs_):
-        if runonceType8.subclass:
-            return runonceType8.subclass(*args_, **kwargs_)
-        else:
-            return runonceType8(*args_, **kwargs_)
-    factory = staticmethod(factory)
-    def hasContent_(self):
-        if (
-
-        ):
-            return True
-        else:
-            return False
-    def export(self, outfile, level, namespace_='tns:', name_='runonceType8', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        showIndent(outfile, level, pretty_print)
-        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
-        already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='runonceType8')
-        if self.hasContent_():
-            outfile.write('>%s' % (eol_, ))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='runonceType8', pretty_print=pretty_print)
-            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
-        else:
-            outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='runonceType8'):
-        pass
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='runonceType8', fromsubclass_=False, pretty_print=True):
-        pass
-    def exportLiteral(self, outfile, level, name_='runonceType8'):
-        level += 1
-        already_processed = set()
-        self.exportLiteralAttributes(outfile, level, already_processed, name_)
-        if self.hasContent_():
-            self.exportLiteralChildren(outfile, level, name_)
-    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
-        pass
-    def exportLiteralChildren(self, outfile, level, name_):
-        pass
-    def build(self, node):
-        already_processed = set()
-        self.buildAttributes(node, node.attrib, already_processed)
-        for child in node:
-            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
-            self.buildChildren(child, node, nodeName_)
-        return self
-    def buildAttributes(self, node, attrs, already_processed):
-        pass
-    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
-        pass
-# end class runonceType8
-
-
-class repeat_counterType9(GeneratedsSuper):
-    subclass = None
-    superclass = None
-    def __init__(self, interval_minutes=None, valueOf_=None):
-        self.interval_minutes = _cast(int, interval_minutes)
-        self.valueOf_ = valueOf_
-    def factory(*args_, **kwargs_):
-        if repeat_counterType9.subclass:
-            return repeat_counterType9.subclass(*args_, **kwargs_)
-        else:
-            return repeat_counterType9(*args_, **kwargs_)
-    factory = staticmethod(factory)
-    def get_interval_minutes(self): return self.interval_minutes
-    def set_interval_minutes(self, interval_minutes): self.interval_minutes = interval_minutes
-    def get_valueOf_(self): return self.valueOf_
-    def set_valueOf_(self, valueOf_): self.valueOf_ = valueOf_
-    def hasContent_(self):
-        if (
-            self.valueOf_
-        ):
-            return True
-        else:
-            return False
-    def export(self, outfile, level, namespace_='tns:', name_='repeat-counterType9', namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"', pretty_print=True):
-        if pretty_print:
-            eol_ = '\n'
-        else:
-            eol_ = ''
-        showIndent(outfile, level, pretty_print)
-        outfile.write('<%s%s%s' % (namespace_, name_, namespacedef_ and ' ' + namespacedef_ or '', ))
-        already_processed = set()
-        self.exportAttributes(outfile, level, already_processed, namespace_, name_='repeat-counterType9')
-        if self.hasContent_():
-            outfile.write('>')
-            outfile.write(str(self.valueOf_).encode(ExternalEncoding))
-            self.exportChildren(outfile, level + 1, namespace_='tns:', name_='repeat-counterType9', pretty_print=pretty_print)
-            outfile.write('</%s%s>%s' % (namespace_, name_, eol_))
-        else:
-            outfile.write('/>%s' % (eol_, ))
-    def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='repeat-counterType9'):
-        if self.interval_minutes is not None and 'interval_minutes' not in already_processed:
-            already_processed.add('interval_minutes')
-            outfile.write(' interval-minutes="%s"' % self.gds_format_integer(self.interval_minutes, input_name='interval-minutes'))
-    def exportChildren(self, outfile, level, namespace_='tns:', name_='repeat-counterType9', fromsubclass_=False, pretty_print=True):
-        pass
-    def exportLiteral(self, outfile, level, name_='repeat-counterType9'):
-        level += 1
-        already_processed = set()
-        self.exportLiteralAttributes(outfile, level, already_processed, name_)
-        if self.hasContent_():
-            self.exportLiteralChildren(outfile, level, name_)
-        showIndent(outfile, level)
-        outfile.write('valueOf_ = """%s""",\n' % (self.valueOf_,))
-    def exportLiteralAttributes(self, outfile, level, already_processed, name_):
-        if self.interval_minutes is not None and 'interval_minutes' not in already_processed:
-            already_processed.add('interval_minutes')
-            showIndent(outfile, level)
-            outfile.write('interval_minutes=%d,\n' % (self.interval_minutes,))
-    def exportLiteralChildren(self, outfile, level, name_):
-        pass
-    def build(self, node):
-        already_processed = set()
-        self.buildAttributes(node, node.attrib, already_processed)
-        self.valueOf_ = get_all_text_(node)
-        for child in node:
-            nodeName_ = Tag_pattern_.match(child.tag).groups()[-1]
-            self.buildChildren(child, node, nodeName_)
-        return self
-    def buildAttributes(self, node, attrs, already_processed):
-        value = find_attr_value_('interval-minutes', node)
-        if value is not None and 'interval-minutes' not in already_processed:
-            already_processed.add('interval-minutes')
-            try:
-                self.interval_minutes = int(value)
-            except ValueError, exp:
-                raise_parse_error(node, 'Bad integer attribute: %s' % exp)
-    def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
-        pass
-# end class repeat_counterType9
+# end class siteType2
 
 
 GDSClassesMapping = {
     'target': locationPoint,
     'collection': locationPoint,
-    'runonce': runonceType8,
-    'repeat-counter': repeat_counterType9,
-    'site': siteType,
-    'persistentIdentifier': persistentIdentifierType7,
-    'dataset': datasetType2,
-    'sources': sourcesType5,
+    'repeat-counter': repeat_counterType,
+    'site': siteType2,
+    'persistentIdentifier': persistentIdentifierType,
+    'dataset': datasetType,
+    'sources': sourcesType,
     'trigger': triggerType,
     'location': locationType,
-    'action': actionType4,
-    'actions': actionsType3,
+    'action': actionType1,
+    'actions': actionsType,
     'type': actionType,
-    'targets': targetsType6,
+    'targets': targetsType,
     'source': locationPoint,
 }
 
@@ -3129,8 +2333,8 @@ def parse(inFileName, silence=False):
     rootNode = doc.getroot()
     rootTag, rootClass = get_root_tag(rootNode)
     if rootClass is None:
-        rootTag = 'policy'
-        rootClass = policy
+        rootTag = 'coordinates'
+        rootClass = coordinates
     rootObj = rootClass.factory()
     rootObj.build(rootNode)
     # Enable Python to collect the space used by the DOM.
@@ -3139,7 +2343,7 @@ def parse(inFileName, silence=False):
         sys.stdout.write('<?xml version="1.0" ?>\n')
         rootObj.export(
             sys.stdout, 0, name_=rootTag,
-            namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"',
+            namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"',
             pretty_print=True)
     return rootObj
 
@@ -3149,8 +2353,8 @@ def parseEtree(inFileName, silence=False):
     rootNode = doc.getroot()
     rootTag, rootClass = get_root_tag(rootNode)
     if rootClass is None:
-        rootTag = 'policy'
-        rootClass = policy
+        rootTag = 'coordinates'
+        rootClass = coordinates
     rootObj = rootClass.factory()
     rootObj.build(rootNode)
     # Enable Python to collect the space used by the DOM.
@@ -3174,7 +2378,7 @@ def parseString(inString, silence=False):
     roots = get_root_tag(rootNode)
     rootClass = roots[1]
     if rootClass is None:
-        rootClass = policy
+        rootClass = coordinates
     rootObj = rootClass.factory()
     rootObj.build(rootNode)
     # Enable Python to collect the space used by the DOM.
@@ -3182,8 +2386,8 @@ def parseString(inString, silence=False):
     if not silence:
         sys.stdout.write('<?xml version="1.0" ?>\n')
         rootObj.export(
-            sys.stdout, 0, name_="policy",
-            namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"')
+            sys.stdout, 0, name_="coordinates",
+            namespacedef_='xmlns:tns="http://eudat.eu/2013/iRODS-policy"')
     return rootObj
 
 
@@ -3192,15 +2396,15 @@ def parseLiteral(inFileName, silence=False):
     rootNode = doc.getroot()
     rootTag, rootClass = get_root_tag(rootNode)
     if rootClass is None:
-        rootTag = 'policy'
-        rootClass = policy
+        rootTag = 'coordinates'
+        rootClass = coordinates
     rootObj = rootClass.factory()
     rootObj.build(rootNode)
     # Enable Python to collect the space used by the DOM.
     doc = None
     if not silence:
-        sys.stdout.write('#from policy_lib import *\n\n')
-        sys.stdout.write('import policy_lib as model_\n\n')
+        sys.stdout.write('#from policy_irods_lib import *\n\n')
+        sys.stdout.write('import policy_irods_lib as model_\n\n')
         sys.stdout.write('rootObj = model_.rootTag(\n')
         rootObj.exportLiteral(sys.stdout, 0, name_=rootTag)
         sys.stdout.write(')\n')
@@ -3223,26 +2427,18 @@ if __name__ == '__main__':
 __all__ = [
     "actionType",
     "actionType1",
-    "actionType4",
     "actionsType",
-    "actionsType3",
     "coordinates",
     "datasetType",
-    "datasetType2",
     "locationPoint",
     "locationType",
     "persistentIdentifierType",
-    "persistentIdentifierType7",
     "policy",
     "repeat_counterType",
-    "repeat_counterType9",
-    "runonceType",
-    "runonceType8",
     "siteType",
+    "siteType2",
     "sourcesType",
-    "sourcesType5",
     "targetsType",
-    "targetsType6",
     "triggerActionType",
     "triggerType"
 ]

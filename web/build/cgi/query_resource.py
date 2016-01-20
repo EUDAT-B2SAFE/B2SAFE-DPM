@@ -52,7 +52,11 @@ def querydb(dbase):
         sites.site = ? and sites.id = resources.site_id and
         resources.store_id = storage.id''', (system, site))
         results = cur.fetchall()
-
+    elif (qtype == "sitePath"):
+        cur.execute('''select sites.site, storage.path from resources, sites,
+                    storage where storage.id = resources.id and
+                    sites.id = resources.id and storage.id = resources.id''')
+        results = cur.fetchall()
     return results
 
 

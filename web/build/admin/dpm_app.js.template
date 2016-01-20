@@ -88,55 +88,36 @@ function getIsoDate(idate) {
     return t_date;
 }
 
-function actionCtrl($scope, $http, $injector, policy, disabled_flags,
-        data_action, submitFlag) {
+function actionCtrl($scope, $http, $injector, $controller, policy,
+  data_action) {
+    'use strict';
     $scope.policy = policy;
-    $injector.invoke(dpmCtrl, this, {$scope: $scope});
+    // $injector.invoke(dpmCtrl, this, {$scope: $scope});
+    $controller('dpmCtrl', {$scope: $scope});
 
-    var disabled_flags_obj = disabled_flags.getFlags();
     var action_obj = data_action.getActions();
 
-    $scope.operations = action_obj.operations;
+    // Remove this line $scope.operations = action_obj.operations;
     $scope.triggers = action_obj.triggers;
-    $scope.types = action_obj.types;
+    // Remmove this line $scope.types = action_obj.types;
+    $scope.actionTypes = action_obj.types;
     $scope.location_types = action_obj.location_types;
 
-    $scope.action_type = disabled_flags_obj.action_type;
-    $scope.action_trigger = disabled_flags_obj.action_trigger;
-
     // Read in the available actions using promises
-    var actions = $http({method: 'GET',
-        url: '${CGI_URL}/query_actions.py',
-        params: {qtype: 'operations'}});
+    var getActions = $http({method: 'GET',
+      url: '${CGI_URL}/query_actions.py', params: {qtype: 'types'} });
 
-    actions.then(function (result) {
-        var data = result.data;
-        for (var idx = 0; idx < data.length; ++idx) {
-            if (data[idx].length > 0) {
-                action_obj.operations =
-                    storeData(action_obj.operations, data[idx][0]);
-            }
+    getActions.then(function(results) {
+      var data = results.data;
+      action_obj.types = [];
+      for (var idx = 0; idx < data.length; ++idx) {
+        if (data[idx].length > 0) {
+          action_obj.types = storeData(action_obj.types, data[idx][0]);
         }
-        $scope.operations = action_obj.operations;
-        data_action.setActions(action_obj);
-    }
-    );
-
-    $scope.period = getPeriod();
-
-    // Only show the date fields for the date option
-    var tdate = new Date();
-    $scope.showDate = function(trname) {
-        var show = false;
-        if (trname == "date") {
-            show = true;
-            if (typeof $scope.trigger_date == "undefined") {
-                $scope.trigger_date = tdate;
-                $scope.policy.trigger_date = getIsoDate(tdate);
-            }
-        }
-        return show;
-    };
+      }
+      $scope.actionTypes = action_obj.types;
+      data_action.setActions(action_obj);
+    });
 
     $scope.datClear = function() {
     };
@@ -153,44 +134,77 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
     // Only show the period fields for the periodic option
     $scope.showPeriod = function(trname) {
         var show = false;
-        if (trname == "period") {
+        if (trname === 'date/time') {
             show = true;
         }
         return show;
     };
 
-    // function to enable the action type option
-    $scope.changeType = function() {
-        var get_types = $http({method: "GET",
-            url: "${CGI_URL}/query_actions.py", params: {qtype: "types",
-                operation: $scope.policy.action.name} });
-        get_types.then(function(results) {
-            var data = results.data;
-            action_obj.types = [];
-            for (var idx = 0; idx < data.length; ++idx) {
-                if (data[idx].length > 0) {
-                    action_obj.types =
-                            storeData(action_obj.types, data[idx][0]);
-                }
+    // Check the period has been filled in correctly
+    $scope.updatePeriod = function() {
+      $scope.pristineFlags.action.period = false;
+      $scope.invalidFlags.action.period = false;
+      var elements = $scope.policy.trigger_period.name.split('-');
+      if (elements.length < 6) {
+        $scope.invalidFlags.action.period = true;
+      } else {
+        console.log('processing date ' + JSON.stringify(elements));
+        for (var i = 0; i < elements.length; i++) {
+          $scope.invalidFlags.action.period = true;
+          if (i === 4) {
+            if (elements[i] === '*' || (parseInt(elements[i]) >= 0 &&
+              parseInt(elements[i]) <= 6)) {
+              $scope.invalidFlags.action.period = false;
+            } else {
+              $scope.invalidFlags.action.period = true;
+              break;
             }
-            $scope.types = action_obj.types;
-            data_action.setActions(action_obj);
-        });
-        disabled_flags_obj.action_type = false;
-        disabled_flags.setFlags(disabled_flags_obj);
-        $scope.pristineFlags.action.action = false;
-        $scope.policy.type.name = '--- Select a Type ---';
-        $scope.action_type = disabled_flags_obj.action_type;
+          } else if (i === 5) {
+            if (elements[i].length === 4) {
+              if (elements[i] === '*' || ! isNaN(elements[i])) {
+                $scope.invalidFlags.action.period = false;
+              } else {
+                $scope.invalidFlags.action.period = true;
+                break;
+              }
+            }
+          } else {
+            if (i === 1) {
+              if (elements[i] === '*' || (parseInt(elements[i]) >=0 &&
+                parseInt(elements[i]) <= 59)) {
+                $scope.invalidFlags.action.period = false;
+              } else {
+                $scope.invalidFlags.action.period = true;
+                break;
+              }
+            } else if (i === 2) {
+              if (elements[i] === '*' || (parseInt(elements[i]) >= 0 &&
+                parseInt(elements[i]) <= 23)) {
+                $scope.invalidFlags.action.period = false;
+              } else {
+                $scope.invalidFlags.action.period = true;
+                break;
+              }
+            } else if (i === 3) {
+              if (elements[i] === '*' || (parseInt(elements[i]) >=1 &&
+                parseInt(elements[i]) <= 31)) {
+                $scope.invalidFlags.action.period = false;
+              } else {
+                $scope.invalidFlags.action.period = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+      console.log('invalidFlags ' +$scope.invalidFlags.action.period);
     };
 
-
     // function to enable the trigger option
-    $scope.changeTrigger = function() {
-        var get_triggers = $http({method: "GET",
-            url: "${CGI_URL}/query_actions.py",
-            params: {qtype: "triggers",
-                operation: $scope.policy.action.name,
-            type: $scope.policy.type.name}
+    $scope.changeTrigger = function(index) {
+        var get_triggers = $http({method: 'GET',
+            url: '${CGI_URL}/query_actions.py',
+            params: {qtype: 'triggers'}
         });
         get_triggers.then(function(results) {
             var data = results.data;
@@ -204,11 +218,8 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
             $scope.triggers = action_obj.triggers;
             data_action.setActions(action_obj);
         });
-        disabled_flags_obj.action_trigger = false;
-        disabled_flags.setFlags(disabled_flags_obj);
         $scope.pristineFlags.action.type = false;
-        $scope.policy.trigger.name = "--- Select a Trigger ---";
-        $scope.action_trigger = disabled_flags_obj.action_trigger;
+        //$scope.policy.trigger.name = '--- Select ---';
     };
 
     // Update the Trigger
@@ -216,35 +227,9 @@ function actionCtrl($scope, $http, $injector, policy, disabled_flags,
       $scope.pristineFlags.action.trigger = false;
     };
 
-    // Read from the database the available locations
-    $scope.changeTgtOrganisation = function() {
-        var get_organisations = $http({method: "GET",
-            url: "${CGI_URL}/query_actions.py",
-            params: {qtype: "organisations"}});
-
-        get_organisations.then(function(results) {
-            var data = results.data;
-            action_obj.organisations = [];
-            for (var idx = 0; idx < data.length; ++idx) {
-                if (data[idx].length > 0) {
-                    action_obj.organisations =
-                        storeData(action_obj.organisations, data[idx][0]);
-                }
-            }
-            $scope.organisations = action_obj.organisations;
-            data_action.setActions(action_obj);
-            disabled_flags_obj.tgt_organisation = false;
-            disabled_flags.setFlags(disabled_flags_obj);
-            $scope.policy.target.organisation.name = "--- Select an Organisation ---";
-            $scope.tgt_organisation_disabled = disabled_flags_obj.tgt_organisation;
-
-        });
-    };
-
-    $scope.changeTgtOrganisation();
-
     // invoke the SourceTarget control
-    $injector.invoke(sourceTargetCtrl, this, {$scope: $scope});
+    // $injector.invoke(sourceTargetCtrl, this, {$scope: $scope});
+    $controller('sourceTargetCtrl', {$scope: $scope});
 }
 
 function confirmCtrl($scope, $injector, page, submitFlag, policy) {
@@ -340,40 +325,47 @@ function dpmCtrl($scope, $window, $location, page, invalidFlag, submitFlag) {
     };
 }
 
-function datasetCtrl($scope, $http, $injector, data_identifier, policy,
-        pristineFlags, invalidFlags, disabled_flags, data_location,
+function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
+  policy, pristineFlags, invalidFlags, dataLocation, identifierFlags,
         submitFlag) {
     $scope.policy = policy;
+    $scope.showSrcColl = identifierFlags.showSrcColls;
+    $scope.showTgtColl = identifierFlags.showTgtColls;
+    $scope.showSrcPID = identifierFlags.showSrcPIDs;
+    $scope.showTgtPID = identifierFlags.showTgtPIDs;
     $scope.pristineFlags = pristineFlags;
     $scope.invalidFlags = invalidFlags;
-    var disabled_flags_obj = disabled_flags.getFlags();
-    $scope.src_system_disabled = disabled_flags_obj.source_system;
-    var loc_obj = data_location.getLocations();
+    var locations = dataLocation.getLocations();
+    var collType = '';
 
     // Call the base dpm controller for the next/previous pages
     $injector.invoke(dpmCtrl, this, {$scope: $scope});
-    var identifier_obj = data_identifier.getIdentifiers();
+    var identifiers = data_identifier.getIdentifiers();
 
     // Read in the available identifier types using promises to avoid
     // problems with asynch calls
-    var get_identifiers = $http({method: 'GET',
+    var getIdentifiers = $http({method: 'GET',
                     url: '${CGI_URL}/query_actions.py',
                     params: {qtype: 'identifiers'}});
 
-    get_identifiers.then(function(results) {
+    getIdentifiers.then(function(results) {
         var data = results.data;
         for (var idx = 0; idx < data.length; ++idx) {
             if (data[idx].length > 0) {
-                identifier_obj.types = storeData(identifier_obj.types,
+                identifiers.types = storeData(identifiers.types,
                     data[idx][0]);
             }
         }
-        $scope.identifier_types = identifier_obj.types;
-        data_identifier.setIdentifiers(identifier_obj);
+        $scope.identifier_types = identifiers.types;
+        data_identifier.setIdentifiers(identifiers);
     });
 
     $scope.currentPage = 0;
 
+// TODO
+// The code below needs updating to allow adding more than one source
+// Unclear about datasets at the moment
+/*
     $scope.addMore = function() {
         ds_count += 1;
         var id = 'dataset_' + ds_count;
@@ -398,80 +390,164 @@ function datasetCtrl($scope, $http, $injector, data_identifier, policy,
     $scope.removeCollection = function(array, index) {
         array.splice(index, 1);
     };
+*/
 
-    // Show the source collection for the collection option
-    $scope.showSrcColl = function(trname) {
-      var show = false;
-      var tname = trname.replace(/^\s+|\s+$/g, '');
-      if (tname === 'collection') {
-        show = true;
+    // When the source or target type is selected we populate the
+    // select menus and display the correct fields
+    $scope.typeSelected = function(index, ctype) {
+      collType = ctype;
+      var hosts = $http({method: 'GET', url: '${CGI_URL}/query_resource.py',
+                        params: {qtype: 'sitePath'}});
+
+      hosts.then(function(results) {
+        var data = results.data;
+        console.log('data is ' + JSON.stringify(data));
+
+        locations.source_sites = [];
+        locations.target_sites = [];
+        locations.source_collections = [];
+
+        locations.target_collections = [];
+        for (var idx = 0; idx < data.length; ++idx) {
+          if (data[idx].length > 0) {
+            locations.source_sites =
+            storeData(locations.source_sites, data[idx][0]);
+            locations.target_sites =
+            storeData(locations.target_sites, data[idx][0]);
+            locations.source_collections =
+            storeData(locations.source_collections, data[idx][1]);
+            locations.target_collections =
+            storeData(locations.target_collections, data[idx][1]);
+          }
+        }
+
+        $scope.src_sites = locations.source_sites;
+        $scope.tgt_sites = locations.target_sites;
+
+        dataLocation.setLocations(locations);
+
+        // Show the correct fields depending on the type chosen
+        var typeName = '';
+        if (ctype === 'source') {
+          $scope.pristineFlags.sources[index].location_type = false;
+          typeName = $scope.policy.sources[index].type.name.replace(/^\s+|\s+$/g, '');
+          if (typeName === 'collection') {
+            $scope.invalidFlags.sources[index].coll = false;
+            $scope.pristineFlags.sources[index].coll = false;
+            $scope.showSrcColl[index] = true;
+            $scope.showSrcPID[index] = false;
+          } else if (typeName === 'pid') {
+            $scope.invalidFlags.sources[index].pid = false;
+            $scope.pristineFlags.sources[index].pid = false;
+            $scope.showSrcPID[index] = true;
+            $scope.showSrcColl[index] = false;
+          }
+        }
+        if (ctype === 'target') {
+          $scope.pristineFlags.targets[index].location_type = false;
+          typeName = $scope.policy.targets[index].type.name.replace(/^\s+|\s+$/g, '');
+          if (typeName === 'collection') {
+            $scope.pristineFlags.targets[index].coll = false;
+            $scope.invalidFlags.targets[index].coll = false;
+            $scope.showTgtColl[index] = true;
+            $scope.showTgtPID[index] = false;
+          } else if (typeName === 'pid') {
+            $scope.invalidFlags.targets[index].pid = false;
+            $scope.pristineFlags.targets[index].pid = false;
+            $scope.showTgtPID[index] = true;
+            $scope.showTgtColl[index] = false;
+          }
+        }
+      });
+    };
+
+    function getCollIndex(site_name, sites) {
+      var locIndex;
+      var collIndex = -1;
+      for (locIndex = 0; locIndex <= sites.length; locIndex++) {
+        if (sites[locIndex].name === site_name) {
+          collIndex = locIndex;
+          break;
+        }
       }
-      return show;
-    };
+      return collIndex;
+    }
 
-    // Only show the collection fields for the PID option
-    $scope.showCollection = function(trname) {
-        var show = false;
-        var tname = trname.replace(/^\s+|\s+$/g, '');
-        if (tname === 'pid') {
-          show = true;
+    $scope.updateCollection = function(index, type) {
+      var collIndex = -1;
+      if (type === 'source') {
+        $scope.pristineFlags.sources[index].pid = false;
+        $scope.pristineFlags.sources[index].col = false;
+        $scope.pristineFlags.sources[index].site = false;
+        $scope.invalidFlags.sources[index].pid = false;
+        $scope.invalidFlags.sources[index].col = false;
+        collIndex = getCollIndex($scope.policy.sources[index].hostname.name,
+          locations.source_sites);
+        var sourceCopy = [];
+        for (var i = 0; i < locations.source_collections.length; i++) {
+          sourceCopy.push({'name': locations.source_collections[i].name});
         }
-        return show;
-    };
-
-    // If the dataset select changes update our pristine flag
-    // the invalid flag needs to be handled manually since we
-    // can have multiple datasets
-    $scope.changeDataset = function(index) {
-        $scope.pristineFlags.dataset[index].pid = false;
-        if ($scope.policy.collections[index].type.name) {
-            $scope.invalidFlags.dataset[index].pid = false;
-        } else {
-            $scope.invalidFlags.dataset[index].pid = true;
+        $scope.policy.sources[index].identifier = sourceCopy[collIndex];
+      } else if (type === 'target') {
+        $scope.pristineFlags.targets[index].col = false;
+        $scope.pristineFlags.targets[index].pid = false;
+        $scope.pristineFlags.targets[index].site = false;
+        $scope.invalidFlags.targets[index].col = false;
+        $scope.invalidFlags.targets[index].pid = false;
+        collIndex = getCollIndex($scope.policy.targets[index].hostname.name,
+          locations.target_sites);
+        var targetCopy = [];
+        for (var j = 0; j < locations.target_collections.length; j++) {
+          targetCopy.push({'name': locations.target_collections[j].name});
         }
-        if ($scope.policy.collections[index].type.name === 'collection') {
-          changeSrcOrganisation(index);
-        }
+        $scope.policy.targets[index].identifier = targetCopy[collIndex];
+      }
     };
 
     // If the dataset coll is changed update the flags
-    $scope.changeColl = function(index) {
-        $scope.pristineFlags.dataset[index].coll = false;
-        if ($scope.policy.collections[index].name &&
-                $scope.policy.collections[index].name.length >= 3) {
-            $scope.invalidFlags.dataset[index].coll = false;
-        } else {
-            $scope.invalidFlags.dataset[index].coll = true;
+    $scope.changeColl = function(index, location, type) {
+      console.log('changeColl called ' + index + ' ' + location + ' ' + type);
+      if (location === 'source') {
+        if (type === 'collection') {
+          $scope.pristineFlags.sources[index].coll = false;
+          $scope.invalidFlags.sources[index].coll =
+            checkFieldsValid('sources', index);
+        } else if (type === 'pid') {
+          $scope.pristineFlags.sources[index].pid = false;
+          $scope.invalidFlags.sources[index].pid =
+            checkFieldsValid('sources', index);
         }
+      } else if (location === 'target') {
+        if (type === 'collection') {
+          $scope.pristineFlags.targets[index].coll = false;
+          $scope.invalidFlags.targets[index].coll =
+            checkFieldsValid('targets',index);
+        } else if (type === 'pid') {
+          $scope.pristineFlags.targets[index].pid = false;
+          $scope.invalidFlags.targets[index].pid =
+            checkFieldsValid('targets', index);
+        }
+      }
     };
 
+    function checkFieldsValid(location, index) {
+      var invalid = true;
+      if ($scope.policy[location][index].identifier.name &&
+          $scope.policy[location][index].identifier.name.length >= 3) {
+            invalid = false;
+      } else {
+          invalid = true;
+      }
+      console.log('location ' + location + ' index ' + index + ' invalid ' + invalid);
+      return invalid;
+    }
+
     // Call the action controller
-    $injector.invoke(actionCtrl, this, {$scope: $scope});
+    $controller('actionCtrl', {$scope: $scope});
 
     // Get the systems from the database
     $scope.changeSourceSystem = function (index) {
       var default_org = '--- Select an Organisation ---';
-      var get_systems = $http({method: 'GET',
-        url: '${CGI_URL}/query_resource.py',
-        params: {qtype: 'systems'}});
-
-        get_systems.then(function(results) {
-            var data = results.data;
-            loc_obj.source_systems = [];
-            for (var idx = 0; idx < data.length; ++idx) {
-                if (data[idx].length > 0) {
-                    loc_obj.source_systems =
-                        storeData(loc_obj.source_systems, data[idx][0]);
-                }
-            }
-            $scope.src_systems = loc_obj.source_systems;
-            data_location.setLocations(loc_obj);
-            disabled_flags_obj.source_system = false;
-            disabled_flags.setFlags(disabled_flags_obj);
-            $scope.pristineFlags.sources[index].location_type = false;
-            $scope.policy.sources[index].system.name = '--- Select a System ---';
-            $scope.src_system_disabled = disabled_flags_obj.source_system;
-        });
 
         // Set the validation flags for the organisation
         $scope.pristineFlags.sources[index].organisation = false;
@@ -482,41 +558,6 @@ function datasetCtrl($scope, $http, $injector, data_identifier, policy,
             $scope.invalidFlags.source[index].organisation = true;
         }
     };
-
-    // Get the organisations for the sources
-    function changeSrcOrganisation(index) {
-        var default_org = '--- Select an Organisation ---';
-        var get_organisations = $http({method: 'GET',
-            url: '${CGI_URL}/query_actions.py',
-            params: {qtype: 'organisations'}});
-
-        get_organisations.then(function(results) {
-            var data = results.data;
-            loc_obj.source_organisations = [];
-            for (var idx = 0; idx < data.length; ++idx) {
-                if (data[idx].length > 0) {
-                    loc_obj.source_organisations =
-                        storeData(loc_obj.source_organisations, data[idx][0]);
-                }
-            }
-            $scope.organisations = loc_obj.source_organisations;
-            data_location.setLocations(loc_obj);
-            disabled_flags_obj.source_organisation = false;
-            disabled_flags.setFlags(disabled_flags_obj);
-            $scope.policy.sources[index].organisation.name = default_org;
-            $scope.src_organisation_disabled = disabled_flags_obj.source_organisation;
-
-            // Set the validation flags
-            $scope.pristineFlags.sources[index].organisation = false;
-            if ($scope.policy.sources[index].organisation.name &&
-                $scope.policy.sources[index].organisation.name !=
-                default_org) {
-                $scope.invalidFlags.source[index].organisation = false;
-            } else {
-              $scope.invalidFlags.source[index].organisation = true;
-            }
-        });
-    }
 }
 
 function personalCtrl($scope, $injector, policy) {
@@ -527,12 +568,13 @@ function personalCtrl($scope, $injector, policy) {
     };
 }
 
-function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
-        data_location, submitFlag) {
+function sourceTargetCtrl($scope, $http, $controller, policy,
+        dataLocation, submitFlag) {
     $scope.policy = policy;
-    $injector.invoke(dpmCtrl, this, {$scope: $scope});
-    var disabled_flags_obj = disabled_flags.getFlags();
-    var loc_obj = data_location.getLocations();
+    // $injector.invoke(dpmCtrl, {$scope: $scope});
+    $controller('dpmCtrl', {$scope: $scope});
+
+    var loc_obj = dataLocation.getLocations();
 
     $scope.src_systems = loc_obj.source_systems;
     $scope.tgt_systems = loc_obj.target_systems;
@@ -540,41 +582,6 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
     $scope.tgt_sites = loc_obj.target_sites;
     $scope.src_resources = loc_obj.source_resources;
     $scope.tgt_resources = loc_obj.target_resources;
-    $scope.src_site_disabled = disabled_flags_obj.source_site;
-    $scope.tgt_site_disabled = disabled_flags_obj.target_site;
-    $scope.src_resource_disabled = disabled_flags_obj.source_resource;
-    $scope.tgt_resource_disabled = disabled_flags_obj.target_resource;
-    $scope.tgt_system_disabled = disabled_flags_obj.tgt_system;
-    $scope.tgt_loc_type_disabled = disabled_flags_obj.tgt_loc_type;
-
-    // Read from the database the available locations
-    // Don't need - but check!
-    $scope.changeLocation = function() {
-        var get_locations = $http({method: 'GET',
-            url: '${CGI_URL}/query_actions.py',
-            params: {qtype: 'locations',
-                 operation: $scope.policy.action.name,
-                 type: $scope.policy.type.name,
-                 trigger: $scope.policy.trigger.name} });
-        get_locations.then(function(results) {
-            var data = results.data;
-            loc_obj.location_types = [];
-            for (var idx = 0; idx < data.length; ++idx) {
-                if (data[idx].length > 0) {
-                    loc_obj.location_types =
-                        storeData(loc_obj.location_types, data[idx][0]);
-                }
-            }
-            $scope.location_types = loc_obj.location_types;
-            data_location.setLocations(loc_obj);
-            disabled_flags_obj.tgt_loc_type = false;
-            disabled_flags.setFlags(disabled_flags_obj);
-            $scope.pristineFlags.target.organisation = false;
-            $scope.policy.target.loctype.name = "--- Select a Location Type ---";
-            $scope.tgt_loc_type_disabled = disabled_flags_obj.tgt_loc_type;
-
-        });
-    };
 
     // Read from the database the available systems
     $scope.changeTgtSystem = function() {
@@ -597,18 +604,15 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
             $scope.src_systems = loc_obj.source_systems;
             $scope.tgt_systems = loc_obj.target_systems;
             data_location.setLocations(loc_obj);
-            disabled_flags_obj.tgt_system = false;
-            disabled_flags.setFlags(disabled_flags_obj);
             $scope.pristineFlags.target.organisation = false;
-            $scope.policy.target.system.name = "--- Select a System ---";
-            $scope.tgt_system_disabled = disabled_flags_obj.tgt_system;
+            $scope.policy.target.system.name = "iRODS";
         });
     };
 
     // Once the system has been selected populate the sites list for the
     // source
     $scope.changeSrcSite = function(index) {
-        var default_system = "--- Select a System ---";
+        var default_system = "iRODS";
         var get_sites = $http({method: "GET",
             url: "${CGI_URL}/query_resource.py",
             params: {qtype: "sites",
@@ -626,10 +630,7 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
             $scope.src_sites = loc_obj.source_sites;
             data_location.setLocations(loc_obj);
         });
-        disabled_flags_obj.source_site = false;
-        disabled_flags.setFlags(disabled_flags_obj);
-        $scope.policy.sources[index].site.name = "--- Select a Site ---";
-        $scope.src_site_disabled = disabled_flags_obj.source_site;
+        $scope.policy.sources[index].hostname.name = "--- Select a Site ---";
 
         // Set the validation flags for the System
         $scope.pristineFlags.sources[index].system = false;
@@ -658,76 +659,8 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
                 }
             }
         });
-        disabled_flags_obj.target_site = false;
-        disabled_flags.setFlags(disabled_flags_obj);
-        $scope.policy.target.site.name = "--- Select a Site ---";
+        $scope.policy.target.hostname.name = "--- Select a Site ---";
         $scope.pristineFlags.target.system = false;
-        $scope.tgt_site_disabled = disabled_flags_obj.target_site;
-    };
-
-    // Once the site has been selected populate the source resources list
-    $scope.changeSrcResource = function(index) {
-        var default_site = "--- Select a Site ---";
-        var get_resources = $http({method: "GET",
-            url: "${CGI_URL}/query_resource.py",
-            params: {qtype: "resources",
-                system: $scope.policy.sources[index].system.name,
-                site: $scope.policy.sources[index].site.name} });
-        get_resources.then(function(results) {
-            var data = results.data;
-            loc_obj.source_resources = [];
-            loc_obj.source_paths = [];
-            for (var idx = 0; idx < data.length; ++idx) {
-                if (data[idx].length > 0) {
-                    $scope.src_resources =
-                        storeData(loc_obj.source_resources, data[idx][0]);
-                    $scope.src_paths =
-                        storeData(loc_obj.source_paths, data[idx][1]);
-                }
-            }
-        });
-        disabled_flags_obj.source_resource = false;
-        disabled_flags.setFlags(disabled_flags_obj);
-        $scope.policy.sources[index].resource.name = "--- Select a Resource ---";
-        $scope.src_resource_disabled = disabled_flags_obj.source_resource;
-
-        // Set the validation flags for the site
-        $scope.pristineFlags.sources[index].site = false;
-        if ($scope.policy.sources[index].site.name &&
-            $scope.policy.sources[index].site.name !=
-            default_site) {
-            $scope.invalidFlags.source[index].site = false;
-        } else {
-            $scope.invalidFlags.source[index].site = true;
-        }
-    };
-
-    // Once the site has been selected populate the resources list
-    $scope.changeTgtResource = function() {
-        var get_tgtresources = $http({method: "GET",
-            url: "${CGI_URL}/query_resource.py",
-            params: {qtype: "resources",
-            system: $scope.policy.target.system.name,
-            site: $scope.policy.target.site.name} });
-        get_tgtresources.then(function(results) {
-            var data = results.data;
-            loc_obj.target_resources = [];
-            loc_obj.target_paths = [];
-            for (var idx = 0; idx < data.length; ++idx) {
-                if (data[idx].length > 0) {
-                    $scope.tgt_resources =
-                        storeData(loc_obj.target_resources, data[idx][0]);
-                    $scope.tgt_paths = storeData(loc_obj.target_paths,
-                        data[idx][1]);
-                }
-            }
-        });
-        disabled_flags_obj.target_resource = false;
-        disabled_flags.setFlags(disabled_flags_obj);
-        $scope.pristineFlags.target.site = false;
-        $scope.policy.target.resource.name = "--- Select a Resource ---";
-        $scope.tgt_resource_disabled = disabled_flags_obj.target_resource;
-
     };
 
     $scope.updateSrcResource = function(index) {
@@ -749,23 +682,29 @@ function sourceTargetCtrl($scope, $http, $injector, policy, disabled_flags,
     // is not presered when we go back a page)
     $scope.updateTgtResource = function() {
       var idx = $scope.tgt_resources.indexOf($scope.policy.target.resource);
-      console.log("idx is " + idx);
       $scope.policy.target.path = $scope.tgt_paths[idx].name;
-      console.log("target path is " + $scope.policy.target.path);
       $scope.pristineFlags.target.resource = false;
     };
 }
 
 function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
         pristineFlags, invalidFlags, $http, page) {
+
     $scope.setSubmitted = function(validObj) {
-        var flago = submitFlag.getObj();
-        flago.fieldsOK = checkFields(validObj, pristineFlags, invalidFlags,
-                flago, policy);
-        flago.active = true;
-        flago.submitted = true;
-        submitFlag.setObj(flago);
-        $scope.submitted = flago.submitted;
+      console.log('valid objs: is ' + JSON.stringify(validObj));
+      console.log('type ' + validObj.type.$pristine);
+      console.log('trigger ' + validObj.trigger.$pristine);
+      //console.log('srccoll ' + validObj.srcid.$pristine);
+      console.log('tgtcoll ' + validObj.tgtid.$pristine);
+
+      var flago = submitFlag.getObj();
+      console.log('submitting policy ' + JSON.stringify(policy));
+      flago.fieldsOK = checkFields(validObj, pristineFlags, invalidFlags,
+              flago, policy);
+      flago.active = true;
+      flago.submitted = true;
+      submitFlag.setObj(flago);
+      $scope.submitted = flago.submitted;
     };
     $scope.submitForm = function () {
         var flago = submitFlag.getObj();
@@ -785,28 +724,30 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
         // We can now set the id for the policy before sending to the
         // database
         policy.id = policy.uuid;
-        $http.post("${CGI_URL}/storePolicy.py", JSON.stringify(policy),
-                {headers: "Content-Type: application/x-www-form-urlencoded"})
+        console.log('storing the policy ' + JSON.stringify(policy));
+        $http.post('${CGI_URL}/storePolicy.py', JSON.stringify(policy),
+                {headers: 'Content-Type: application/x-www-form-urlencoded'})
             .then(function(results) {
                 var data = results.data;
                 if (data.policy_exists) {
-                    alert("The policy exists in the database");
+                    alert('The policy exists in the database');
                 } else {
-                    alert("Policy successfully stored in the database");
+                    alert('Policy successfully stored in the database');
                 }
                 // Reset the policy and reload the page which puts us on
                 // the default page - the policy listing
-                var new_policy = {};
-                new_policy = resetPolicy(policy);
-                $scope.policy = new_policy;
+                var newPolicy = {};
+                newPolicy = resetPolicy(policy);
+                $scope.policy = newPolicy;
                 // alert("scope is " + JSON.stringify($scope.policy));
                 $window.location.reload();
             },
             function(data, status, headers, config) {
-                alert("error is " + data);
+                alert('error is ' + data);
             });
     };
 
+    // TODO: We will need to alter this as it's not correct 5/Jan/16
     $scope.collDefined = function() {
       var collFlag = false;
       var i = 0;
@@ -819,6 +760,7 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
       return collFlag;
     };
 
+    // TODO: We will need to alter this as it's not correct - AH 5/Jan/16
     $scope.pidDefined = function() {
       var pidFlag = false;
       var i = 0;
@@ -830,7 +772,6 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
       }
       return pidFlag;
     };
-
 }
 
 function tabsCtrl($scope, $http, logPageList, $route, polList, userProfile,
@@ -874,65 +815,76 @@ function checkFields(validObj, pristineFlagsObj, invalidFlagsObj, flago,
 
     if (validObj) {
         fieldsOK = true;
-        // We have to ignore the pristine flag in the case of
-        // a person submitting and goes back to update the form
-        // so we use our own flags
-        if (!flago.submitted) {
-            pristineFlagsObj.action.action = validObj.action.$pristine;
-            pristineFlagsObj.action.type = validObj.type.$pristine;
-            pristineFlagsObj.action.trigger = validObj.trigger.$pristine;
-            pristineFlagsObj.target.organisation = validObj.tgtorganisation.$pristine;
-            // pristineFlagsObj.target.location_type = validObj.location_type.$pristine;
-            pristineFlagsObj.target.system = validObj.tgtsystem.$pristine;
-            pristineFlagsObj.target.site = validObj.tgtsite.$pristine;
-            pristineFlagsObj.target.resource = validObj.tgtresource.$pristine;
+        if (pristineFlagsObj.action.type) {
+          fieldsOK = false;
         }
-
+        if (pristineFlagsObj.action.trigger) {
+          fieldsOK = false;
+        }
+        if (policy.trigger.name === 'date/time') {
+          if (pristineFlagsObj.action.period || invalidFlagsObj.action.period) {
+            fieldsOK = false;
+          }
+        }
+        for (var i = 0; i < pristineFlagsObj.sources.length; i++) {
+          if (policy.sources[i].type.name === 'collection'){
+            fieldsOK = checkCollValid(pristineFlagsObj, invalidFlagsObj,
+              policy, 'sources', i);
+            if (! fieldsOK) {
+              break;
+            }
+          } else if (policy.sources[i].type.name === 'pid') {
+            fieldsOK = true;
+          }
+        }
+        for (i = 0; i < pristineFlagsObj.targets.length; i++) {
+          if (policy.targets[i].type.name === 'collection') {
+            fieldsOK = checkCollValid(pristineFlagsObj, invalidFlagsObj,
+              policy, 'targets', i);
+            if (! fieldsOK) {
+              break;
+            }
+          } else if (policy.targets[i].type.name === 'pid') {
+            fieldsOK = true;
+          }
+        }
         // Loop over all the flags for the dataset pid. On the first true
         // set the valid flag to false and break out
-        var i;
-        for (i=0; i < pristineFlagsObj.dataset.length; i++) {
-            if (policy.collections[i].type.name === "pid") {
-              if (pristineFlagsObj.dataset[i].pid === true ||
-                  pristineFlagsObj.dataset[i].coll === true ||
-                  invalidFlagsObj.dataset[i].pid === true ||
-                  invalidFlagsObj.dataset[i].coll === true) {
-                    fieldsOK = false;
-                    break;
-              }
-            } else if (policy.collections[i].type.name === "collection") {
-              if (pristineFlagsObj.sources[i].organisation === true ||
-                  pristineFlagsObj.sources[i].system === true ||
-                  pristineFlagsObj.sources[i].site === true ||
-                  pristineFlagsObj.sources[i].resource === true ||
-                  invalidFlagsObj.source[i].organisation === true ||
-                  invalidFlagsObj.source[i].system === true ||
-                  invalidFlagsObj.source[i].site === true ||
-                  invalidFlagsObj.source[i].resource === true) {
-                    fieldsOK = false;
-                    break;
-                  }
-            }
-        }
-
-        if (pristineFlagsObj.action.action || validObj.action.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.action.type || validObj.type.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.action.trigger || validObj.trigger.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.target.organisation || validObj.tgtorganisation.$invalid) fieldsOK = false;
-        // if (pristineFlagsObj.target.location_type || validObj.location_type.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.target.system || validObj.tgtsystem.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.target.site || validObj.tgtsite.$invalid) fieldsOK = false;
-        if (pristineFlagsObj.target.resource || validObj.tgtresource.$invalid) fieldsOK = false;
+        console.log('policy is ' + JSON.stringify(policy));
+        console.log('source is ' + JSON.stringify(policy.sources[0]));
+        console.log('target is ' + JSON.stringify(policy.targets[0]));
     }
     return fieldsOK;
+}
+
+function checkCollValid(pristineFlags, invalidFlags, policy, location, index) {
+  var fieldsOK = true;
+  if (pristineFlags[location][index].location_type ||
+    pristineFlags[location][index].site) {
+      console.log('location ' + pristineFlags[location][index].location_type);
+      console.log('site ' + pristineFlags[location][index].site);
+    fieldsOK = false;
+  }
+  if (policy[location][index].type.name === 'collection') {
+    if (invalidFlags[location][index].coll ||
+      pristineFlags[location][index].coll) {
+        fieldsOK = false;
+    }
+  } else if (policy[location][index].type.name === 'pid') {
+    if (invalidFlags[location][index].pid ||
+      pristineFlags[location][index].pid) {
+        fieldsOK = false;
+    }
+  }
+  return fieldsOK;
 }
 
 function completeCtrl($scope) {
 }
 
 dpmApp.service('data_action', function() {
-    var actions = {types:[],
-        operations:[], triggers:[]};
+  'use strict';
+    var actions = {types:[], triggers:[]};
     return {
         getActions: function() {
             return actions;
@@ -955,13 +907,15 @@ dpmApp.service('data_identifier', function() {
     };
 });
 
-dpmApp.service('data_location', function() {
+dpmApp.service('dataLocation', function() {
     var locations = {source_systems:[],
         source_sites:[], source_resources:[],
         source_organisations:[],
+        source_collections: [],
+        target_collections: [],
         target_systems:[], target_sites:[],
         target_resources:[],
-        target_organisations:[], 
+        target_organisations:[],
         location_types:[]};
     return {
         getLocations: function() {
@@ -990,6 +944,18 @@ dpmApp.service("disabled_flags", function() {
     };
 });
 
+var identifierFlags = function() {
+  var showSrcPIDs = [];
+  var showSrcColls = [];
+  var showTgtColls = [];
+  var showTgtPIDs = [];
+  var identifierFlagObj = {showSrcPIDs: showSrcPIDs, showSrcColls: showSrcColls,
+  showTgtColls: showTgtColls, showTgtPIDs: showTgtPIDs};
+  return identifierFlagObj;
+};
+
+dpmApp.factory('identifierFlags', identifierFlags);
+
 dpmApp.factory('invalidFlag', function() {
     var validObj = {"policyName": false,
         "policyVersion": false,
@@ -1000,11 +966,13 @@ dpmApp.factory('invalidFlag', function() {
 });
 
 function invalidFlags() {
-    var dataset = new Array({pid: true, coll: true});
-    var sources = new Array({organisation: true, system: true,
-      site: true, resource: true});
-    var invalids = {dataset: dataset, source: sources};
-    return invalids;
+  var action = {period:true};
+  var sources = new Array({organisation: true, system: true,
+    site: true, resource: true, pid: true, coll: true});
+  var targets = new Array({organisation: true, system: true,
+    site: true, resource: true, pid: true, coll: true});
+  var invalids = {action:action, sources: sources, targets: targets};
+  return invalids;
 }
 dpmApp.factory('invalidFlags', invalidFlags);
 
@@ -1048,70 +1016,60 @@ function getPeriod() {
 }
 
 var policy = function() {
-    var action = {name: "--- Select an Action ---"};
-    var type = {name: "--- Select a Type ---"};
-    var trigger = {name: "--- Select a Trigger ---"};
-    var source_system = {name: "--- Select a System ---"};
-    var source_site = {name: "--- Select a Site ---"};
-    var source_resource = {name: "--- Select a Resource ---"};
-    var target_system = {name: "--- Select a System ---"};
-    var target_site = {name: "--- Select a Site ---"};
-    var target_resource = {name: "--- Select a Resource ---"};
-    var loctype = {name: "--- Select a Location type ---"};
-    var source_organisation = new Array({name: "--- Select an Organisation ---"});
-    var target_organisation = {name: "--- Select an Organisation ---"};
-    var weekday = {name: "*"};
-    var day = {name: "*"};
-    var month ={name: "*"};
-    var hour = {name: "*"};
-    var minute = {name: "*"};
-
-    var period = {weekday: weekday, month: month, day: day, hour: hour,
-        minute: minute};
+    var source_type = {name: '--- Select a Type ---'};
+    var target_type = {name: '--- Select a Type ---'};
+    var type = {name: '--- Select a Type ---'};
+    var trigger = {name: '--- Select ---'};
+    var trigger_period = '';
+    var source_site = {name: '--- Select ---'};
+    var source_system = {name: 'iRODS'};
+    var source_resource = {name: ''};
+    var target_system = {name: 'iRODS'};
+    var target_site = {name: '--- Select ---'};
+    var target_resource = {name: ''};
+    var source_organisation = {name: 'EUDAT'};
+    var target_organisation = {name: 'EUDAT'};
+    var source_identifier = {name: ''};
+    var target_identifier = {name: ''};
 
     var sources = new Array({
-        loctype: loctype,
+        identifier: source_identifier,
+        type: source_type,
         organisation: source_organisation,
         system: source_system,
-        site: source_site,
-        path: '',
+        hostname: source_site,
         resource: source_resource
     });
-    var target = {
-        loctype: loctype,
+
+    var targets = new Array({
+        identifier: target_identifier,
+        type: target_type,
         organisation: target_organisation,
         system: target_system,
-        site: target_site,
-        path: "",
+        hostname: target_site,
         resource: target_resource
-    };
-    var collections = new Array({name: "", type: {name: ""}});
+    });
 
-    var policyObj = {name: "", id: "",
-        version: "1.0", uuid: "", author: "", community: "",
-        collections: collections,
-        action: action,
+    var policyObj = {name: '', id: '',
+        version: '1.0', uuid: '', author: '', community: '',
         type: type,
         trigger: trigger,
-        trigger_date: "",
-        trigger_period: period,
+        trigger_period: trigger_period,
         sources: sources,
-        target: target};
+        targets: targets};
     return policyObj;
 };
 
 // create a factory to generate a policy object
-dpmApp.factory("policy", policy);
+dpmApp.factory('policy', policy);
 
 function pristineFlags() {
-    var dataset = new Array({pid: true, coll: true});
-    var action = {action: true, type: true, trigger: true};
-    var target = {organisation: true, location_type: true, system: true,
-        site: true, resource: true};
-    var sources = new Array({organisation: true, location_type: true, system: true,
-        site: true, resource: true});
-    var pristine = {dataset: dataset, action: action, sources: sources,
-        target: target};
+    var action = {action: true, type: true, trigger: true, period: true};
+    var targets = new Array({organisation: true, location_type: true,
+      system: true, site: true, resource: true, coll: true, pid: true});
+    var sources = new Array({organisation: true, location_type: true,
+      system: true, site: true, resource: true, coll: true, pid: true});
+    var pristine = {action: action, sources: sources, targets: targets};
     return pristine;
 }
 
@@ -1374,8 +1332,6 @@ function listCtrl($scope, $sce, $http, $route,
         for (i = 0; i < keys.length; i++) {
             dkeys[keys[i].name] = keys[i].idx;
         }
-        // console.log("dkeys is " + JSON.stringify(dkeys));
-        // console.log("data is " + JSON.stringify(this.pol_data));
         $scope.policy.name = this.pol_data.pol_vals[dkeys.policy_name].name;
         $scope.policy.version = this.pol_data.pol_vals[dkeys.policy_version].name;
         $scope.policy.author = this.pol_data.pol_vals[dkeys.policy_author].name;
@@ -1506,17 +1462,16 @@ function listCtrl($scope, $sce, $http, $route,
                 var data = results.data;
                 uuids = clearArray(uuids);
                 for (i = 0; i < data.length; i++) {
+                  console.log(' data is ' + JSON.stringify(data[i]) + ' i ' + i);
                     var ddvals = [];
                     var is_visible = false;
                     for (j = 0; j < data[i].length; j++) {
                       if (j === 6) {
                         dat = new Date(parseInt(data[i][j][0])*1000);
-                        data[i][j][0] = dat.getFullYear() + '-' +
-                        dat.getMonth() + '-' + dat.getDate();
+                        data[i][j][0] = displayDate(dat);
                       }
-                        is_visible = (data[i][j][1] === 'true');
-                        ddvals.push({name: data[i][j][0],
-                            visible: is_visible});
+                      is_visible = (data[i][j][1] === 'true');
+                      ddvals.push({name: data[i][j][0], visible: is_visible});
                     }
                     // Set flag indicating whether to show removed
                     // policy to false by default.
@@ -1609,8 +1564,8 @@ function listCtrl($scope, $sce, $http, $route,
                             for (j = 0; j < data[i].length; j++) {
                                 if (j === 6) {
                                   var dat = new Date(parseInt(data[i][j][0])*1000);
-                                  data[i][j][0] = dat.getFullYear() + '-' +
-                                  dat.getMonth() + '-' + dat.getDate();
+                                  console.log('date is ' + displayDate(dat));
+                                  data[i][j][0] = displayDate(dat);
                                 }
                                 ddvals.push({name: data[i][j][0],
                                     visible: $scope.policy_columns[j].visible});
@@ -1717,6 +1672,20 @@ function listCtrl($scope, $sce, $http, $route,
        showLog.name = true;
        $scope.$parent.changeLoc(url);
     };
+}
+
+function displayDate(date) {
+  var returnDate = '';
+  var month = parseInt(date.getMonth()) + 1;
+  var day = date.getDate();
+  if (month < 10) {
+    month = '0' + month;
+  }
+  if (day < 10) {
+    day = '0' + date.getDate();
+  }
+  returnDate = date.getFullYear() + '-' + month + '-' + day;
+  return returnDate;
 }
 
 function modifyCtrl($scope, $window, policy, $http, data_identifier, userProfile) {

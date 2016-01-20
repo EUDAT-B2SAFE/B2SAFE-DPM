@@ -18,31 +18,22 @@ hash=log_hash
 id=log_policy_uuid
 community=log_community
 
-[DATASETS_SCHEMA]
-pid=collection_persistentIdentifier
-type=collection_persistentIdentifier_type
-
 [ACTIONS_SCHEMA]
-name=action_name
 type=action_type
 trigger=action_trigger_action
 trigger_type=action_trigger_type
 
 [SOURCES_SCHEMA]
-site_type=src_location_site_type
-site=src_location_site
-path=src_location_path
-resource=src_location_resource
-type=src_location_type
-# loctype=src_loctype
+identifier=src_identifier
+type=src_type
+hostname=src_hostname
+resource=src_resource
 
 [TARGETS_SCHEMA]
-site_type=location_site_type
-site=location_site
-path=location_path
-resource=location_resource
-type=location_type
-# loctype=loctype
+identifier=tgt_identifier
+type=tgt_type
+hostname=tgt_hostname
+resource=tgt_resource
 
 [XML_NAMESPACE]
 namespacedef=xmlns:tns="http://eudat.eu/2013/policy" xmlns:irodsns="http://eudat.eu/2013/iRODS-policy"
@@ -91,6 +82,7 @@ admin_file=${CGI_PATH}/config/dpm_admin.txt
 resource_data=https://creg.eudat.eu/gocdbpi/public/?method=get_service_endpoint&service_type=b2safe.irods
 resource_schema=resources.schema
 action_action_data=action_action.data
+action_trigger_data=action_trigger.data
 action_org_data=action_org.data
 action_schema=actions.schema
 profile_community=profile_community.data

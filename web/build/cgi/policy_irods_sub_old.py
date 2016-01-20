@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #
-# Generated Mon Jan 11 17:05:53 2016 by generateDS.py version 2.12b.
+# Generated Thu Mar  6 07:43:42 2014 by generateDS.py version 2.12b.
 #
 
 import sys
@@ -103,8 +103,8 @@ supermod.actionType.subclass = actionTypeSub
 
 
 class triggerTypeSub(supermod.triggerType):
-    def __init__(self, action=None, time=None, runonce=None, repeat_counter=None):
-        super(triggerTypeSub, self).__init__(action, time, runonce, repeat_counter, )
+    def __init__(self, action=None, time=None, repeat_counter=None):
+        super(triggerTypeSub, self).__init__(action, time, repeat_counter, )
 supermod.triggerType.subclass = triggerTypeSub
 # end class triggerTypeSub
 
@@ -119,11 +119,10 @@ supermod.triggerActionType.subclass = triggerActionTypeSub
 class coordinatesSub(supermod.coordinates):
     def __init__(self, site=None, path=None, resource=None, anytypeobjs_=None):
         super(coordinatesSub, self).__init__(site, path, resource, anytypeobjs_, )
-
     def export(self, outfile, level, namespace_='tns:',
-               name_='coordinates',
-               namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"',
-               pretty_print=True):
+            name_='coordinates',
+            namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"',
+            pretty_print=True):
         # We need to fix the superclass namespaces when exporting the
         # xml file
         super(coordinatesSub, self).export(outfile, level, 'tns:',
@@ -186,13 +185,6 @@ class persistentIdentifierTypeSub(supermod.persistentIdentifierType):
         super(persistentIdentifierTypeSub, self).__init__(type_, valueOf_, )
 supermod.persistentIdentifierType.subclass = persistentIdentifierTypeSub
 # end class persistentIdentifierTypeSub
-
-
-class runonceTypeSub(supermod.runonceType):
-    def __init__(self):
-        super(runonceTypeSub, self).__init__()
-supermod.runonceType.subclass = runonceTypeSub
-# end class runonceTypeSub
 
 
 class repeat_counterTypeSub(supermod.repeat_counterType):
