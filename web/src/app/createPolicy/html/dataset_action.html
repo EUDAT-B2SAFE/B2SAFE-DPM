@@ -41,6 +41,55 @@
           </div>
           <div id="action-period"
             data-ng-show="showPeriod(policy.trigger.name)">
+            <p>Period</p>
+            <select id="datesel" name="trigger_date"
+              data-ng-options="trd.name for trd in trigger_date"
+              data-ng-model="policy.trigger_date"
+              data-ng-change="updateTriggerDate()"
+              data-validate-select required>
+              <option name="policy.trigger_date.name" value="">
+                {{policy.trigger_date.name}}
+              </option>
+            </select>
+            <div data-ng-show="submitted || datasetactions.trigger_date.$invalid">
+              <span id="error" data-ng-show="pristineFlags.action.trigger_date || datasetactions.trigger_date.$error.required">
+                The trigger period is required
+              </span>
+            </div>
+
+            <div id="action-period-period"
+              data-ng-show="showPeriodPeriod(policy.trigger_date.name)">
+              <input type="text" name="trigger_period" class="period" data-ng-change="updatePeriod()"
+                data-ng-model="policy.trigger_period.name">
+              <div data-ng-show="submitted">
+                <span id="error" data-ng-show="invalidFlags.action.period">
+                  The period is incorrect
+                </span>
+              </div>
+            </div>
+            <div id="action-period-date"
+              data-ng-show="showPeriodDate(policy.trigger_date.name)">
+              <div class="container">
+                <div class="row">
+                  <div class="col-sm-6">
+                    <div class="form-group">
+                      <div class="input-group date" id="periodDate">
+                          <input type="text" name="period_date" class="form-control" data-ng-change="updatePeriodDate()" data-ng-model="policy.dateString" required>
+                          <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                          </span>
+                        </div>
+                        <div data-ng-show="submitted || !pristineFlags.action.period_date">
+                          <span id="error" data-ng-show="invalidFlags.action.period_date">
+                            The date is incorrect
+                          </span>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--
             <input type="text" class="period" data-ng-change="updatePeriod()"
               data-ng-model="policy.trigger_period.name">
             <div data-ng-show="submitted || datasetactions.trigger.$invalid">
@@ -48,6 +97,7 @@
                 Period must be in the form: mm-hh-dayofmonth-month-dayofweek-year
               </span>
             </div>
+          -->
           </div>
         </div>
       </fieldset>
@@ -129,6 +179,7 @@
           </div>
         </div>
         <br>
+        <!--
         <button id="previouspage" data-ng-disabled="currentPage == 0"
           data-ng-click="currentPage=currentPage-1">
           Previous
@@ -141,7 +192,8 @@
         <button id="addmore" data-ng-click="addMore()">
           Add More
         </button>
-
+      -->
+      
         <h3 class="field">Targets</h3>
         <div data-ng-repeat="target in policy.targets | startFrom:currentPage*3 | limitTo:3">
           <div class="datasets">
@@ -218,6 +270,7 @@
             </div>
           </div>
           <br>
+          <!--
           <button id="previouspage" data-ng-disabled="currentPage == 0"
             data-ng-click="currentPage=currentPage-1">
             Previous
@@ -230,6 +283,7 @@
           <button id="addmore" data-ng-click="addMore()">
             Add More
           </button>
+        -->
         </div>
       </div>
 </data-ng-form>

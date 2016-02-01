@@ -117,7 +117,16 @@ module.exports = function (grunt) {
                     dest: 'build/html/script/jquery'},
                     {expand: true, cwd: 'src/script/angular',
                     src: ['**'],
-                    dest: 'build/html/script/angular'}],
+                    dest: 'build/html/script/angular'},
+                    {expand: true, cwd: 'src/script/bootstrap-datetimepicker-4.17.37/build',
+                     src: ['**'],
+                     dest: 'build/html/script/bootstrap-datetimepicker'},
+                    {expand: true, cwd: 'src/script/moment-2.11.1/min',
+                     src: ['**'],
+                     dest: 'build/html/script/moment/min'},
+                    {expand: true, cwd: 'src/script/later-1.2.0',
+                     src: ['**'],
+                     dest: 'build/html/script/later-1.2.0'}],
             },
             // Copy config files (only those not processed before)
             config: {

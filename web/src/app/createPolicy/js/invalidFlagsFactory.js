@@ -1,5 +1,5 @@
 function invalidFlags() {
-  var action = {period:true};
+  var action = {period:true, period_date:true};
   var sources = new Array({organisation: true, system: true,
     site: true, resource: true, pid: true, coll: true});
   var targets = new Array({organisation: true, system: true,

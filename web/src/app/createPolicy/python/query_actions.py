@@ -10,15 +10,15 @@ import json
 import ConfigParser
 
 
-def querydb(dbase):
+def querydb(d_base):
     '''Function to query the database
     '''
     conn = None
     results = None
 
     # The database must exist otherwise we have a little problem
-    if (os.path.exists(dbase)):
-        conn = sqlite3.connect(dbase)
+    if (os.path.exists(d_base)):
+        conn = sqlite3.connect(d_base)
     else:
         return "error"
 
@@ -29,18 +29,21 @@ def querydb(dbase):
 
     # Query the database and get the results
     cur = conn.cursor()
-    if (qtype == "types"):
+    if qtype == "types":
         cur.execute('''select type.name from type''')
         results = cur.fetchall()
-    elif (qtype == "triggers"):
+    elif qtype == "triggers":
         cur.execute('''select trigger.name from trigger''')
         results = cur.fetchall()
-    elif (qtype == "identifiers"):
+    elif qtype == 'trigger_date':
+        cur.execute('select trigger_date.name, trigger_date.value from trigger_date')
+        results = cur.fetchall()
+    elif qtype == "identifiers":
         cur.execute('''select distinct name from persistentID''')
         results = cur.fetchall()
-    elif (qtype == "organisations"):
-            cur.execute('''select distinct name from organisation''')
-            results = cur.fetchall()
+    elif qtype == "organisations":
+        cur.execute('''select distinct name from organisation''')
+        results = cur.fetchall()
 
     return results
 
@@ -56,5 +59,5 @@ if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
     config.read('./config/policy.cfg')
     dbase = config.get("DATABASE", "action_name").strip()
-    results = querydb(dbase)
-    returnResults(results)
+    data = querydb(dbase)
+    returnResults(data)

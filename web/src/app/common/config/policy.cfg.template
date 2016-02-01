@@ -84,6 +84,7 @@ resource_schema=resources.schema
 action_action_data=action_action.data
 action_trigger_data=action_trigger.data
 action_org_data=action_org.data
+action_date_data=action_date.data
 action_schema=actions.schema
 profile_community=profile_community.data
 profile_page_template=profile_page.data.template

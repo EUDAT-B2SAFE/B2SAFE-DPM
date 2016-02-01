@@ -395,7 +395,7 @@ input.period {
   -webkit-border-radius: 0px;
   -moz-border-radius: 0px;
   border-radius: 0px;
-  margin-top: 0%;
+  margin-top: 1px;
 }
 
 div#period-space {
@@ -426,6 +426,24 @@ button#nextpage {
 }
 button#addmore {
     margin-left: 1%;
+}
+
+.container {
+  width: 100%;
+  padding-left: 0px;
+}
+
+.input-group-addon {
+  padding-top: 0px;
+}
+
+.input-group .form-control {
+  width: 180px;
+  margin-left: 15px;
+}
+
+.col-sm-6 {
+  padding-left: 5px;
 }
 
 div#errreg {

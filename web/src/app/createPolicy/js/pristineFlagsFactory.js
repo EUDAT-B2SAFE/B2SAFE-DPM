@@ -1,5 +1,6 @@
 function pristineFlags() {
-    var action = {action: true, type: true, trigger: true, period: true};
+    var action = {action: true, type: true, trigger: true, period: true,
+      trigger_date: true, period_date: true};
     var targets = new Array({organisation: true, location_type: true,
       system: true, site: true, resource: true, coll: true, pid: true});
     var sources = new Array({organisation: true, location_type: true,

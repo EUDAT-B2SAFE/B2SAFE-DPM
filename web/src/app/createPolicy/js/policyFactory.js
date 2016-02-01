@@ -1,9 +1,11 @@
 var policy = function() {
     var source_type = {name: '--- Select a Type ---'};
+    var dateString = '';
     var target_type = {name: '--- Select a Type ---'};
     var type = {name: '--- Select a Type ---'};
     var trigger = {name: '--- Select ---'};
     var trigger_period = '';
+    var trigger_date = {name: '--- Select ---'};
     var source_site = {name: '--- Select ---'};
     var source_system = {name: 'iRODS'};
     var source_resource = {name: ''};
@@ -38,6 +40,8 @@ var policy = function() {
         type: type,
         trigger: trigger,
         trigger_period: trigger_period,
+        trigger_date: trigger_date,
+        dateString: dateString,
         sources: sources,
         targets: targets};
     return policyObj;

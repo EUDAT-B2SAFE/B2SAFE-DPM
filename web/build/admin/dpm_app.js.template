@@ -99,6 +99,7 @@ function actionCtrl($scope, $http, $injector, $controller, policy,
 
     // Remove this line $scope.operations = action_obj.operations;
     $scope.triggers = action_obj.triggers;
+    $scope.trigger_date = action_obj.trigger_date;
     // Remmove this line $scope.types = action_obj.types;
     $scope.actionTypes = action_obj.types;
     $scope.location_types = action_obj.location_types;
@@ -126,7 +127,13 @@ function actionCtrl($scope, $http, $injector, $controller, policy,
         $event.stopPropagation();
         $scope.opened = true;
     };
-
+    $scope.showPeriodPeriod = function(trgDateType) {
+      var show = false;
+      if (typeof trgDateType !== 'undefined' && trgDateType !== 'date') {
+        show = true;
+      }
+      return show;
+    };
     $scope.updateDate = function() {
         $scope.policy.trigger_date = getIsoDate($scope.trigger_date);
     };
@@ -144,57 +151,40 @@ function actionCtrl($scope, $http, $injector, $controller, policy,
     $scope.updatePeriod = function() {
       $scope.pristineFlags.action.period = false;
       $scope.invalidFlags.action.period = false;
-      var elements = $scope.policy.trigger_period.name.split('-');
-      if (elements.length < 6) {
+      console.log('trigger_period ' + $scope.policy.trigger_period.name);
+      var cron = later.parse.cron($scope.policy.trigger_period.name);
+      console.log('cron is ' + JSON.stringify(cron));
+      var cronElements = $scope.policy.trigger_period.name.split(' ');
+      if (cronElements.length < 6) {
         $scope.invalidFlags.action.period = true;
       } else {
-        console.log('processing date ' + JSON.stringify(elements));
-        for (var i = 0; i < elements.length; i++) {
-          $scope.invalidFlags.action.period = true;
-          if (i === 4) {
-            if (elements[i] === '*' || (parseInt(elements[i]) >= 0 &&
-              parseInt(elements[i]) <= 6)) {
-              $scope.invalidFlags.action.period = false;
-            } else {
-              $scope.invalidFlags.action.period = true;
-              break;
-            }
-          } else if (i === 5) {
-            if (elements[i].length === 4) {
-              if (elements[i] === '*' || ! isNaN(elements[i])) {
-                $scope.invalidFlags.action.period = false;
-              } else {
-                $scope.invalidFlags.action.period = true;
-                break;
-              }
-            }
-          } else {
-            if (i === 1) {
-              if (elements[i] === '*' || (parseInt(elements[i]) >=0 &&
-                parseInt(elements[i]) <= 59)) {
-                $scope.invalidFlags.action.period = false;
-              } else {
-                $scope.invalidFlags.action.period = true;
-                break;
-              }
-            } else if (i === 2) {
-              if (elements[i] === '*' || (parseInt(elements[i]) >= 0 &&
-                parseInt(elements[i]) <= 23)) {
-                $scope.invalidFlags.action.period = false;
-              } else {
-                $scope.invalidFlags.action.period = true;
-                break;
-              }
-            } else if (i === 3) {
-              if (elements[i] === '*' || (parseInt(elements[i]) >=1 &&
-                parseInt(elements[i]) <= 31)) {
-                $scope.invalidFlags.action.period = false;
-              } else {
-                $scope.invalidFlags.action.period = true;
-                break;
-              }
-            }
-          }
+        var minutePattern = searchPattern('([1-5][0-9]|[0-9])');
+        var minuteExp = new RegExp(minutePattern);
+        $scope.invalidFlags.action.period = ! minuteExp.test(cronElements[0]);
+        if (!$scope.invalidFlags.action.period) {
+          var hourPattern = searchPattern('([2][0-3]|[1][0-9]|[0-9])');
+          var hourExp = new RegExp(hourPattern);
+          $scope.invalidFlags.action.period = ! hourExp.test(cronElements[1]);
+        }
+        if (!$scope.invalidFlags.action.period) {
+          var datePattern = searchPattern('([3][0-1]|[1-2][0-9]|[0-9])');
+          var dateExp = new RegExp(datePattern);
+          $scope.invalidFlags.action.period = ! dateExp.test(cronElements[2]);
+        }
+        if (!$scope.invalidFlags.action.period) {
+          var monthPattern = searchPattern('([1][0-2]|[0-9])');
+          var monthExp = new RegExp(monthPattern);
+          $scope.invalidFlags.action.period = ! monthExp.test(cronElements[3]);
+        }
+        if (!$scope.invalidFlags.action.period) {
+          var dowPattern = searchPattern('([0-6])');
+          var dowExp = new RegExp(dowPattern);
+          $scope.invalidFlags.action.period = ! dowExp.test(cronElements[4]);
+        }
+        if (!$scope.invalidFlags.action.period) {
+          var yearPattern = searchPattern('([2][0-9][0-9][0-9])');
+          var yearExp = new RegExp(yearPattern);
+          $scope.invalidFlags.action.period = ! yearExp.test(cronElements[5]);
         }
       }
       console.log('invalidFlags ' +$scope.invalidFlags.action.period);
@@ -224,12 +214,123 @@ function actionCtrl($scope, $http, $injector, $controller, policy,
 
     // Update the Trigger
     $scope.updateTrigger = function() {
+      console.log('trigger value is ' + $scope.policy.trigger.name);
+      if ($scope.policy.trigger.name === 'date/time') {
+        var getTriggerDate = $http({method: 'GET',
+            url: '${CGI_URL}/query_actions.py',
+            params: {qtype: 'trigger_date'}});
+        getTriggerDate.then(function(results) {
+          var data = results.data;
+          action_obj.trigger_date = [];
+          action_obj.trigger_date_value = [];
+          for (var idx = 0; idx < data.length; ++idx) {
+            if (data[idx].length > 0) {
+              action_obj.trigger_date = storeData(action_obj.trigger_date,
+                                                  data[idx][0]);
+              action_obj.trigger_date_value = storeData(action_obj.trigger_date_value,
+                                                        data[idx][1]);
+            }
+          }
+          $scope.trigger_date = action_obj.trigger_date;
+          data_action.setActions(action_obj);
+        });
+      }
       $scope.pristineFlags.action.trigger = false;
+    };
+
+    $scope.updateTriggerDate = function() {
+      var dateIndex = -1;
+      for (var j=0; j < action_obj.trigger_date.length; ++j) {
+        if (action_obj.trigger_date[j].name === $scope.policy.trigger_date.name) {
+          dateIndex = j;
+          break;
+        }
+      }
+      if (dateIndex >= 0) {
+        $scope.policy.trigger_period = {'name': action_obj.trigger_date_value[dateIndex].name};
+      }
+      //console.log('trigger_period ' + JSON.stringify(action_obj.trigger_date_value));
+      $scope.pristineFlags.action.trigger_date = false;
+      $scope.invalidFlags.action.period = false;
+    };
+
+    $('#periodDate').datetimepicker({
+      locale: 'en-gb',
+      format: 'YYYY-MM-DDTHH:mmZ'
+    }).on('dp.change',
+      function(e){
+        //console.log('date is ' + e.date);
+        //console.log('e is ' + JSON.stringify(e));
+        var pDate = new Date(e.date);
+        var month = pDate.getMonth() + 1;
+        var hours = pDate.getHours();
+        var dom = pDate.getDate();
+        var minutes = pDate.getMinutes();
+        if (dom <= 9) {
+          dom = '0' + dom;
+        }
+        if (month <= 9) {
+          month = '0' + month;
+        }
+        if (hours <= 9) {
+          hours = '0' + hours;
+        }
+        if (minutes <= 9) {
+          minutes = '0' + minutes;
+        }
+        var dateString = pDate.getFullYear() + '-' + month + '-' + dom + 'T' +
+          hours + ':' + minutes + '+00:00';
+        var cronString = minutes + ' ' + hours + ' ' + dom + ' ' + month +
+          ' * ' + pDate.getFullYear();
+        $scope.policy.trigger_period.name = cronString;
+        $scope.policy.dateString = dateString;
+        var dateStamp = Date.parse(dateString);
+        if (isNaN(dateStamp) === true) {
+          $scope.invalidFlags.action.period_date = true;
+        } else {
+          $scope.invalidFlags.action.period_date = false;
+        }
+        $scope.pristineFlags.action.period_date = false;
+        // Since we are outside of angular we need to update the view
+        $scope.$digest();
+        //console.log('jquery flag ' + $scope.invalidFlags.action.period_date);
+      }
+    );
+
+    $scope.showPeriodDate = function(periodType) {
+      var show = false;
+      if (typeof periodType !== 'undefined' && periodType === 'date') {
+        show = true;
+      }
+      return show;
+    };
+
+    $scope.updatePeriodDate = function() {
+      //console.log('we are called! ' + $scope.policy.trigger_period.name);
+      //console.log('dateString ' + $scope.policy.dateString);
+      var dateStamp = Date.parse($scope.policy.dateString);
+      //console.log('dateStamp ' + dateStamp);
+      if (isNaN(dateStamp) === true) {
+        $scope.policy.trigger_period.name = "";
+        $scope.invalidFlags.action.period_date = true;
+      } else {
+        $scope.invalidFlags.action.period_date = false;
+      }
+      //console.log('flag is ' + $scope.invalidFlags.action.period_date);
     };
 
     // invoke the SourceTarget control
     // $injector.invoke(sourceTargetCtrl, this, {$scope: $scope});
     $controller('sourceTargetCtrl', {$scope: $scope});
+}
+
+function searchPattern(patt1) {
+  var pattern = '';
+  var patt2 =  '^[*]$';
+  var patt3 = '((' + patt1 + '[\\-]' + patt1 + '))|^(' + patt1 + '(,(' + patt1 +
+    '[\\-]' + patt1 + ')|(,' + patt1 + '))+)$|(([*]|' + patt1 + ')[/]' + patt1 + ')';
+  pattern = '^' + patt1 + '$' + '|' + patt2 + '|' + patt3;
+  return pattern;
 }
 
 function confirmCtrl($scope, $injector, page, submitFlag, policy) {
@@ -817,15 +918,27 @@ function checkFields(validObj, pristineFlagsObj, invalidFlagsObj, flago,
         fieldsOK = true;
         if (pristineFlagsObj.action.type) {
           fieldsOK = false;
+          return fieldsOK;
         }
         if (pristineFlagsObj.action.trigger) {
           fieldsOK = false;
+          return fieldsOK;
         }
         if (policy.trigger.name === 'date/time') {
-          if (pristineFlagsObj.action.period || invalidFlagsObj.action.period) {
+          if (invalidFlagsObj.action.period) {
             fieldsOK = false;
+            return fieldsOK;
+          }
+          if (policy.trigger_date.name === 'date') {
+            if (invalidFlagsObj.action.period_date) {
+              fieldsOK = false;
+              return fieldsOK;
+            }
           }
         }
+        console.log('after trigger fieldsOK ' + fieldsOK);
+        console.log('pristineFlags ' + JSON.stringify(pristineFlagsObj.sources));
+        console.log('policy sources ' + JSON.stringify(policy.sources));
         for (var i = 0; i < pristineFlagsObj.sources.length; i++) {
           if (policy.sources[i].type.name === 'collection'){
             fieldsOK = checkCollValid(pristineFlagsObj, invalidFlagsObj,
@@ -835,8 +948,15 @@ function checkFields(validObj, pristineFlagsObj, invalidFlagsObj, flago,
             }
           } else if (policy.sources[i].type.name === 'pid') {
             fieldsOK = true;
+          } else {
+            fieldsOK = false;
+            break;
           }
         }
+        if (!fieldsOK) {
+          return fieldsOK;
+        }
+        console.log('after sources fieldsOK ' + fieldsOK);
         for (i = 0; i < pristineFlagsObj.targets.length; i++) {
           if (policy.targets[i].type.name === 'collection') {
             fieldsOK = checkCollValid(pristineFlagsObj, invalidFlagsObj,
@@ -846,8 +966,14 @@ function checkFields(validObj, pristineFlagsObj, invalidFlagsObj, flago,
             }
           } else if (policy.targets[i].type.name === 'pid') {
             fieldsOK = true;
+          } else {
+            fieldsOK = false;
           }
         }
+        if (!fieldsOK) {
+          return fieldsOK;
+        }
+        console.log('after targets fieldsOK ' + fieldsOK);
         // Loop over all the flags for the dataset pid. On the first true
         // set the valid flag to false and break out
         console.log('policy is ' + JSON.stringify(policy));
@@ -966,7 +1092,7 @@ dpmApp.factory('invalidFlag', function() {
 });
 
 function invalidFlags() {
-  var action = {period:true};
+  var action = {period:true, period_date:true};
   var sources = new Array({organisation: true, system: true,
     site: true, resource: true, pid: true, coll: true});
   var targets = new Array({organisation: true, system: true,
@@ -1017,10 +1143,12 @@ function getPeriod() {
 
 var policy = function() {
     var source_type = {name: '--- Select a Type ---'};
+    var dateString = '';
     var target_type = {name: '--- Select a Type ---'};
     var type = {name: '--- Select a Type ---'};
     var trigger = {name: '--- Select ---'};
     var trigger_period = '';
+    var trigger_date = {name: '--- Select ---'};
     var source_site = {name: '--- Select ---'};
     var source_system = {name: 'iRODS'};
     var source_resource = {name: ''};
@@ -1055,6 +1183,8 @@ var policy = function() {
         type: type,
         trigger: trigger,
         trigger_period: trigger_period,
+        trigger_date: trigger_date,
+        dateString: dateString,
         sources: sources,
         targets: targets};
     return policyObj;
@@ -1064,7 +1194,8 @@ var policy = function() {
 dpmApp.factory('policy', policy);
 
 function pristineFlags() {
-    var action = {action: true, type: true, trigger: true, period: true};
+    var action = {action: true, type: true, trigger: true, period: true,
+      trigger_date: true, period_date: true};
     var targets = new Array({organisation: true, location_type: true,
       system: true, site: true, resource: true, coll: true, pid: true});
     var sources = new Array({organisation: true, location_type: true,

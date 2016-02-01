@@ -40,6 +40,7 @@ def create_tables(conn, cfg, dbtype):
         cur.execute(cfg.get("CREATE", "type"))
         cur.execute(cfg.get("CREATE", "persistentid"))
         cur.execute(cfg.get("CREATE", "organisation"))
+        cur.execute(cfg.get("CREATE", "trigger_date"))
     elif dbtype == 'profile':
         cur.execute(cfg.get("CREATE", "dpm_page"))
         cur.execute(cfg.get("CREATE", "roles"))
@@ -91,8 +92,14 @@ def get_next_actions_indexes(conn, cfg):
     next_indexes = {}
     next_indexes['type'] = 0
     next_indexes['trigger'] = 0
+    next_indexes['trigger_date'] = 0
     next_indexes['persistentid'] = 0
     next_indexes['organisation'] = 0
+
+    cur.execute(cfg.get("QUERY", "max_trigger_date"))
+    max_trigger_date = cur.fetchall()
+    if len(max_trigger_date) > 0:
+        next_indexes['trigger_date'] = max_trigger_date[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_trigger"))
     max_triggers = cur.fetchall()
@@ -105,9 +112,9 @@ def get_next_actions_indexes(conn, cfg):
         next_indexes['type'] = max_type[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_persistentid"))
-    max_persistentID = cur.fetchall()
-    if len(max_persistentID) > 0:
-        next_indexes['persistentid'] = max_persistentID[0][0] + 1
+    max_persistent_id = cur.fetchall()
+    if len(max_persistent_id) > 0:
+        next_indexes['persistentid'] = max_persistent_id[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_organisation"))
     max_organisation = cur.fetchall()
@@ -278,7 +285,7 @@ def fill_resource(conn, config, next_indexes, data):
 def fill_table(cur, config, table, idx, val, *values):
     '''Fill the table
     '''
-    insertOK = False
+    insert_ok = False
     cur.execute(config.get("QUERY", table), (val,))
     vals = cur.fetchall()
     if len(vals) == 0:
@@ -291,12 +298,12 @@ def fill_table(cur, config, table, idx, val, *values):
             params.append(val)
             params = params + list(values)
             cur.execute(config.get("INSERT", table), params)
-        insertOK = True
+        insert_ok = True
         idx += 1
     else:
         idx = int(vals[0][0]) + 1
 
-    return (insertOK, idx)
+    return (insert_ok, idx)
 
 
 def fill_profile(conn, config, next_indexes, data):
@@ -362,6 +369,9 @@ def fill_action(conn, config, next_indexes, data):
 
     # Fill the action trigger table from the ascii file
     for row in file(data['action_trigger_data'], 'r'):
+        if ('##' in row):
+            print 'we are skipping row ', row
+            continue
         atrigger = row.strip()
         atrigger_IOK, atrigger_count = fill_table(cur, config,
                                                   "trigger",
@@ -370,6 +380,22 @@ def fill_action(conn, config, next_indexes, data):
         if atrigger_IOK:
             next_indexes['trigger'] = atrigger_count
 
+    conn.commit()
+
+    # Fill the action date table from the ascii file
+    cur = conn.cursor()
+    for row in file(data['action_date_data'], 'r'):
+        entries = row.split('|')
+        if len(entries) == 2:
+            adate = entries[0].strip()
+            avalue = entries[1].strip()
+        else:
+            adate = entries[0].strip()
+        adate_IOK, adate_count = fill_table(cur, config, "trigger_date",
+                                            next_indexes["trigger_date"],
+                                            adate, avalue)
+        if adate_IOK:
+            next_indexes['trigger_date'] = adate_count
     conn.commit()
 
     # Now do the organisation and persistent id tables
@@ -904,6 +930,7 @@ if __name__ == '__main__':
             data_tag.append("%s_action_data" % dbase.strip())
             data_tag.append("%s_trigger_data" % dbase.strip())
             data_tag.append("%s_org_data" % dbase.strip())
+            data_tag.append("%s_date_data" % dbase.strip())
         elif dbase == 'profile':
             data_tag.append("%s_community" % dbase.strip())
             data_tag.append("%s_page" % dbase.strip())

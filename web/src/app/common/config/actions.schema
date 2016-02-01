@@ -3,19 +3,23 @@ trigger=create table if not exists trigger(id int, name text)
 type=create table if not exists type (id int, name text)
 persistentid=create table if not exists persistentID(id int, name text)
 organisation=create table if not exists organisation(id int, name text)
+trigger_date=create table if not exists trigger_date(id int, name text, value text)
 
 [INSERT]
 trigger=insert into trigger values(?, ?)
 type=insert into type values(?, ?)
 persistentid=insert into persistentID values(?, ?)
 organisation=insert into organisation values(?, ?)
+trigger_date=insert into trigger_date values(?,?,?)
 
 [QUERY]
 max_trigger=select id from trigger order by id desc limit 1
 max_type=select id from type order by id desc limit 1
 max_persistentid=select id from persistentID order by id desc limit 1
 max_organisation=select id from organisation order by id desc limit 1
+max_trigger_date=select id from trigger_date order by id desc limit 1
 trigger=select id, name from trigger where name=?
 type=select id, name from type where name=?
 persistentid=select id, name from persistentID where name=?
 organisation=select id, name from organisation where name=?
+trigger_date=select id, name, value from trigger_date where name=?
