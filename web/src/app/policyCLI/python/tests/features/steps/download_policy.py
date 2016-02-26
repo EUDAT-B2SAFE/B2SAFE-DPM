@@ -7,9 +7,6 @@ import wsgi.policy_server
 
 @behave.given('a valid user submits a valid policy identifier')
 def step_impl(context):
-    flask_app = wsgi.policy_server.app.test_client()
-    context.flask_app = flask_app
-
     policy_file = os.path.join(context.env_dir, 'policy.txt')
     with file(policy_file, 'r') as fin:
         data = fin.read(-1)

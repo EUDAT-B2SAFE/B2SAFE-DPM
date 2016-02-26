@@ -13,10 +13,10 @@ removed=policy_removed
 [LOG_SCHEMA]
 state=log_state
 timestamp=log_timestamp
-center=log_center
-hash=log_hash
-id=log_policy_uuid
-community=log_community
+hostname=log_hostname
+comment=log_comment
+identifier=log_policy_identifier
+last_index=log_last_index
 
 [ACTIONS_SCHEMA]
 type=action_type
@@ -49,7 +49,7 @@ allowed_states=QUEUED, RUNNING, FAILED, FINISHED
 
 [DATABASE]
 name=${CGI_PATH}/data/policy.db
-fetch_string=${CLI_URL}/fetch_policy.py?policy_id
+fetch_string=${CLI_URL}/getPolicy?identifier
 default_visible=policy_name, policy_author, policy_ctime, policy_community
 skip_keys=policy_object
 last_index=last_index

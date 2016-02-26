@@ -528,11 +528,8 @@ def read_input(local_cfg):
         else:
             break
 
-    if len(old_cfg['cli_url']) == 0:
-        old_cfg['cli_url'] = "%s-cli" % cgi_url
-
     while 1:
-        print "Base URI for the CLI scripts: [%s]" % old_cfg['cli_url']
+        print "Base URI for the REST API: [%s]" % old_cfg['cli_url']
         cli_url = raw_input()
         if cli_url == 'q':
             sys.exit()

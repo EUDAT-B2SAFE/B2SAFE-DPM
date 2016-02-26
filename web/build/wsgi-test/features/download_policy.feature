@@ -1,6 +1,6 @@
 Feature: Download a policy
 
-  Scenario: User Downloads a valid policy
+  Scenario: User downloads a valid policy
     Given a valid user submits a valid policy identifier
     Then the user gets a "200" response
     Then the user receives the policy object that matches the identifier
