@@ -7,7 +7,7 @@ from lxml import etree
 from Policy import Policy
 
 """
- ReplicationPolicy Class 
+ ReplicationPolicy Class
  see https://github.com/EUDAT-B2SAFE/B2SAFE-DPM/tree/master/schema
 """
 class ReplicationPolicy(Policy):
@@ -22,7 +22,7 @@ class ReplicationPolicy(Policy):
         if debug:
             self.logger.setLevel(logging.DEBUG)
         else:
-            self.logger.setLevel(logging.INFO)        
+            self.logger.setLevel(logging.INFO)
         self.debug = debug
 
         Policy.__init__(self, element, ns, loggerName, debug)
@@ -46,7 +46,7 @@ class ReplicationPolicy(Policy):
         self.parseActions(self.root.findall(self.ns+'actions'))
 
     def parseDataSets(self, datasets):
-  
+
         self.logger.debug('Parsing the policy datasets')
         if datasets == None:
             print('No datasets found')
@@ -67,7 +67,7 @@ class ReplicationPolicy(Policy):
 
 
 """
- Dataset Class 
+ Dataset Class
  Parses the list of data sets
 """
 class Dataset():
@@ -97,7 +97,7 @@ class Dataset():
 
 
 """
- Collection Class 
+ Collection Class
  Parses a single collection location
 """
 class Collection():
@@ -111,7 +111,7 @@ class Collection():
         if debug:
             self.logger.setLevel(logging.DEBUG)
         else:
-            self.logger.setLevel(logging.INFO)        
+            self.logger.setLevel(logging.INFO)
 
         self.id = element.get('id').strip()
         self.logger.debug('Got collection id: ' + self.id)
@@ -120,7 +120,7 @@ class Collection():
         if pid:
             self.type = pid[0].get('type').strip()
             self.value = pid[0].text.strip()
-            self.logger.debug('Got pid type %s and value %s', self.type, 
+            self.logger.debug('Got pid type %s and value %s', self.type,
                                                               self.value)
         #process location
         location = element.findall(ns+'location')
@@ -129,7 +129,7 @@ class Collection():
             loc = Location(element, ns, loggerName, debug)
             self.value = loc.location.path
             self.locTriplet = '[%s, %s, %s]' % (loc.location.site,
-                                                loc.location.path, 
+                                                loc.location.path,
                                                 loc.location.resource)
             self.logger.debug('Got path %s', self.locTriplet)
 
@@ -158,8 +158,14 @@ class Action():
         self.targets = []
         self.sources = []
 
-        self.name = element.get('name').strip()
-        self.type = element.findall(ns+'type')[0].text.strip()
+        self.name = element.get('name')
+        if self.name is not None:
+            self.name = self.name.strip()
+
+        self.type = element.findall(ns+'type')[0].text
+        if self.type is not None:
+            self.type = self.type.strip()
+
         self.trigger = None
         if len(element.findall(ns+'trigger/'+ns+'action')) > 0:
             self.trigger = element.findall(ns+'trigger/'+ns+'action')[0].text.strip()
@@ -170,7 +176,7 @@ class Action():
         elif len(element.findall(ns+'trigger/'+ns+'runonce')) > 0:
             self.triggerType = 'runonce'
         else:
-            logger.error('Unkown trigger')        
+            logger.error('Unkown trigger')
 
         #Process sources
         for source in element.findall(ns+'sources/'+ns+'source'):
@@ -244,7 +250,7 @@ class IrodsLocation:
         if debug:
             self.logger.setLevel(logging.DEBUG)
         else:
-            self.logger.setLevel(logging.INFO)        
+            self.logger.setLevel(logging.INFO)
 
         self.dpmIrodsns = '{http://eudat.eu/2013/iRODS-policy}'
         self.site = element.findall(self.dpmIrodsns+'site')[0].text.strip()
@@ -256,8 +262,10 @@ class IrodsLocation:
         if resElements == None or len(resElements) <= 0:
             self.resource = None
         else:
-            self.resource = resElements[0].text.strip()
+            if resElements[0].text is None:
+                self.resource = None
+            else:
+                self.resource = resElements[0].text.strip()
 
-        self.logger.debug('Got iRODS path %s and resource %s', self.path, 
+        self.logger.debug('Got iRODS path %s and resource %s', self.path,
                                                                self.resource)
-

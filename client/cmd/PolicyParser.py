@@ -1,16 +1,16 @@
 __author__ = 'Willem Elbers (MPI-TLA) <willem.elbers@mpi.nl>, \
               Claudio Cacciari (Cineca) <c.cacciari@cineca.it>'
-
+import json
+import hashlib
 import logging
 import logging.handlers
-import urllib2
 from lxml import etree
+import urllib2
 from ReplicationPolicy import *
-import hashlib
 
 
 """
- PolicyParser Class 
+ PolicyParser Class
  Class which manages the parsing of all the policy elements
 """
 class PolicyParser():
@@ -34,7 +34,7 @@ class PolicyParser():
         self.policy = None
 
     def parseXmlSchemaFromUrl(self, url):
- 
+
         self.logger.debug('Parsing xml schema from url ' + url)
         response = urllib2.urlopen(url)
         xmlData = response.read()
@@ -69,7 +69,7 @@ class PolicyParser():
             if errorMessage.startswith("Element '{http://eudat.eu/2013/policy}time'"):
                 self.timeErrorManager(root, xmlschema)
             else:
-                exit()            
+                exit()
         self.parse(root)
 
     def parseFromFile(self, file, xmlSchemaDoc):
@@ -97,7 +97,10 @@ class PolicyParser():
 
         self.logger.debug('Getting xml doc from url ' + url)
         response = urllib2.urlopen(url)
-        xmlData = response.read()
+        response_data = response.read()
+        data = json.loads(response_data)
+        xmlData = data["policy"]
+        self.logger.debug("xmlData is %s" % xmlData)
 
         #Decide if checksum verification is needed and if yes, compute the checksum for the downloaded policy
         checksumVerificationNeeded = not checksum_algo == None
@@ -109,6 +112,8 @@ class PolicyParser():
                 self.logger.debug('md5')
                 newChecksumValue = hashlib.md5(xmlData).hexdigest()
                 checksumVerified = newChecksumValue == checksum_value
+                self.logger.debug('checksum computed %s read %s' % \
+                  (newChecksumValue, checksum_value))
 
         #Parse the policy if checksum verification is needed
         self.logger.debug('Checksum verification: ')
