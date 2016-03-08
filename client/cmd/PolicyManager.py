@@ -150,11 +150,11 @@ def queryDpm(args, config, begin_date=None, end_date=None):
         _json = json.loads(json_data)
         logger.info('Found %d policies' % (len(_json)))
         for entry in _json:
-            logger.info('entry %s' % entry['identifier'])
+            logger.info('entry %s' % entry)
             url = entry['identifier']
             ts = int(entry['ctime'])
             checksum_value = entry['checksum']
-            checksum_algo = str(entry[3])
+            checksum_algo = entry["checksum_type"]
 
             if not url.endswith('.html'):
                 logger.info('Processing policy: %s [%s, %s, %s]', url, ts,
