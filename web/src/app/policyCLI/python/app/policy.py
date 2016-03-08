@@ -1,7 +1,6 @@
 '''Module to interact with policies stored in the database'''
 import sqlite3
 import json
-import time
 import common
 
 def get_policy_objects(cfg, indexes):
@@ -54,20 +53,20 @@ def get_indexes(config, search_params=None, log_flag=False):
                               "data"],
                    "community": ["policy_community_",
                                  "value = ? and key like '%s%%'", "data"],
-                    "source_hostname": ["src_hostname_",
-                                        "value = ? and key like '%s%%'", "data"],
-                    "target_hostname": ["tgt_hostname_",
-                                        "value = ? and key like '%s%%'", "data"],
-                    "action": ["action_type_",
-                               "value = ? and key like '%s%%'", "data"],
-                    "source_identifier": ["src_identifier_",
-                                          "value = ? and key like '%s%%'",
-                                          "data"],
-                    "target_identifier": ["tgt_identifier_",
-                                          "value = ? and key like '%s%%'",
-                                          "data"],
-                    "author": ["policy_author_",
-                               "value = ? and key like '%s%%'", "data"]}
+                   "source_hostname": ["src_hostname_",
+                                       "value = ? and key like '%s%%'", "data"],
+                   "target_hostname": ["tgt_hostname_",
+                                       "value = ? and key like '%s%%'", "data"],
+                   "action": ["action_type_",
+                              "value = ? and key like '%s%%'", "data"],
+                   "source_identifier": ["src_identifier_",
+                                         "value = ? and key like '%s%%'",
+                                         "data"],
+                   "target_identifier": ["tgt_identifier_",
+                                         "value = ? and key like '%s%%'",
+                                         "data"],
+                   "author": ["policy_author_",
+                              "value = ? and key like '%s%%'", "data"]}
 
     indexes = common.find_indexes(config, search_keys, search_params)
 
@@ -138,7 +137,7 @@ def get_policy_md5(cfg, key):
 def download(identifier, config):
     '''get the policy from the database and send to the user'''
     dbfile = None
-    response = json.dumps({})
+    response = json.dumps({}), 400
     # Open the database
     dbfile = config.get('DATABASE', 'name').strip()
     if not dbfile:
@@ -154,7 +153,7 @@ def download(identifier, config):
         # create the JSON and send to the user
         json_policy = {'policy': policy, 'md5': policy_md5,
                        'identifier': identifier}
-        response = json.dumps(json_policy)
+        response = json.dumps(json_policy), 200
     return response
 
 def search(params, config):
