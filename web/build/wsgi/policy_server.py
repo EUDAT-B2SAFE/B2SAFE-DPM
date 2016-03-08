@@ -11,7 +11,7 @@ CONFIG_OBJECT = common.get_config()
 policy_app = flask.Flask(__name__)
 policy_app.config.from_object(__name__)
 
-@policy_app.route('/getPolicy')
+@policy_app.route('/policy')
 def get_policy():
     '''Get the policy for the given identifier'''
     response = "Unrecognised request", 400
