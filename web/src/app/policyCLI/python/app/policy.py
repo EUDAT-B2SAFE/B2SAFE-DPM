@@ -25,6 +25,10 @@ def get_policy_objects(cfg, indexes):
                     (cfg.get("DATABASE", "fetch_string"), results[0][0])
                 else:
                     policy_object[policy_keys[key]] = results[0][0]
+
+        # This is currently a hack as we don't store the checksum type in the
+        # database. Adil Hasan 8/Mar/16
+        policy_object["checksum_type"] = "md5"
         policy_objects.append(policy_object)
 
     return policy_objects
@@ -151,7 +155,8 @@ def download(identifier, config):
         policy_md5 = get_policy_md5(config, policy_md5_key)
 
         # create the JSON and send to the user
-        json_policy = {'policy': policy, 'md5': policy_md5,
+        json_policy = {'policy': policy, 'checksum': policy_md5,
+                       'checksum_type': 'md5',
                        'identifier': identifier}
         response = json.dumps(json_policy), 200
     return response

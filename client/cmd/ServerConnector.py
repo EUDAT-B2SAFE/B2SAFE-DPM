@@ -51,24 +51,25 @@ class ServerConnector:
 
         # Upload information
         opened = urllib2.install_opener(self.myopener)
-        data = urllib.urlencode({'id': policyId, 
-                                 'state': state, 
-                                 'timestamp': timestamp, 
-                                 'center': 
+        data = urllib.urlencode({'id': policyId,
+                                 'state': state,
+                                 'timestamp': timestamp,
+                                 'center':
                                      self.config.SectionMap('Center')['id'],
-                                 'community': 
+                                 'community':
                                      self.config.SectionMap('Community')['id']})
         self.logger.debug('url:' + url + ', data: ' + data)
         req = urllib2.Request(url=url, data=data)
         response = urllib2.urlopen(req).read()
-        return response 
+        return response
 
 
     def listPolicies(self, begin_date=None, end_date=None):
-        
-        url = '%s://%s%s?community_id=%s&site=%s' % \
+
+        url = '%s://%s:%s%s?community_id=%s&site=%s' % \
                  (self.config.SectionMap('DpmServer')['scheme'],
                   self.config.SectionMap('DpmServer')['hostname'],
+                  self.config.SectionMap('DpmServer')['port'],
                   self.config.SectionMap('DpmServer')['path'],
                   self.config.SectionMap('Community')['id'],
                   self.config.SectionMap('Center')['id'])

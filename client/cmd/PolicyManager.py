@@ -8,7 +8,7 @@ import argparse
 import urllib2
 import json
 import logging
-import logging.handlers 
+import logging.handlers
 import os
 import glob
 from crontab import CronTab
@@ -44,7 +44,7 @@ def parseFromFile(args):
     setLoggingSystem(config, debug)
     logger.info('Getting the policies via file %s', policypath)
     mapFilename = config.SectionMap('AccountMapping')['file']
-    usermap = loadUserMap(mapFilename)  
+    usermap = loadUserMap(mapFilename)
     pParser = PolicyParser(None, test, 'PolicyManager', debug)
     xmlSchemaDoc = pParser.parseXmlSchema(None, schemapath)
     pParser.parseFromFile(policypath, xmlSchemaDoc)
@@ -119,9 +119,10 @@ def queryDpm(args, config, begin_date=None, end_date=None):
     username = config.SectionMap('DpmServer')['username']
     password = config.SectionMap('DpmServer')['password']
     server = config.SectionMap('DpmServer')['hostname']
-    url = '%s://%s%s?community_id=%s&site=%s' % \
+    url = '%s://%s:%s%s?community=%s&site=%s' % \
           (config.SectionMap('DpmServer')['scheme'],
            config.SectionMap('DpmServer')['hostname'],
+           config.SectionMap('DpmServer')['port'],
            config.SectionMap('DpmServer')['path'],
            config.SectionMap('Community')['id'],
            config.SectionMap('Center')['id'])
@@ -149,13 +150,14 @@ def queryDpm(args, config, begin_date=None, end_date=None):
         _json = json.loads(json_data)
         logger.info('Found %d policies' % (len(_json)))
         for entry in _json:
-            url = str(entry[0])
-            ts = entry[1]
-            checksum_value = str(entry[2])
+            logger.info('entry %s' % entry['identifier'])
+            url = entry['identifier']
+            ts = int(entry['ctime'])
+            checksum_value = entry['checksum']
             checksum_algo = str(entry[3])
 
             if not url.endswith('.html'):
-                logger.info('Processing policy: %s [%s, %s, %s]', url, ts, 
+                logger.info('Processing policy: %s [%s, %s, %s]', url, ts,
                             checksum_value, checksum_algo)
                 pParser = PolicyParser(None, args.test, 'PolicyManager', args.verbose)
                 xmlSchemaDoc = pParser.parseXmlSchema(args.schemaurl, args.schemapath)
@@ -171,11 +173,11 @@ def updatePolicyStatus(args):
     """
     Update the status of all the policies in the central DB
     """
-    
+
     debug = args.verbose
     config = ConfigLoader(args.config)
     setLoggingSystem(config, debug)
-    logger.info('Start to update the status of the policies') 
+    logger.info('Start to update the status of the policies')
     loggerName = 'PolicyManager'
     conn = ServerConnector(args.config, args.test, loggerName, debug)
     policies = conn.listPolicies()
@@ -203,7 +205,7 @@ def getPolicyStatus(id, debug):
     """
     Get the status of a policy [QUEUED, RUNNING, DONE, FAILED]
     """
- 
+
     rulePath = os.path.join(os.path.dirname(sys.path[0]), 'rules')
     ruleFiles = glob.glob(rulePath +'/replicate.' + id + '*')
     resPath = os.path.join(os.path.dirname(sys.path[0]), 'output')
@@ -230,9 +232,9 @@ def setLoggingSystem(config, debug):
     ll = {'INFO': logging.INFO, 'DEBUG': logging.DEBUG, \
           'ERROR': logging.ERROR, 'WARNING': logging.WARNING}
     logger.setLevel(ll[loglevel])
-    if (debug): 
+    if (debug):
         logger.setLevel(logging.DEBUG)
-    rfh = logging.handlers.RotatingFileHandler(logfilepath, 
+    rfh = logging.handlers.RotatingFileHandler(logfilepath,
                                                maxBytes=6000000,
                                                backupCount=9)
     formatter = logging.Formatter('%(asctime)s %(levelname)s: '
@@ -245,16 +247,16 @@ def main():
     argp = argparse.ArgumentParser(description="EUDAT Data Policy Manager (DPM) client")
     argp.add_argument('-T', '--type', choices=['periodic', 'hook', 'cli'], required=True,
                         help='Specify if this invokation is triggered periodic or via an irods hook')
-    argp.add_argument('-t', '--test', action='store_true', required=False, 
+    argp.add_argument('-t', '--test', action='store_true', required=False,
                         help='Test the DPM client (does not trigger an actual replication)')
-    argp.add_argument('-v', '--verbose', action='store_true', required=False, 
+    argp.add_argument('-v', '--verbose', action='store_true', required=False,
                         help='Run the DPM client in verbose mode')
     argp.add_argument('-c', '--config', required=True, help='Path to config.ini')
     group = argp.add_mutually_exclusive_group(required=True)
     group.add_argument('-su', '--schemaurl', help='The policy schema URL', nargs=1)
     group.add_argument('-sp', '--schemapath', help='Path to the policy schema file', nargs=1)
-    
-    subparsers = argp.add_subparsers(help='sub-command help')    
+
+    subparsers = argp.add_subparsers(help='sub-command help')
     parser_url = subparsers.add_parser('http', help='Fetch policy over http')
     parser_url.set_defaults(func=parseOverHttp)
 
