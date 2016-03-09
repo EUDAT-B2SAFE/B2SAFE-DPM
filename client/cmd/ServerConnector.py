@@ -41,9 +41,10 @@ class ServerConnector:
     def updateStatus(self, policyId, state):
 
         self.logger.info('uploading the policy status')
-        url = '%s://%s%s' % \
+        url = '%s://%s:%s%s' % \
               (self.config.SectionMap('DpmServer')['scheme'],
                self.config.SectionMap('DpmServer')['hostname'],
+               self.config.SectionMap('DpmServer')['port'],
                self.config.SectionMap('DpmServer')['uploadpath'])
 
         #Get the current UNIX timestamp
@@ -51,22 +52,22 @@ class ServerConnector:
 
         # Upload information
         opened = urllib2.install_opener(self.myopener)
-        data = urllib.urlencode({'id': policyId,
-                                 'state': state,
-                                 'timestamp': timestamp,
-                                 'center':
-                                     self.config.SectionMap('Center')['id'],
-                                 'community':
-                                     self.config.SectionMap('Community')['id']})
-        self.logger.debug('url:' + url + ', data: ' + data)
-        req = urllib2.Request(url=url, data=data)
+        data = [{"identifier": policyId,
+                                 "state": state,
+                                 "timestamp": "%s" % timestamp,
+                                 "hostname":
+                                     self.config.SectionMap('Center')['id']}]
+        self.logger.debug('url:' + url + ', data: %s' % data)
+        req = urllib2.Request(url=url, data=json.dumps(data),
+                              headers={'Content-Type': 'application/json'})
         response = urllib2.urlopen(req).read()
+        self.logger.debug('response is %s ' % response)
         return response
 
 
     def listPolicies(self, begin_date=None, end_date=None):
 
-        url = '%s://%s:%s%s?community_id=%s&site=%s' % \
+        url = '%s://%s:%s%s?community=%s&site=%s' % \
                  (self.config.SectionMap('DpmServer')['scheme'],
                   self.config.SectionMap('DpmServer')['hostname'],
                   self.config.SectionMap('DpmServer')['port'],

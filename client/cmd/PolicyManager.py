@@ -183,10 +183,11 @@ def updatePolicyStatus(args):
     policies = conn.listPolicies()
     if policies is not None:
         for entry in policies:
-            url = str(entry[0])
-            ts = entry[1]
-            checksum_value = str(entry[2])
-            checksum_algo = str(entry[3])
+            logger.debug('entry %s' % type(entry))
+            url = str(entry['identifier'])
+            ts = int(entry['ctime'])
+            checksum_value = str(entry['checksum'])
+            checksum_algo = str(entry['checksum_type'])
 
             if not url.endswith('.html'):
                 logger.info('Processing policy: %s [%s, %s, %s]', url, ts,

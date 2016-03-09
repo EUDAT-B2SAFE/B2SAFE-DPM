@@ -58,8 +58,15 @@ def store_last_index(cur, cfg, idx, log_idx):
     '''Store the last log index'''
     last_log_index = int(log_idx) + 1
     db_key = "%s_%s" % (cfg.get("LOG_SCHEMA", "last_index"), idx)
-    cur.execute("insert into policies(key,value) values(?,?)",
-                (db_key, last_log_index))
+    cur.execute("select key from policies where key = ?",
+                (db_key,))
+    results = cur.fetchall()
+    if len(results) == 1:
+        cur.execute("update policies set ? = ?",
+                    (db_key, last_log_index))
+    else:
+        cur.execute("insert into policies(key,value) values(?,?)",
+                    (db_key, last_log_index))
 
 def load_db(config, log_document):
     '''Load the log document into the database'''
@@ -87,12 +94,12 @@ def fetch_log_document(cfg, log_doc, idx, log_idx):
     conn = sqlite3.connect(cfg.get("DATABASE", "name"))
     cursor = conn.cursor()
     for key, db_key in cfg.items("LOG_SCHEMA"):
-        if (key in log_doc):
+        if key in log_doc:
             db_key = "%s_%s_%s" % (db_key, log_idx, idx)
             cursor.execute("select value from policies where key = ?",
                            (db_key,))
             results = cursor.fetchall()
-            if (len(results) == 1):
+            if len(results) == 1:
                 out_doc[key] = results[0][0]
     return out_doc
 
