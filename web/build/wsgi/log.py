@@ -63,8 +63,8 @@ def store_last_index(cur, cfg, idx, log_idx):
                 (db_key,))
     results = cur.fetchall()
     if len(results) == 1:
-        cur.execute("update policies set ? = ?",
-                    (db_key, last_log_index))
+        cur.execute("update policies set value = ?",
+                    (last_log_index, db_key))
     else:
         cur.execute("insert into policies(key,value) values(?,?)",
                     (db_key, last_log_index))
