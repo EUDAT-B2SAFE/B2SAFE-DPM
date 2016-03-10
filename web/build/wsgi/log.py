@@ -15,7 +15,8 @@ def check_schema(config, log_document):
             break
     if schema_ok:
         for key in schema_keys:
-            if key == "last_index": continue
+            if key == "last_index":
+                continue
             if key not in log_document and key != "comment":
                 schema_ok = False
                 break
@@ -37,7 +38,7 @@ def get_identifier_index(cur, iden):
     cur.execute('''select key from policies where key like 'policy_id_%' and
                    value = ?''', (iden,))
     results = cur.fetchall()
-    if (len(results) == 1):
+    if len(results) == 1:
         index = results[0][0].split("_")[-1]
     return index
 
@@ -48,9 +49,9 @@ def get_last_log_index(cur, cfg, idx):
     cur.execute("select value from policies where key = ?",
                 (last_index,))
     results = cur.fetchall()
-    if (len(results) == 1):
+    if len(results) == 1:
         last_log = results[0][0]
-    elif (len(results) == 0):
+    elif len(results) == 0:
         last_log = 0
     return last_log
 
@@ -79,7 +80,7 @@ def load_db(config, log_document):
 
     for key, db_key in config.items("LOG_SCHEMA"):
         db_key = "%s_%s_%s" % (db_key, last_log_index, index)
-        if (key in log_document):
+        if key in log_document:
             cursor.execute("insert into policies(key, value) values (?,?)",
                            (db_key, log_document[key]))
     store_last_index(cursor, config, index, last_log_index)
