@@ -87,6 +87,7 @@ def load_db(config, log_document):
     conn.commit()
     stored_log_doc = fetch_log_document(config, log_document, index,
                                         last_log_index)
+    print "done loading the doc ", stored_log_doc
     return stored_log_doc
 
 def fetch_log_document(cfg, log_doc, idx, log_idx):
@@ -127,8 +128,11 @@ def upload(cfg, log_documents):
     if type(log_documents) == str:
         log_documents = [log_documents]
 
+    print "log_documents ", log_documents
+
     for log_document in log_documents:
         is_valid = check_schema(cfg, log_document)
+        print "is valid ", is_valid
         if not is_valid:
             data = []
             message["error"] = "JSON does not conform to schema"
