@@ -30,7 +30,7 @@ class PolicyRunner:
         self.debug = debug
         self.iruleCmd = '/usr/bin/irule'
         self.crontab  = CronTab(user=True)
-        
+
 
     def runPolicy(self, policy):
         """
@@ -48,12 +48,12 @@ class PolicyRunner:
             Process all collections with the selected action(s)
             """
             a_id += 1
-            c_id = 0 
+            c_id = 0
             for collection in policy.dataset.collections:
-                c_id += 1 
+                c_id += 1
                 t_id = 0
                 for target in action.targets:
-                    t_id += 1 
+                    t_id += 1
                     rulePath = '%s/replicate.%s_%s_%s_%s.r' % (path, policyId, a_id, c_id, t_id)
                     if self.test:
                         rulePath = '%s/replicate_test.%s_%s_%s_%s.r' % (path, policyId, a_id, c_id, t_id)
@@ -81,12 +81,12 @@ class PolicyRunner:
     def createAndRunRule(self, policyId, action, collection, target, author, rulePath, jobId):
         """
         Create a rule file and run it
-        """     
+        """
         self.logger.info('Generating rule')
         self.generateRule(rulePath, collection.value, target.location.path, target.location.resource, policyId)
         path = os.path.join(os.path.dirname(sys.path[0]), 'output')
         resultPath = path + '/response.' + jobId + '.json'
-       
+
         if action.triggerType == 'runonce':
             self.logger.info('Executing the rule just one time')
             result = self.executeRule(author, rulePath)
@@ -120,7 +120,7 @@ class PolicyRunner:
         if not self.test:
             d = dict(os.environ)
             d['clientUserName'] = author
-            proc = subprocess.Popen([self.iruleCmd+' -F '+rulePath], env=d, 
+            proc = subprocess.Popen([self.iruleCmd+' -F '+rulePath], env=d,
                                     stdout=subprocess.PIPE, shell=True)
             output, err = proc.communicate()
             rc = proc.poll()
@@ -130,9 +130,9 @@ class PolicyRunner:
                 self.logger.info('Command executed')
         else:
             self.logger.info('skipped in test mode')
- 
+
         return output
-        
+
 
     def generateRule(self, ruleFilePath, collection, path, resource, id):
         f = open(ruleFilePath,'w')
@@ -144,14 +144,15 @@ class PolicyRunner:
         f.write('\tlogInfo(*policyId);\n')
         f.write('\t*recursive = bool("true");\n')
         f.write('\t*registered = bool("true");\n')
-        f.write('\t*result = EUDATReplication(*sourceNode, *destRootCollection,' 
+        f.write('\t*result = EUDATReplication(*sourceNode, *destRootCollection,'
               + '*registered, *recursive, *response);\n')
         f.write('\twriteLine("serverLog","Generated replication for policy '
               + '[*policyId]");\n')
         outputMsg = "{'policyId':'*policyId', 'result':'*result', 'response':'*response'}"
         f.write('\twriteLine("stdout", "' + outputMsg + '");\n')
         f.write('}\n')
-        f.write('INPUT *sourceNode="%s",*destRootCollection="%s",*destResource="%s",\
-                *policyId="%s"\n' % (collection, path, resource, id))
+
+        outString = 'INPUT *sourceNode="%s",*destRootCollection="%s",*destResource="%s",*policyId="%s"\n'
+        f.write(outString % (collection, path, resource, id))
         f.write('OUTPUT ruleExecOut\n')
         f.close()

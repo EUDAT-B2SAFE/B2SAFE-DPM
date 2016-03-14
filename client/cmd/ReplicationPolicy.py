@@ -260,10 +260,10 @@ class IrodsLocation:
             self.path = ''
         resElements = element.findall(self.dpmIrodsns+'resource')
         if resElements == None or len(resElements) <= 0:
-            self.resource = None
+            self.resource = ''
         else:
             if resElements[0].text is None:
-                self.resource = None
+                self.resource = ''
             else:
                 self.resource = resElements[0].text.strip()
 
