@@ -167,7 +167,8 @@ def download(communities, identifier, config):
         response = "Server database error", 500
         return response
 
-    policy_key, policy_md5_key = get_policy_keys(config, communities, identifier)
+    policy_key, policy_md5_key = get_policy_keys(config, identifier,
+                                                 communities)
 
     if len(policy_key) != 0 and len(policy_md5_key) != 0:
         policy = get_policy(config, policy_key)

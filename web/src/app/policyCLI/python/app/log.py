@@ -149,14 +149,14 @@ def check_allowed(identifier, communities, config):
     conn = sqlite3.connect(config.get("DATABASE", "name"))
     cursor = conn.cursor()
     cursor.execute('''select key from policies where key like 'policy_id_%'
-                      value = ?''', (identifier))
+                      and value = ?''', (identifier,))
     results = cursor.fetchall()
     if len(results) == 1:
         index = results[0][0].split("_")[-1]
         community_key = "%s_%s" % (config.get("POLICY_SCHEMA", "community"),
                                    index)
         cursor.execute("select value from policies where key = ?",
-                       (community_key))
+                       (community_key,))
         res = cursor.fetchall()
         if len(res) == 1:
             if res[0][0] in communities:

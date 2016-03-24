@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import time
 import json
 import flask
 import flask.ext.httpauth
@@ -32,12 +33,23 @@ def verify_password(user_id, password):
     flask.g.user_acct = user_acct
     return True
 
+@policy_app.route('/')
+@auth.login_required
+def root_url():
+    return ""
+
 @policy_app.route('/token')
 @auth.login_required
 def get_auth_token():
     '''Get the token for authorised users'''
-    response = user.generate_auth_token(flask.g.user_acct["name"], 600)
-    return flask.jsonify({'token': response.decode('ascii')})
+    expiry = 600
+    utc_time = time.gmtime()
+    response = user.generate_auth_token(flask.g.user_acct["name"], expiry)
+    json_output = {}
+    json_output['token'] =  response.decode('ascii')
+    json_output['created'] = time.strftime("%Y-%m-%dT%H:%M:%SZ", utc_time)
+    json_output['expiry'] = expiry
+    return flask.jsonify(json_output)
 
 
 @policy_app.route('/policy')

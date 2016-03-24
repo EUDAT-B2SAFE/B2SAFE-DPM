@@ -536,6 +536,8 @@ def read_input(local_cfg):
         elif len(cli_url) == 0:
             cli_url = old_cfg['cli_url']
             break
+        else:
+            break
 
     while 1:
         print "Authentication method type: 1=AAI, 2=Standalone [%s]:" %\

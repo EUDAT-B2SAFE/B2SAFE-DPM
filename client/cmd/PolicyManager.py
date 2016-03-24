@@ -82,7 +82,7 @@ def cleanScheduledPolicies(args):
         logger.debug('checking job command: %s', job.command)
         if job.command.startswith("export clientUserName") \
         and 'irule' in job.command:
-            if (args.all):
+            if args.all:
                 jobList.append(job)
             else:
                 logger.debug('checking if the job is expired')
@@ -116,9 +116,11 @@ def runPolicy(policy, usermap, test, loggerName, debug):
 def queryDpm(args, config, begin_date=None, end_date=None):
 
     #load properties from configuration
-    username = config.SectionMap('DpmServer')['username']
-    password = config.SectionMap('DpmServer')['password']
-    server = config.SectionMap('DpmServer')['hostname']
+    with open(config.SectionMap('DpmServer')['tokenfile'], 'r') as fin:
+        token_map = json.loads(fin.read())
+        fin.close()
+    username = token_map['token']
+    password = ''
     url = '%s://%s:%s%s?community=%s&site=%s' % \
           (config.SectionMap('DpmServer')['scheme'],
            config.SectionMap('DpmServer')['hostname'],
@@ -136,10 +138,10 @@ def queryDpm(args, config, begin_date=None, end_date=None):
     #start interaction with DPM server
     logger.info('Listing policies [%s]' % url)
     authinfo = urllib2.HTTPPasswordMgrWithDefaultRealm()
-    authinfo.add_password(None, server, username, password)
+    authinfo.add_password(None, url, username, password)
     handler = urllib2.HTTPBasicAuthHandler(authinfo)
     myopener = urllib2.build_opener(handler)
-    opened = urllib2.install_opener(myopener)
+    urllib2.install_opener(myopener)
     response = urllib2.urlopen(url)
 
     json_data = response.read()
@@ -161,7 +163,8 @@ def queryDpm(args, config, begin_date=None, end_date=None):
                             checksum_value, checksum_algo)
                 pParser = PolicyParser(None, args.test, 'PolicyManager', args.verbose)
                 xmlSchemaDoc = pParser.parseXmlSchema(args.schemaurl, args.schemapath)
-                pParser.parseFromUrl(url, xmlSchemaDoc, checksum_algo, checksum_value)
+                pParser.parseFromUrl(url, username, password, xmlSchemaDoc,
+                                     checksum_algo, checksum_value)
                 if not pParser.policy is None:
                     mapFilename = config.SectionMap('AccountMapping')['file']
                     usermap = loadUserMap(mapFilename)
@@ -173,13 +176,18 @@ def updatePolicyStatus(args):
     """
     Update the status of all the policies in the central DB
     """
-
+    username = ''
+    password = ''
     debug = args.verbose
     config = ConfigLoader(args.config)
     setLoggingSystem(config, debug)
     logger.info('Start to update the status of the policies')
     loggerName = 'PolicyManager'
     conn = ServerConnector(args.config, args.test, loggerName, debug)
+    with open(config.SectionMap('DpmServer')['tokenfile'], 'r') as fin:
+        json_input = json.loads(fin.read())
+        username = json_input['token']
+        fin.close()
     policies = conn.listPolicies()
     if policies is not None:
         for entry in policies:
@@ -194,7 +202,8 @@ def updatePolicyStatus(args):
                             checksum_value, checksum_algo)
                 pParser = PolicyParser(None, args.test, 'PolicyManager', debug)
                 xmlSchemaDoc = pParser.parseXmlSchema(args.schemaurl, args.schemapath)
-                pParser.parseFromUrl(url, xmlSchemaDoc, checksum_algo, checksum_value)
+                pParser.parseFromUrl(url, username, password, xmlSchemaDoc,
+                                     checksum_algo, checksum_value)
                 if not pParser.policy is None:
                     id = pParser.policy.policyId
                     state = getPolicyStatus(id, debug)

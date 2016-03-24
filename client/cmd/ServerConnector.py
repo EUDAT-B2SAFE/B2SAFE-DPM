@@ -27,16 +27,23 @@ class ServerConnector:
 
         #load properties from configuration
         self.config = ConfigLoader(config)
-        username = self.config.SectionMap('DpmServer')['username']
-        password = self.config.SectionMap('DpmServer')['password']
-        server = self.config.SectionMap('DpmServer')['hostname']
+        json_input = {}
+        with open(self.config.SectionMap('DpmServer')['tokenfile']) as fin:
+            json_input = json.loads(fin.read())
+            fin.close()
+            username = json_input['token']
+            password = ''
+
+        url = '%s://%s:%s/' % \
+              (self.config.SectionMap('DpmServer')['scheme'],
+               self.config.SectionMap('DpmServer')['hostname'],
+               self.config.SectionMap('DpmServer')['port'])
 
         #Prepare server connection
         authinfo = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        authinfo.add_password(None, server, username, password)
+        authinfo.add_password(None, url, username, password)
         handler = urllib2.HTTPBasicAuthHandler(authinfo)
         self.myopener = urllib2.build_opener(handler)
-
 
     def updateStatus(self, policyId, state):
 

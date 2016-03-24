@@ -36,6 +36,7 @@ class PolicyParser():
     def parseXmlSchemaFromUrl(self, url):
 
         self.logger.debug('Parsing xml schema from url ' + url)
+
         response = urllib2.urlopen(url)
         xmlData = response.read()
         schemaDoc = etree.fromstring(xmlData)
@@ -90,16 +91,24 @@ class PolicyParser():
                 exit()
         self.parse(root)
 
-    def parseFromUrl(self, url, xmlSchemaDoc, checksum_algo=None, checksum_value=None):
+    def parseFromUrl(self, url, username, password, xmlSchemaDoc,
+                     checksum_algo=None, checksum_value=None):
         """
         Create an xml document from url input
         """
 
         self.logger.debug('Getting xml doc from url ' + url)
+
+        authinfo = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        authinfo.add_password(None, url, username, password)
+        handler = urllib2.HTTPBasicAuthHandler(authinfo)
+        myopener = urllib2.build_opener(handler)
+        urllib2.install_opener(myopener)
         response = urllib2.urlopen(url)
         response_data = response.read()
         data = json.loads(response_data)
         xmlData = data["policy"]
+
         self.logger.debug("xmlData is %s" % xmlData)
 
         #Decide if checksum verification is needed and if yes, compute the checksum for the downloaded policy
