@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 import sqlite3
 import ConfigParser
-import os 
+import os
 import sys
-import cgi
 import time
 import json
 import csv
 import smtplib
+import passlib.apps
 
 def getAdmin(config):
     '''Function to load the DPM admin users
@@ -34,14 +34,14 @@ def submitRequest(config):
     elif (config.get("AUTHENTICATION", "type") == "STANDALONE"):
         if (config.has_option("HTMLENV", "user")):
             username = config.get("HTMLENV", "user")
-    
+
     if (username.strip() != dataVals["username"].strip()):
         print "Error: username mismatch!"
         print "Exiting"
         sys.exit(1)
 
-    smtpObj = smtplib.SMTP("localhost")
-    
+    smtpObj = smtplib.SMTP(config.get("EMAIL", "server"))
+
     email_from = 'noreply@dmpadmin.localhost'
     email_msg = "From: %s \n" % email_from + "To: %s \n" + \
             "Subject: Request for Access to the Data Policy Manager \n" +\
@@ -59,7 +59,7 @@ def submitRequest(config):
                 community, user where user.email = ? and user.user_id =
                 user_community.user_id and community.name = ? and
                 community.community_id = user_community.community_id''',
-                (dataVals["email"].lower().strip(), 
+                (dataVals["email"].lower().strip(),
                     comm["name"].lower().strip())
                 )
 
@@ -77,25 +77,26 @@ def submitRequest(config):
             # We will only ever have one user with these details
             cur.execute('''select user_id from user where email = ? and
                     firstname = ? and lastname = ? and name = ?''',
-                    (dataVals["email"].lower().strip(), 
-                        dataVals["firstname"].lower().strip(),
-                        dataVals["lastname"].lower().strip(),
-                        dataVals["username"].lower().strip()))
+                    (dataVals["email"].lower().strip(),
+                     dataVals["firstname"].lower().strip(),
+                     dataVals["lastname"].lower().strip(),
+                     dataVals["username"].lower().strip()))
             res = cur.fetchall()
             if (len(res) == 0):
+                pword = passlib.apps.custom_app_context.encrypt(dataVals["password"].strip())
                 cur.execute("select max(user_id) from user")
                 u_id = cur.fetchone()
                 if (u_id is not None and u_id[0] is not None):
                     uid = int(u_id[0]) + 1
-                cur.execute('''insert into user (user_id, name, firstname, 
-                    lastname, email)  values(?,?,?,?,?)''',
-                    (uid, dataVals["username"].strip(), 
-                        dataVals["firstname"].lower().strip(), 
-                        dataVals["lastname"].lower().strip(),
-                        dataVals["email"].lower().strip()))
+                cur.execute('''insert into user (user_id, name, firstname,
+                    lastname, email, pword)  values(?,?,?,?,?,?)''',
+                    (uid, dataVals["username"].strip(),
+                     dataVals["firstname"].lower().strip(),
+                     dataVals["lastname"].lower().strip(),
+                     dataVals["email"].lower().strip(), pword))
             else:
                 uid = res[0][0]
-            
+
             # Get the last date entry and store the submit time
             cur.execute('''select max(dpm_date_id) from dpm_date''')
             res = cur.fetchone()
@@ -104,9 +105,9 @@ def submitRequest(config):
             cur.execute('''insert into dpm_date (dpm_date_id, submit_time)
                 values (?, ?)''', (dpm_date_id, int(time.time())))
 
-            # Get the selected community id the rows must exist so 
+            # Get the selected community id the rows must exist so
             # no need to check
-            cur.execute('''select community_id from community 
+            cur.execute('''select community_id from community
                 where name = ?''', (comm["name"].lower().strip(),))
             comm_id = cur.fetchone()[0]
 
@@ -114,10 +115,10 @@ def submitRequest(config):
             # to check
             cur.execute('''select role_id from roles where name = ?''',
                     (dataVals["role"].lower().strip(),))
-            role_id = cur.fetchone()[0] 
+            role_id = cur.fetchone()[0]
 
             # Store the pending URL until the user has been approved
-            cur.execute('''select dpm_id from dpm_page where 
+            cur.execute('''select dpm_id from dpm_page where
                 name = 'pending' ''')
             res = cur.fetchall()
             dpm_id = res[0][0]
@@ -128,10 +129,10 @@ def submitRequest(config):
             if (res is not None and res[0] is not None):
                 next_user_comm = int(res[0]) + 1
             cur.execute('''insert into user_community (user_comm_id,
-            user_id, community_id, dpm_id, dpm_date_id, role_id, 
+            user_id, community_id, dpm_id, dpm_date_id, role_id,
             status_id) values (?,?,?,?,?,?,?)''',
             (next_user_comm, uid, comm_id, dpm_id, dpm_date_id, role_id, 1))
-            
+
             conn.commit()
 
             # Email the DPM admin ( we need get the admins from the
@@ -150,7 +151,7 @@ def submitRequest(config):
 
             msg = email_msg % (admin_email, dataVals["username"].strip(),
                     next_user_comm, dataVals["role"], comm["name"])
-            
+
             try:
                 smtpObj.sendmail(email_from, emails, msg)
             except smtplib.SMTPException:

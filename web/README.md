@@ -10,9 +10,12 @@ mailserver to send emails. By default the email host is set to localhost. If
 you want to change the host you need to edit the  updateAndEmail.py script to
 point to your email server.
 
-1. cd build/admin
+1. Make sure the python package passlib is installed:
+sudo pip install passlib
 
-2. run the script:
+2. cd build/admin
+
+3. run the script:
 '''
 ./configure_dpm.py
 '''
@@ -34,11 +37,11 @@ the AAI persistent identifier for the administrator.
 You can supply the input parameters via config file using the '-c' option (see
   the 'Config File Schema' section for the structure of the file).
 
-3. Once script has completed you will need to copy the 'html', 'cgi', 'cgi-cli'
+4. Once script has completed you will need to copy the 'html', 'cgi', 'cgi-cli'
 directories under the 'deploy' directory to those that map to the corresponding
 URI.
 
-4. Make sure that the 'data' directory for the 'cgi' directory is writeable by
+5. Make sure that the 'data' directory for the 'cgi' directory is writeable by
 the webserver to allow the web server to populate the policy database.
 
 

@@ -11,12 +11,12 @@ def sendEmail(config, dataVals):
     '''
     sender = "noreply@usit.uio.no"
     receivers = [dataVals["email"]]
-    msg = file(config.get("EMAIL", "header"), 'r').read() 
+    msg = file(config.get("EMAIL", "header"), 'r').read()
     msg = msg % (dataVals["email"], dataVals["e_subject"])
     msg = msg + dataVals["e_body"]
 
     try:
-        smtpObj = smtplib.SMTP("localhost")
+        smtpObj = smtplib.SMTP(config.get("EMAIL", "server"))
         smtpObj.sendmail(sender, receivers, msg)
         print "msgSent"
     except smtplib.SMTPException:
@@ -38,7 +38,7 @@ def update(config):
     # Get the status id according to the approval type
     # And update the dpm page according to the approval type
     if (dataVals["approval"] == "approve"):
-        cur.execute('''select status_id from status where 
+        cur.execute('''select status_id from status where
                 status = 'approved' ''')
         status_id = int(cur.fetchone()[0])
 
@@ -47,7 +47,7 @@ def update(config):
         if ("admin" not in dataVals["role"]):
             cur.execute('''select dpm_id from dpm_page where name = 'dpm' ''')
         elif ("admin" in dataVals["role"]):
-            cur.execute('''select dpm_id from dpm_page where 
+            cur.execute('''select dpm_id from dpm_page where
                 name = 'frontpage' ''')
         dpm_id = int(cur.fetchone()[0])
     elif (dataVals["approval"] == "decline"):
@@ -57,15 +57,15 @@ def update(config):
         cur.execute('''select dpm_id from dpm_page where name = 'declined' ''')
         dpm_id = int(cur.fetchone()[0])
     elif (dataVals['approval'] == "close"):
-        cur.execute('''select status_id from status where 
+        cur.execute('''select status_id from status where
                 status = 'closed' ''')
         status_id = int(cur.fetchone()[0])
-        cur.execute('''select dpm_id from dpm_page where 
+        cur.execute('''select dpm_id from dpm_page where
                 name = 'closed' ''')
         dpm_id = int(cur.fetchone()[0])
 
     if (status_id >= 0):
-        cur.execute('''update user_community set dpm_id=? where 
+        cur.execute('''update user_community set dpm_id=? where
                 user_comm_id=?''', (dpm_id, dataVals["uid"]))
         cur.execute('''update user_community set status_id=? where
                 user_comm_id=?''', (status_id, dataVals["uid"]))

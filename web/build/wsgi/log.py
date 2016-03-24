@@ -114,7 +114,7 @@ def pack_response(data, msg, return_code):
     response["return_code"] = return_code
     return response
 
-def upload(cfg, log_documents):
+def upload(communities, cfg, log_documents):
     '''Upload the log document to the database'''
 
     # Need to loop over each document if we have a list or just the one doc
@@ -135,6 +135,30 @@ def upload(cfg, log_documents):
             return_code = 400
             break
         else:
-            data.append(load_db(cfg, log_document))
+            if check_allowed(log_document["identifier"], communities, cfg):
+                data.append(load_db(cfg, log_document))
+            else:
+                message["error"] = "Unauthorised access to dataset"
+                return_code = 400
     response = pack_response(data, message, return_code)
     return response
+
+def check_allowed(identifier, communities, config):
+    '''Check if the user is allowed access to this dataset'''
+    allowed = False
+    conn = sqlite3.connect(config.get("DATABASE", "name"))
+    cursor = conn.cursor()
+    cursor.execute('''select key from policies where key like 'policy_id_%'
+                      value = ?''', (identifier))
+    results = cursor.fetchall()
+    if len(results) == 1:
+        index = results[0][0].split("_")[-1]
+        community_key = "%s_%s" % (config.get("POLICY_SCHEMA", "community"),
+                                   index)
+        cursor.execute("select value from policies where key = ?",
+                       (community_key))
+        res = cursor.fetchall()
+        if len(res) == 1:
+            if res[0][0] in communities:
+                allowed = True
+    return allowed

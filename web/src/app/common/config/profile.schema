@@ -4,7 +4,7 @@ roles=create table if not exists roles (role_id integer, name text)
 status=create table if not exists status (status_id integer, status text)
 community=create table if not exists community (community_id integer, name text)
 user_community=create table if not exists user_community(user_comm_id integer, user_id integer, community_id integer, dpm_id integer, dpm_date_id integer, role_id integer, status_id integer)
-user=create table if not exists user(user_id integer, name text, email text, firstname text, lastname text)
+user=create table if not exists user(user_id integer, name text, email text, firstname text, lastname text, pword text)
 dpm_date=create table if not exists dpm_date(dpm_date_id integer, create_time integer, submit_time integer)
 
 [INSERT]

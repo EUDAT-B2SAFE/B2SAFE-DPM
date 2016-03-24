@@ -46,7 +46,7 @@ def filter_removed(cursor, indexes):
             out_indexes.append(index)
     return out_indexes
 
-def get_indexes(config, search_params=None, log_flag=False):
+def get_indexes(config, communities, search_params=None, log_flag=False):
     '''Get the policy identifier keys for all policies satisfying the search
     criteria'''
     indexes = []
@@ -86,9 +86,27 @@ def get_indexes(config, search_params=None, log_flag=False):
                                             indexes, "data")
     else:
         indexes = filter_removed(cursor, indexes)
+    output = []
+    for index in indexes:
+        if check_authorised(config, communities, index):
+            output.append(index)
+    indexes = output
     return indexes
 
-def get_policy_keys(cfg, identifier):
+def check_authorised(config, communities, key):
+    '''Check if the user is allowed to access this policy'''
+    authorised = False
+    community_key = "policy_community_%s" % key
+    conn = sqlite3.connect(config.get("DATABASE", "name"))
+    cursor = conn.cursor()
+    cursor.execute("select value from policies where key = ?", (community_key,))
+    results = cursor.fetchall()
+    if len(results) == 1:
+        if results[0][0] in communities:
+            authorised = True
+    return authorised
+
+def get_policy_keys(cfg, identifier, communities):
     '''Get the policy and md5 key for a given policy identifier'''
 
     index = -1
@@ -105,8 +123,9 @@ def get_policy_keys(cfg, identifier):
     else:
         key = results[0][0]
         index = key.split("_")[-1]
-        policy_key = '%s_%s' % (cfg.get('POLICY_SCHEMA', 'object'), index)
-        policy_md5_key = '%s_%s' % (cfg.get('POLICY_SCHEMA', 'md5'), index)
+        if check_authorised(cfg, communities, index):
+            policy_key = '%s_%s' % (cfg.get('POLICY_SCHEMA', 'object'), index)
+            policy_md5_key = '%s_%s' % (cfg.get('POLICY_SCHEMA', 'md5'), index)
 
     return policy_key, policy_md5_key
 
@@ -138,7 +157,7 @@ def get_policy_md5(cfg, key):
         policy_md5 = results[0][0]
     return policy_md5
 
-def download(identifier, config):
+def download(communities, identifier, config):
     '''get the policy from the database and send to the user'''
     dbfile = None
     response = json.dumps({}), 400
@@ -148,7 +167,7 @@ def download(identifier, config):
         response = "Server database error", 500
         return response
 
-    policy_key, policy_md5_key = get_policy_keys(config, identifier)
+    policy_key, policy_md5_key = get_policy_keys(config, communities, identifier)
 
     if len(policy_key) != 0 and len(policy_md5_key) != 0:
         policy = get_policy(config, policy_key)
@@ -161,13 +180,13 @@ def download(identifier, config):
         response = json.dumps(json_policy), 200
     return response
 
-def search(params, config):
+def search(communities, params, config):
     '''search for the policy objects'''
     response = json.dumps([])
     search_params = {}
     for key in params.keys():
         search_params[key] = params[key]
-    indexes = get_indexes(config, search_params)
+    indexes = get_indexes(config, communities, search_params)
     policy_objects = get_policy_objects(config, indexes)
     response = json.dumps(policy_objects)
     return response

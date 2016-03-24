@@ -14,7 +14,7 @@ def find_indexes(config, search_keys, search_params):
     for key in search_keys.keys():
         if key not in search_params:
             continue
-        if 'after' == key or 'before' == key:
+        if key == 'after' or key == 'before':
             param = convert_time(search_params[key])
             if param is None:
                 continue
@@ -42,7 +42,7 @@ def search_for_indexes(crsr, search_string, param, indexes, data_type):
             elif data_type == "log":
                 sub_index, index = result[0].split("_")[-2:]
                 log_indexes.append("%s_%s" % (sub_index, index))
-    if (len(indexes) > 0):
+    if len(indexes) > 0:
         indexes = find_common_indexes(indexes, data_indexes, log_indexes)
     else:
         indexes = data_indexes + log_indexes

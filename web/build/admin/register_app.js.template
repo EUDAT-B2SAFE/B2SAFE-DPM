@@ -1,15 +1,15 @@
-var registerApp = angular.module("registerApp", ["ngRoute"]);
+var registerApp = angular.module('registerApp', ['ngRoute']);
 
 function regConfig($routeProvider) {
     $routeProvider.
-        when("/", {
+        when('/', {
             controller: registerCtrl,
-            templateUrl: "template/reg_tpl.html"}).
-        when("/acknowledge", {
+            templateUrl: 'template/reg_tpl.html'}).
+        when('/acknowledge', {
             controller: acknowledgeCtrl,
-            templateUrl: "template/acknowledge.html"}).
+            templateUrl: 'template/acknowledge.html'}).
         otherwise({
-            redirectTo: "/"
+            redirectTo: '/'
         });
 }
 
@@ -18,15 +18,19 @@ registerApp.config(regConfig);
 function regFormCtrl($scope, $http, $route, $location, cMgr, invalidFlags) {
     $scope.register_submitted = false;
     $scope.invalidFlags = invalidFlags;
+    if ($scope.register) {
+      $scope.register.cm_password.$invalid = true;
+      $scope.register.confirmPassword.$invalid = true;
+    }
     $scope.cm = cMgr;
 
     // Get the user environment
     getUserEnv($http).then(function(result) {
         $scope.cm.username = result.data;
     });
-    
+
     // Get the communities and roles
-    getCommunities = $http({method:"GET", url: "${CGI_URL}/getCommunities.py"}); 
+    var getCommunities = $http({method:'GET', url: '${CGI_URL}/getCommunities.py'});
     getCommunities.then(function(result) {
         $scope.comm_types = result.data;
         $scope.comm_roles = result.data.roles;
@@ -36,7 +40,7 @@ function regFormCtrl($scope, $http, $route, $location, cMgr, invalidFlags) {
 
     // Add more community fields
     $scope.addMore = function() {
-        $scope.cm.communities.push({name: ''}); 
+        $scope.cm.communities.push({name: ''});
         $scope.invalidFlags.communities.push({community: true});
     };
 
@@ -68,14 +72,21 @@ function regFormCtrl($scope, $http, $route, $location, cMgr, invalidFlags) {
     // Submit the form
     $scope.submitForm = function() {
         if ($scope.register_submitted) {
-            if (! $scope.register.$invalid) {
-                $http.post("${CGI_URL}/submitProfile.py", 
-                        angular.toJson($scope.cm),
-                        {headers: "Content-Type: application/x-www-form-urlencoded; charset=UTF-8;"}).then(
+          // Check the password fields are set and valid
+          if ($scope.register.cm_password.$invalid ||
+              $scope.register.confirmPassword.$invalid) {
+                $scope.register.$invalid = true;
+                $scope.register.cm_password.$isdirty = true;
+                $scope.register.confirmPassword.$isdirty = true;
+          }
+
+          if (! $scope.register.$invalid) {
+              $http.post('${CGI_URL}/submitProfile.py', angular.toJson($scope.cm),
+                         {headers: 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8;'}).then(
                             function(result){
                                 var retval = result.data.replace(/\s/g, '');
-                                if (retval === "roleExists") {
-                                    alert("The user account is already registered for this role");
+                                if (retval === 'roleExists') {
+                                    alert('The user account is already registered for this role');
                                 } else {
                                     // Have to reset the fields manually
                                     // as the $setPristine doesn't work
@@ -85,16 +96,27 @@ function regFormCtrl($scope, $http, $route, $location, cMgr, invalidFlags) {
                                     cMgr.email = '';
                                     cMgr.role = '';
                                     cMgr.username = '';
+                                    cMgr.password = '';
                                     cMgr.communities = [{name: ''}];
                                     $scope.cm = cMgr;
-                                    $location.url("/acknowledge");
+                                    $location.url('/acknowledge');
                                 }
                             }, function(error){
-                                alert("There was a problem submitting the request." +
-                                " Please contact the Data Policy Manager for more information");
+                                alert('There was a problem submitting the request.' +
+                                ' Please contact the Data Policy Manager for more information');
                             });
-            }
+          }
         }
+    };
+
+    $scope.comparePasswords = function() {
+      var invalid = $scope.cm.password !== $scope.confirmPassword;
+      $scope.register.confirmPassword.$invalid = invalid;
+      $scope.register.confirmPassword.$isdirty = true;
+    };
+
+    $scope.updatePassword = function() {
+      $scope.register.cm_password.$isdirty = true;
     };
 
     // Reset the form
@@ -114,7 +136,6 @@ function registerCtrl($scope) {
 
 function acknowledgeCtrl($scope) {
 }
-
 
 // Function for getting the user profile
 function getProfile($http) {
@@ -140,8 +161,8 @@ function checkRegisterCtrl($scope, $http) {
 
 // Factory to create a community manager object
 registerApp.factory('cMgr', function() {
-    var cMgr = {firstname: '', lastname: '', email: '', username: '', 
-        communities: [{name: ''}]};
+    var cMgr = {firstname: '', lastname: '', email: '', username: '',
+        password: '', communities: [{name: ''}]};
     return cMgr;
 });
 

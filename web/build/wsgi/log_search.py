@@ -1,24 +1,39 @@
 import json
 import sqlite3
-import time
 import common
 
-def find_states(config):
+def find_states(communities, config):
     '''Get the states for all the log entries'''
     states = []
     conn = sqlite3.connect(config.get("DATABASE", "name"))
     cursor = conn.cursor()
-    cursor.execute("select value from policies where key like 'log_state_%'")
+    cursor.execute("select key, value from policies where key like 'log_state_%'")
     results = cursor.fetchall()
-    states = [result[0] for result in results]
+    for result in results:
+        index = result[1].split("_")[-2]
+        if check_allowed(index, communities, config):
+            states.append(result[0])
     return states
 
-def get_states(config):
+def check_allowed(index, communities, config):
+    '''Check if the user is allowed to view the log entry'''
+    allowed = False
+    conn = sqlite3.connect(config.get("DATABASE", "name"))
+    cursor = conn.cursor()
+    community_key = "%s_%s" % (config.get("POLICY_SCHEMA", "community"), index)
+    cursor.execute("select value from policies where key = ?", (community_key,))
+    results = cursor.fetchall()
+    if len(results) == 1:
+        if results[0][0] in communities:
+            allowed = True
+    return allowed
+
+def get_states(communities, config):
     '''Return the list of states'''
-    states = json.dumps(find_states(config))
+    states = json.dumps(find_states(communities, config))
     return states, 200
 
-def get_indexes(config, search_params=None):
+def get_indexes(config, communities, search_params=None):
     '''Return the indexes for the matching log documents'''
 
     search_keys = {"after": ["log_timestamp_",
@@ -30,7 +45,7 @@ def get_indexes(config, search_params=None):
                    "hostname": ["log_hostname_",
                                 "key like '%s%%' and value = ?", "log"],
                    "identifier": ["log_policy_identifier_",
-                                "key like '%s%%' and value = ?", "log"],
+                                  "key like '%s%%' and value = ?", "log"],
                    "community": ["policy_community_",
                                  "key like '%s%%' and value = ?", "data"],
                    "action": ["action_type_",
@@ -39,7 +54,11 @@ def get_indexes(config, search_params=None):
                               "key like '%s%%' and value = ?", "data"]}
 
     indexes = common.find_indexes(config, search_keys, search_params)
-
+    output = []
+    for index in indexes:
+        if check_allowed(index, communities, config):
+            output.append(index)
+    indexes = output
     return indexes
 
 def get_documents(config, indexes):
@@ -55,7 +74,8 @@ def get_documents(config, indexes):
             query = "select value from policies where key like ?"
 
         for item in config.items("LOG_SCHEMA"):
-            if "last_index" in  item[0]: continue
+            if "last_index" in  item[0]:
+                continue
 
             db_key = "%s_%s" % (item[1], index)
             cursor.execute(query, (db_key,))
@@ -101,7 +121,7 @@ def log_doc_exists(logs, new_log):
                     break
     return match
 
-def search(params, cfg):
+def search(communities, params, cfg):
     '''Return the log documents matching the search criteria'''
     search_params = {}
     results = []
@@ -115,7 +135,7 @@ def search(params, cfg):
                 bad_format = True
                 break
     if not bad_format:
-        indexes = get_indexes(cfg, search_params)
+        indexes = get_indexes(cfg, communities, search_params)
         results = get_documents(cfg, indexes)
         response = json.dumps(results), 200
     else:
