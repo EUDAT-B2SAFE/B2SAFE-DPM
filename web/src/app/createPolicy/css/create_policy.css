@@ -149,7 +149,7 @@ div#regform {
     border: 1px dotted #3399FF;
 }
 .regform label {
-    width: 120px;
+    width: 180px;
     float: left;
     margin-left: 2px;
     margin-right: 3px;
@@ -161,7 +161,7 @@ div#hreg {
 }
 
 div#clabel {
-    width: 120px;
+    width: 180px;
     height: 20px;
     float: left;
     margin-left: 2px;
