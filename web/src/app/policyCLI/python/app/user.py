@@ -10,7 +10,7 @@ def verify_password(user, password, config):
     verified = False
     conn = sqlite3.connect(config.get("DATABASE", "profile_name"))
     cursor = conn.cursor()
-    cursor.execute("select pword from user where name = ?", (user,))
+    cursor.execute("select pword from user where email = ?", (user,))
     results = cursor.fetchall()
     if len(results) == 1:
         pword_hash = results[0][0]
@@ -36,7 +36,7 @@ def verify_auth_token(token, config):
 
     conn = sqlite3.connect(config.get("DATABASE", "profile_name"))
     cursor = conn.cursor()
-    cursor.execute("select name, user_id from user where name = ?", (data["id"],))
+    cursor.execute("select email, user_id from user where email = ?", (data["id"],))
     results = cursor.fetchall()
     if len(results) == 1:
         user = {}
