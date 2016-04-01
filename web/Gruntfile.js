@@ -92,6 +92,7 @@ module.exports = function (grunt) {
                                 flatten: true},
                     {expand: true,
                     src: ['src/app/policyCLI/python/app/*.py',
+                    'src/app/policyCLI/python/app/*.wsgi',
                     'src/app/policyCLI/python/app/requirements.txt'],
                     dest: 'build/wsgi', flatten: true},
                     {expand: true, cwd: 'src/app/policyCLI/python/tests',
