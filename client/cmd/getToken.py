@@ -52,7 +52,7 @@ def get_token(args, config):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate and store an authentication token")
-    parser.add_argument("username", help="DPM username")
+    parser.add_argument("email", help="email address")
     parser.add_argument("password", help="DPM password")
     parser.add_argument("config", help="Path to configuration file")
     args = parser.parse_args()
