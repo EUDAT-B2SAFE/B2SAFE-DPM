@@ -3,8 +3,6 @@
 #set -x
 
 USERNAME=`whoami`
-IRODSUID=`id -un $USERNAME`
-IRODSGID=`id -gn $USERNAME`
 B2SAFEHOMEPACKAGING="$(cd $(dirname "$0"); pwd)"
 B2SAFEHOME=`dirname $B2SAFEHOMEPACKAGING`
 RPM_BUILD_ROOT="${HOME}/debbuild/"
@@ -16,7 +14,7 @@ VERS_CONFIG=./version.sh
 if [ "$USERNAME" = "root" ]
 then
 	echo "We are NOT allowed to run as root, exit"
-        echo "Run this script/procedure as the user who run's iRODS"
+        echo "Run this script/procedure as any user except root"
 	exit 1
 fi
 
@@ -84,6 +82,7 @@ EOF
 
 # create postinstall scripts
 cat > $RPM_BUILD_ROOT${PACKAGE}/DEBIAN/postinst << EOF
+#!/bin/bash
 # create symbolic links
 if [ -e "/var/lib/irods/iRODS/server/bin/cmd" ]
 then
@@ -93,13 +92,22 @@ fi
 # show package installation/configuration info 
 cat << EOF1
 
-To install/configure b2saef dpm client in iRODS do following as the user "$USERNAME" :
+The package b2safe dpm client has been installed in ${IRODS_PACKAGE_DIR}
+To install/configure it in iRODS do following as the user who runs iRODS :
 
-su - $USERNAME
-cd ${IRODS_PACKAGE_DIR}/conf
 # update config.ini with correct parameters with your favorite editor
+sudo vi ${IRODS_PACKAGE_DIR}/conf/config.ini
 
 EOF1
+
+# set owner of files to the user who run's iRODS
+IRODS_SERVICE_ACCOUNT_CONFIG=/etc/irods/service_account.config
+if [ -e \$IRODS_SERVICE_ACCOUNT_CONFIG ]
+then
+    source \$IRODS_SERVICE_ACCOUNT_CONFIG
+    chown -R \$IRODS_SERVICE_ACCOUNT_NAME:\$IRODS_SERVICE_GROUP_NAME ${IRODS_PACKAGE_DIR} 
+    chown -R \$IRODS_SERVICE_ACCOUNT_NAME:\$IRODS_SERVICE_GROUP_NAME /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
+fi
 
 EOF
 
