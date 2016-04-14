@@ -10,8 +10,9 @@ mailserver to send emails. By default the email host is set to localhost. If
 you want to change the host you need to edit the  updateAndEmail.py script to
 point to your email server.
 
-1. Make sure the python package passlib is installed:
+1. Make sure the python packages passlib  and virtualenv installed:
 sudo pip install passlib
+sudo pip install virtualenv
 
 2. cd build/admin
 
@@ -21,10 +22,9 @@ sudo pip install passlib
 '''
 This will prompt you for the following paths:
 
-* Root URI for the CGI scripts.
-* Root PATH for the CGI scripts (this is the directory in which the scripts live).
-* Root URI for the command line interface (which are CGI scripts typically accessed
-  with curl from the command line).
+* Base URI for the CGI scripts.
+* Base PATH for the CGI scripts (this is the directory in which the scripts live).
+* Root URI for the REST API used by client tools.
 * Authentication method - currently EUDAT AAI is supported and a STANDALONE method.
 Please note that the STANDALONE method provides no authentication or access control
 and SHOULD NOT be used in production.
@@ -35,19 +35,18 @@ the AAI persistent identifier for the administrator.
 * Root URI for the web pages.
 
 You can supply the input parameters via config file using the '-c' option (see
-  the 'Config File Schema' section for the structure of the file).
+  the 'Config File Schema' section for the structure of the file). The script will create the python virtual environment for the REST API, the databases for the DPM and assemble the web pages.
 
-4. Once script has completed you will need to copy the 'html', 'cgi', 'cgi-cli'
+4. Once script has completed you will need to copy the 'html', 'cgi', 'wsgi'
 directories under the 'deploy' directory to those that map to the corresponding
 URI.
 
 5. Make sure that the 'data' directory for the 'cgi' directory is writeable by
-the webserver to allow the web server to populate the policy database.
-
+the webserver to allow the web server to populate the policy database. Since the REST API expects to be installed as a WSGI application running in your web server (see for example: http://flask.pocoo.org/docs/0.10/deploying/mod_wsgi/).
 
 ## Using the DPM
 You can use the web interface to create a policy for replication (currently the
-  only supported policy). To create a policy follow these simple steps:
+  only supported policy). To create a policy follow these steps:
 
 1. Register to use the DPM. Select a community you belong to and a fill in your
 personal information. You will receive an email once your request has been processed.
@@ -57,7 +56,7 @@ tab. Fill in the required information for the replication policy and submit your
 policy for storage.
 
 3. To query policies to download use:
-curl "<CLI_URL>/querypolicy.py?community=<community>"
+curl -u<emailaddress>:<password> "<CLI_URL>/search/policy?community=<community>"
 
 This should result in a list of policy parameters where the parameters are:
 FETCH_URI, TIMESTAMP, CHECKSUMVALUE, "CHECKSUMALGORITHM".
@@ -66,17 +65,17 @@ FETCH_URI, TIMESTAMP, CHECKSUMVALUE, "CHECKSUMALGORITHM".
 curl <FETCH_URI>
 
 5. You can upload log information associated to the policy using:
-curl "<CLI-URI>/updatepolicy.py?state=<state>&community=<community>&timestamp=<timestamp>&center=<center>&id=<uuid>"
+curl -u<emailaddress>:<password> "<CLI-URI>/policy/log?state=<state>&community=<community>&timestamp=<timestamp>&hostname=<hostname>&identifier=<uuid>"
 
 where:
 * state = the state of the policy: QUEUED, RUNNING, DONE, FAILED
 * community = the community the policy belongs to
 * timestamp = the timestamp for the log message
-* center = the host where the policy is executed
-* id = the uuid of the policy
+* hostname = the host where the policy is executed
+* identifier = the uuid of the policy
 
 6. To find the list of deactivated policies run:
-curl "<CLI_URL>/querypolicy.py?community_id=<community>&deactivated=true"
+curl "<CLI_URL>/search/policy?community_id=<community>&deactivated=true"
 
 This should return a list of deactivated policies. The list contains:
 <policy uuid>, <md5 value>, <md5 algorithm>
@@ -116,15 +115,15 @@ the 'Deploying the DPM' steps to deploy the pages on your web server.
 Using the '-c' option of the configure_dpm.py script you can supply the input
 parameters in a config file. The structure of the file should follow:
 
-[DEFAULT]
-CGI_URL=<root url to the cgi scripts>
-CGI_PATH=<root path to the cgi scripts>
-CLI_URL=<root url to the cgi scripts that provide the command line interface>
-ADMIN_USER=<the username or AAI persistent identifier for the admin user>
-ADMIN_NAME=<the firstname lastname of the admin user>
-ADMIN_EMAIL=<the email address of the admin user>
-AUTH_TYPE=<the authentication type: either 1 or 2 where 1=AAI, 2=STANDALONE>
-ROOT_URL=<root url to the DPM html>
+   [DEFAULT]
+   CGI_URL=<root url to the cgi scripts>
+   CGI_PATH=<root path to the cgi scripts>
+   CLI_URL=<root url to the cgi scripts that provide the command line interface>
+   ADMIN_USER=<the username or AAI persistent identifier for the admin user>
+   ADMIN_NAME=<the firstname lastname of the admin user>
+   ADMIN_EMAIL=<the email address of the admin user>
+   AUTH_TYPE=<the authentication type: either 1 or 2 where 1=AAI, 2=STANDALONE>
+   ROOT_URL=<root url to the DPM html>
 
 
 Comments:
