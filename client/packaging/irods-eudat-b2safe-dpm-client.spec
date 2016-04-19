@@ -55,6 +55,8 @@ cp $RPM_SOURCE_DIR/client/conf/* $RPM_BUILD_ROOT%{_irodsPackage}/conf
 cp $RPM_SOURCE_DIR/client/test/* $RPM_BUILD_ROOT%{_irodsPackage}/test
 cp $RPM_SOURCE_DIR/schema/*.xsd $RPM_BUILD_ROOT%{_irodsPackage}/conf
 
+mkdir -p $RPM_BUILD_ROOT/var/log/irods
+
 touch $RPM_BUILD_ROOT%{_irodsPackage}/cmd/toBeExcludedFile.pyc
 touch $RPM_BUILD_ROOT%{_irodsPackage}/cmd/toBeExcludedFile.pyo
 
@@ -72,6 +74,7 @@ rm -rf %{buildroot}
 # exclude .pyc and .py files
 %exclude %{_irodsPackage}/cmd/*.pyc
 %exclude %{_irodsPackage}/cmd/*.pyo
+#include files
 %{_irodsPackage}/cmd
 %{_irodsPackage}/conf
 %{_irodsPackage}/output
@@ -83,6 +86,7 @@ rm -rf %{buildroot}
 %attr(600,-,-) %{_irodsPackage}/conf/*.ini
 %attr(600,-,-) %{_irodsPackage}/conf/*.xsd
 %attr(600,-,-) %{_irodsPackage}/test/*.xml
+%attr(-,-,-)   /var/log/irods
 %doc
 # config files
 %config(noreplace) %{_irodsPackage}/conf/config.ini
@@ -115,6 +119,7 @@ if [ -e $IRODS_SERVICE_ACCOUNT_CONFIG ]
 then
     source $IRODS_SERVICE_ACCOUNT_CONFIG
     chown -R $IRODS_SERVICE_ACCOUNT_NAME:$IRODS_SERVICE_GROUP_NAME %{_irodsPackage}
+    chown -R $IRODS_SERVICE_ACCOUNT_NAME:$IRODS_SERVICE_GROUP_NAME /var/log/irods
     chown -R $IRODS_SERVICE_ACCOUNT_NAME:$IRODS_SERVICE_GROUP_NAME /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
 fi
 

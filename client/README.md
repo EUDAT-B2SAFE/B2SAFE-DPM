@@ -32,10 +32,11 @@ Such a organization would look something like this:
    
  /opt/eudat/b2safe-dpm-client/cmd
  /opt/eudat/b2safe-dpm-client/conf
- /opt/eudat/b2safe-dpm-client/log
  /opt/eudat/b2safe-dpm-client/output
  /opt/eudat/b2safe-dpm-client/rules
  /opt/eudat/b2safe-dpm-client/test
+
+ /var/log/irods
 ```
 
 Inside the `/opt/eudat/b2safe-dpm-client/conf` directory are two files

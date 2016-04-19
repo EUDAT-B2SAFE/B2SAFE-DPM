@@ -56,6 +56,8 @@ cp $RPM_SOURCE_DIR/conf/*          $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}
 cp $RPM_SOURCE_DIR/test/*          $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/test
 cp $RPM_SOURCE_DIR/../schema/*.xsd $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/conf
 
+mkdir -p                          $RPM_BUILD_ROOT${PACKAGE}/var/log/irods
+
 # set mode of specific files
 chmod 700 $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/cmd/*.py
 chmod 600 $RPM_BUILD_ROOT${PACKAGE}${IRODS_PACKAGE_DIR}/conf/*.ini
@@ -106,6 +108,7 @@ if [ -e \$IRODS_SERVICE_ACCOUNT_CONFIG ]
 then
     source \$IRODS_SERVICE_ACCOUNT_CONFIG
     chown -R \$IRODS_SERVICE_ACCOUNT_NAME:\$IRODS_SERVICE_GROUP_NAME ${IRODS_PACKAGE_DIR} 
+    chown -R \$IRODS_SERVICE_ACCOUNT_NAME:\$IRODS_SERVICE_GROUP_NAME /var/log/irods
     chown -R \$IRODS_SERVICE_ACCOUNT_NAME:\$IRODS_SERVICE_GROUP_NAME /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
 fi
 
