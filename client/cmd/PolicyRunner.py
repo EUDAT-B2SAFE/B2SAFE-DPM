@@ -90,23 +90,30 @@ class PolicyRunner:
         if action.triggerType == 'runonce':
             self.logger.info('Executing the rule just one time')
             result = self.executeRule(author, rulePath)
-            resultJson = json.loads(result.strip().replace("'",'"'))
-            with open(resultPath, 'w') as outfile:
-                json.dump(resultJson, outfile)
+            if not self.test:
+                resultJson = json.loads(result.strip().replace("'",'"'))
+                with open(resultPath, 'w') as outfile:
+                    json.dump(resultJson, outfile)
+            else:
+                self.logger.info(result)
+                
         elif action.triggerType == 'time':
             self.logger.info('Scheduling the rule execution via system crontab')
-            cronJob_iter = self.crontab.find_comment(jobId)
-            if sum(1 for _ in cronJob_iter) == 0:
-                cmd = 'export clientUserName=' + author + '; ' + self.iruleCmd + \
-                      ' -F ' + rulePath + ' > ' + resultPath
-                cronJob = self.crontab.new(command=cmd, comment=jobId)
-                self.logger.debug('time trigger: ' + action.trigger)
-                cronJob.setall((action.trigger).split())
-                cronJob.enable()
-                self.crontab.write_to_user(user=True)
+            if not self.test:
+                cronJob_iter = self.crontab.find_comment(jobId)
+                if sum(1 for _ in cronJob_iter) == 0:
+                    cmd = 'export clientUserName=' + author + '; ' + self.iruleCmd + \
+                          ' -F ' + rulePath + ' > ' + resultPath
+                    cronJob = self.crontab.new(command=cmd, comment=jobId)
+                    self.logger.debug('time trigger: ' + action.trigger)
+                    cronJob.setall((action.trigger).split())
+                    cronJob.enable()
+                    self.crontab.write_to_user(user=True)
+                else:
+                    self.logger.info('Skipping rule execution, policy already '
+                                   + 'scheduled [id=%s]', policyId)
             else:
-                self.logger.info('Skipping rule execution, policy already '
-                               + 'scheduled [id=%s]', policyId)
+                self.logger.info('skipped in test mode')
         else:
             self.logger.error('Unkown trigger type [%s]', action.triggerType)
 
@@ -130,6 +137,7 @@ class PolicyRunner:
                 self.logger.info('Command executed')
         else:
             self.logger.info('skipped in test mode')
+            output = 'skipped in test mode'
 
         return output
 

@@ -12,7 +12,6 @@ import logging.handlers
 import os
 import glob
 from crontab import CronTab
-from croniter import croniter
 from datetime import datetime
 from datetime import date
 from PolicyParser import PolicyParser
@@ -188,28 +187,32 @@ def updatePolicyStatus(args):
         json_input = json.loads(fin.read())
         username = json_input['token']
         fin.close()
-    policies = conn.listPolicies()
-    if policies is not None:
-        for entry in policies:
-            logger.debug('entry %s' % type(entry))
-            url = str(entry['identifier'])
-            ts = int(entry['ctime'])
-            checksum_value = str(entry['checksum'])
-            checksum_algo = str(entry['checksum_type'])
+    if (args.id):
+        state = getPolicyStatus(args.id, debug)
+        conn.updateStatus(args.id, state)
+    else:
+        policies = conn.listPolicies()
+        if policies is not None:
+            for entry in policies:
+                logger.debug('entry %s' % type(entry))
+                url = str(entry['identifier'])
+                ts = int(entry['ctime'])
+                checksum_value = str(entry['checksum'])
+                checksum_algo = str(entry['checksum_type'])
 
-            if not url.endswith('.html'):
-                logger.info('Processing policy: %s [%s, %s, %s]', url, ts,
-                            checksum_value, checksum_algo)
-                pParser = PolicyParser(None, args.test, 'PolicyManager', debug)
-                xmlSchemaDoc = pParser.parseXmlSchema(args.schemaurl, args.schemapath)
-                pParser.parseFromUrl(url, username, password, xmlSchemaDoc,
-                                     checksum_algo, checksum_value)
-                if not pParser.policy is None:
-                    id = pParser.policy.policyId
-                    state = getPolicyStatus(id, debug)
-                    conn.updateStatus(id, state)
-            else:
-                logger.error('invalid policy location [%s]', url)
+                if not url.endswith('.html'):
+                    logger.info('Processing policy: %s [%s, %s, %s]', url, ts,
+                                checksum_value, checksum_algo)
+                    pParser = PolicyParser(None, args.test, 'PolicyManager', debug)
+                    xmlSchemaDoc = pParser.parseXmlSchema(args.schemaurl, args.schemapath)
+                    pParser.parseFromUrl(url, username, password, xmlSchemaDoc,
+                                         checksum_algo, checksum_value)
+                    if not pParser.policy is None:
+                        id = pParser.policy.policyId
+                        state = getPolicyStatus(id, debug)
+                        conn.updateStatus(id, state)
+                else:
+                    logger.error('invalid policy location [%s]', url)
 
 def getPolicyStatus(id, debug):
     """
@@ -279,6 +282,7 @@ def main():
     parser_clean.set_defaults(func=cleanScheduledPolicies)
 
     parser_update = subparsers.add_parser('update', help='Update policy status in the central DB')
+    parser_update.add_argument('-i', '--id', help='id of the policy')
     parser_update.set_defaults(func=updatePolicyStatus)
 
     args = argp.parse_args()
