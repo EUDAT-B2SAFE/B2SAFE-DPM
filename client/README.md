@@ -17,6 +17,8 @@ Required Python Modules:
    * (https://pypi.python.org/packages/source/c/crontab/crontab-0.18.tar.gz)
    * (https://github.com/josiahcarlson/parse-crontab)
  * libxml and libxslt
+ * python-crontab
+   * (https://pypi.python.org/pypi/python-crontab/2.0.1)
    * (http://lxml.de/)
  * ConfigParser
  * time
@@ -47,7 +49,7 @@ Inside the `/opt/eudat/b2safe-dpm-client/conf` directory are two files
 
 ### Using the script ###
 
-to get help on how to use the script run `./runPolicyManager.py -h`:
+to get help on how to use the script run `./PolicyManager.py -h`:
 ```
 usage: PolicyManager.py [-h] -T {periodic,hook,cli} [-t] [-v] -c CONFIG
                         (-su SCHEMAURL | -sp SCHEMAPATH)
@@ -104,9 +106,9 @@ iRODS policy is not started.
 
 ### Examples ###
 
-`./runPolicyManager.py -t -v -T cli -su http://eudat.eu/policy.template.xsd http -u https://dpm-eudat.norstore.uio.no/DPM1/DataPolicyMgr/data/output-1379580840.xml`
+`./PolicyManager.py -t -v -T cli -su http://eudat.eu/policy.template.xsd http -u https://dpm-eudat.norstore.uio.no/DPM1/DataPolicyMgr/data/output-1379580840.xml`
 
-`./runPolicyManager.py -t -v -T cli -sp policy.template.xsd file -p ./policy_test.xml`
+`./PolicyManager.py -t -v -T cli -sp policy.template.xsd file -p ./policy_test.xml`
 
 ### Running the DPM client inside iRODS ###
 
@@ -140,3 +142,4 @@ Data uploads have the following format and will be send as form-www/encoded name
         'community': args.community     community id
     }
 ```
+It is also possible to update a specific policy with the parameter -i .
