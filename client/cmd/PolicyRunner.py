@@ -83,7 +83,7 @@ class PolicyRunner:
         Create a rule file and run it
         """
         self.logger.info('Generating rule')
-        self.generateRule(rulePath, collection.value, target.location.path, target.location.resource, policyId)
+        self.generateRule(rulePath, collection, target.location.path, target.location.resource, policyId)
         path = os.path.join(os.path.dirname(sys.path[0]), 'output')
         resultPath = path + '/response.' + jobId + '.json'
 
@@ -146,13 +146,22 @@ class PolicyRunner:
         f = open(ruleFilePath,'w')
         f.write('replicate {\n')
         f.write('\tlogInfo("DPM Client call to replicate.r");\n')
-        f.write('\tlogInfo(*sourceNode);\n')
-        f.write('\tlogInfo(*destRootCollection);\n')
-        f.write('\tlogInfo(*destResource);\n')
-        f.write('\tlogInfo(*policyId);\n')
+        f.write('\tlogInfo("Source: *sourceNode");\n')
+        f.write('\tlogInfo("Destination: *destRootCollection");\n')
+        f.write('\tlogInfo("Destination resource: *destResource");\n')
+        f.write('\tlogInfo("Policy id: *policyId");\n')
+
+        if collection.type == 'pid':
+            f.write('\tEUDATeURLsearch(*sourceNode, *sourceUrl);\n')
+            f.write('\tlogInfo("Source url: *sourceUrl");\n')
+            f.write('\t*sourcePath = "/" ++ triml(triml(*sourceUrl, "//"),"/");\n')
+        else:
+            f.write('\t*sourcePath = *sourceNode;\n')
+        f.write('\tlogInfo("Source path: *sourcePath");\n')
+
         f.write('\t*recursive = bool("true");\n')
         f.write('\t*registered = bool("true");\n')
-        f.write('\t*result = EUDATReplication(*sourceNode, *destRootCollection,'
+        f.write('\t*result = EUDATReplication(*sourcePath, *destRootCollection,'
               + '*registered, *recursive, *response);\n')
         f.write('\twriteLine("serverLog","Generated replication for policy '
               + '[*policyId]");\n')
@@ -161,6 +170,6 @@ class PolicyRunner:
         f.write('}\n')
 
         outString = 'INPUT *sourceNode="%s",*destRootCollection="%s",*destResource="%s",*policyId="%s"\n'
-        f.write(outString % (collection, path, resource, id))
+        f.write(outString % (collection.value, path, resource, id))
         f.write('OUTPUT ruleExecOut\n')
         f.close()
