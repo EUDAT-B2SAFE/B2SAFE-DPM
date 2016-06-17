@@ -50,12 +50,17 @@ allowed_states=QUEUED, RUNNING, FAILED, FINISHED
 [DATABASE]
 name=${CGI_PATH}/data/policy.db
 fetch_string=${CLI_URL}/policy?identifier
-default_visible=policy_name, policy_author, policy_ctime, policy_community
+default_visible=policy_name, policy_author, policy_version, policy_uniqueid
 skip_keys=policy_object
 last_index=last_index
 profile_name=${CGI_PATH}/data/profile.db
 resource_name=${CGI_PATH}/config/resources.db
 action_name=${CGI_PATH}/config/actions.db
+
+[XMLDATABASE]
+name=${XML_PATH}/policy
+user=${XML_USER}
+pass=${XML_PASS}
 
 [HTML]
 not_registered=./errors/not_reg.html

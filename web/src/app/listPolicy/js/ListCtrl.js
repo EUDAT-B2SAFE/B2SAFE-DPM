@@ -177,16 +177,18 @@ function listCtrl($scope, $sce, $http, $route,
 
                 // For removed or deactivated policies we need to
                 // remove the option to remove the policy
-                var k;
-                for (k = 0; k < dvals.length; k++) {
-                    if (dvals[k].pol_vals[dkeys.policy_removed].name === "true") {
+                //var k;
+                //for (k = 0; k < dvals.length; k++) {
+                //  console.log("dvals " + JSON.stringify(dvals[k].pol_vals));
+                //  console.log("dkeys " + JSON.stringify(dkeys));
+                //    if (dvals[k].pol_vals[dkeys.policy_removed].name === "true") {
                       // dvals[k].listaction = [{"name": "Reactivate"},
                       //      {"name": "Modify"}];
-                      dvals[k].listaction = [{"name": "Reactivate"}];
-                    } else {
-                      dvals[k].listaction = listaction;
-                    }
-                }
+                //      dvals[k].listaction = [{"name": "Reactivate"}];
+                //    } else {
+                //      dvals[k].listaction = listaction;
+                //    }
+                //}
 
                 $scope.data = dvals;
                 var totlen = 0;

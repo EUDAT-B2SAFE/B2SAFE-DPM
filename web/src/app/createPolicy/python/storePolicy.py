@@ -7,6 +7,7 @@ import hashlib
 import time
 import os
 import sqlite3
+import requests
 
 sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])))
 import policy_irods_sub
@@ -42,23 +43,23 @@ class Policy(object):
                                     'removed').strip()] = 'false'
         self.policy[self.config.get('POLICY_SCHEMA',
                                     'community').strip()] = \
-                                    self.form_data['community']
+            self.form_data['community']
         self.policy[self.config.get('POLICY_SCHEMA',
                                     'uniqueid').strip()] = \
-                                    self.form_data['uuid']
+            self.form_data['uuid']
         self.policy[self.config.get('POLICY_SCHEMA',
                                     'id').strip()] = self.form_data['id']
         self.policy[self.config.get('POLICY_SCHEMA',
                                     'name').strip()] = self.form_data['name']
         self.policy[self.config.get('POLICY_SCHEMA',
                                     'version').strip()] = \
-                                    self.form_data['version']
+            self.form_data['version']
         self.policy[self.config.get('POLICY_SCHEMA',
                                     'author').strip()] = \
-                                    self.form_data['author']
+            self.form_data['author']
         self.policy[self.config.get('ACTIONS_SCHEMA',
                                     'type').strip()] = \
-                                    self.form_data['type']['name']
+            self.form_data['type']['name']
         if self.form_data['trigger']['name'] == periodic_type:
             trigger_val = self.form_data['trigger_period']['name']
             self.trigger_time = True
@@ -74,7 +75,7 @@ class Policy(object):
         self.__fill_colls(self.form_data['sources'], 'SOURCES_SCHEMA')
         self.__fill_colls(self.form_data['targets'], 'TARGETS_SCHEMA')
 
-        print "policy is ", self.policy
+        # print "policy is ", self.policy
 
     def __fill_colls(self, form_colls, schema):
         '''Fill the collection attributes for the policy
@@ -153,10 +154,10 @@ class Policy(object):
         '''Private method to build the trigger node
         '''
         xml_trigger = policy_lib.triggerType()
-        #xml_trigger_action = policy_lib.actionType()
+        # xml_trigger_action = policy_lib.actionType()
 
         # Process the form data according to the type selected
-        #trigger_key = self.config.get('ACTIONS_SCHEMA', 'trigger_type')
+        # trigger_key = self.config.get('ACTIONS_SCHEMA', 'trigger_type')
         trigger_date_key = self.config.get('ACTIONS_SCHEMA', 'trigger')
 
         if self.trigger_time:
@@ -164,8 +165,8 @@ class Policy(object):
         else:
             runonce = policy_lib.runonceType()
             xml_trigger.runonce = runonce
-            #xml_trigger_action.valueOf_ = self.policy[trigger_date_key]
-            #xml_trigger.action = xml_trigger_action
+            # xml_trigger_action.valueOf_ = self.policy[trigger_date_key]
+            # xml_trigger.action = xml_trigger_action
         return xml_trigger
 
     def __create_actions(self):
@@ -232,7 +233,8 @@ class Policy(object):
 
                 if self.policy[key] == 'pid':
                     identifier_key = '%s%s' % \
-                        (self.config.get('TARGETS_SCHEMA', 'identifier'), index)
+                        (self.config.get('TARGETS_SCHEMA', 'identifier'),
+                         index)
                     xml_persistent_identifier = \
                         policy_lib.persistentIdentifierType7()
                     xml_persistent_identifier.valueOf_ = \
@@ -258,13 +260,15 @@ class Policy(object):
 
                 if self.policy[key] == 'pid':
                     identifier_key = "%s%s" % \
-                        (self.config.get('SOURCES_SCHEMA', 'identifier'), index)
+                        (self.config.get('SOURCES_SCHEMA', 'identifier'),
+                         index)
                     xml_persistent_identifier = \
                         policy_lib.persistentIdentifierType7()
                     xml_persistent_identifier.valueOf_ = \
                         self.policy[identifier_key]
                     xml_persistent_identifier.type_ = self.policy[key]
-                    xml_collection.persistentIdentifier = xml_persistent_identifier
+                    xml_collection.persistentIdentifier = \
+                        xml_persistent_identifier
                 elif self.policy[key] == 'collection':
                     xml_source_location = self.__create_src_location(index)
                     xml_collection.location = xml_source_location
@@ -283,7 +287,8 @@ class Policy(object):
         '''Method to set the create time
         '''
         self.policy[self.config.get("POLICY_SCHEMA", "ctime").strip()] = \
-                ctime
+            ctime
+
 
 def policy_exists(pol, config):
     '''Function to check if the policy exists in the database by comparing
@@ -310,6 +315,33 @@ def policy_exists(pol, config):
         exists = True
     return exists
 
+
+def dump_to_xml_store(pol, config):
+    '''Store the policy in the XML database'''
+    baseX_url = config.get("XMLDATABASE", "name").strip()
+
+    # Check the database exists
+#    resp = requests.put(baseX_url, auth=(config.get("XMLDATABASE", "user"),
+#                                         config.get("XMLDATABASE", "pass")))
+#    if resp.status_code != 201:
+#        print "Problem creating the XML database: ", resp.status_code
+#        print resp.text
+#        sys.exit(-100)
+
+    # Store the policy in the XML database. We assume the database exists
+    # beforehand
+    policy_url = baseX_url + "/policy_%s.xml" %\
+        pol[config.get("POLICY_SCHEMA", "uniqueid")]
+    resp = requests.put(policy_url,
+                        data=pol[config.get("POLICY_SCHEMA", "object")],
+                        auth=(config.get("XMLDATABASE", "user"),
+                              config.get("XMLDATABASE", "pass")))
+    if resp.status_code != 201:
+        print "Problem storing the policy in the XML database: ",\
+            resp.status_code
+        print resp.text
+        sys.exit(-100)
+
 def dump_to_store(pol, config):
     '''Function to dump the policy to a key-value pair database
     '''
@@ -333,7 +365,7 @@ def dump_to_store(pol, config):
 
     # Write the key-value pairs to the db
     for akey in pol.keys():
-        key = "%s_%s" %(akey, next_index)
+        key = "%s_%s" % (akey, next_index)
         try:
             cur.execute('''insert into policies (key, value) values (?, ?)''',
                         (key, pol[akey]))
@@ -357,6 +389,7 @@ def dump_to_store(pol, config):
 
     conn.commit()
 
+
 def run_store():
     '''Fetch and store the policy'''
     # Get the schema used for the key-value pair database
@@ -374,19 +407,20 @@ def run_store():
     policy.process_form()
     policy.create_xml(aform)
 
+    dump_to_xml_store(policy.policy, config)
     # Compute md5 for policy and the create time
-    md5 = hashlib.md5()
-    md5.update(policy.policy["policy_object"])
-    md5sum = md5.hexdigest()
-    policy.setmd5(md5sum)
-    policy.settime(int(time.time()))
+    # md5 = hashlib.md5()
+    # md5.update(policy.policy["policy_object"])
+    # md5sum = md5.hexdigest()
+    # policy.setmd5(md5sum)
+    # policy.settime(int(time.time()))
 
     # Check if the policy exists in the database
-    if policy_exists(policy.policy, config):
-        exists = True
-    else:
+    # if policy_exists(policy.policy, config):
+    #    exists = True
+    # else:
         # Write the policy to a database
-        dump_to_store(policy.policy, config)
+    #    dump_to_store(policy.policy, config)
 
     print ""
     print json.dumps({'policy_exists': exists})
