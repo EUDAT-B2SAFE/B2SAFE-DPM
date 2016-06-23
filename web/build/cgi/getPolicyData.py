@@ -188,7 +188,7 @@ def get_data(config):
                 xml.etree.ElementTree.fromstring(response.text))
 
         xml_files = []
-        for xml_node in xml_response.iter():
+        for xml_node in xml_response.getiterator():
             if "resource" in xml_node.tag:
                 if xml_node.text.strip() not in xml_files:
                     xml_files.append(xml_node.text.strip())
