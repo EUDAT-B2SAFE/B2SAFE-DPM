@@ -1,7 +1,7 @@
 # The Data Policy Manager Web interface
 The DPM web interface consists of html, javascript, css and python scripts that
 allow users to create and manage policies. The policies themselves are stored in
-an SQLITE database. Please not the DPM has only been tested on Linux machines -
+an baseX XML database. Please not the DPM has only been tested on Linux machines -
 you may experience problems installing on a Windows-based machine.
 
 ## Deploying the DPM
@@ -25,6 +25,8 @@ This will prompt you for the following paths:
 * Base URI for the CGI scripts.
 * Base PATH for the CGI scripts (this is the directory in which the scripts live).
 * Root URI for the REST API used by client tools.
+* Base URI for the BaseX XML database.
+* Username and password for access to the BaseX database.
 * Authentication method - currently EUDAT AAI is supported and a STANDALONE method.
 Please note that the STANDALONE method provides no authentication or access control
 and SHOULD NOT be used in production.
@@ -115,15 +117,15 @@ the 'Deploying the DPM' steps to deploy the pages on your web server.
 Using the '-c' option of the configure_dpm.py script you can supply the input
 parameters in a config file. The structure of the file should follow:
 
-   [DEFAULT]
-   CGI_URL=<root url to the cgi scripts>
-   CGI_PATH=<root path to the cgi scripts>
-   CLI_URL=<root url to the cgi scripts that provide the command line interface>
-   ADMIN_USER=<the username or AAI persistent identifier for the admin user>
-   ADMIN_NAME=<the firstname lastname of the admin user>
-   ADMIN_EMAIL=<the email address of the admin user>
-   AUTH_TYPE=<the authentication type: either 1 or 2 where 1=AAI, 2=STANDALONE>
-   ROOT_URL=<root url to the DPM html>
+    [DEFAULT]
+    CGI_URL=<root url to the cgi scripts>
+    CGI_PATH=<root path to the cgi scripts>
+    CLI_URL=<root url to the cgi scripts that provide the command line interface>
+    ADMIN_USER=<the username or AAI persistent identifier for the admin user>
+    ADMIN_NAME=<the firstname lastname of the admin user>
+    ADMIN_EMAIL=<the email address of the admin user>
+    AUTH_TYPE=<the authentication type: either 1 or 2 where 1=AAI, 2=STANDALONE>
+    ROOT_URL=<root url to the DPM html>
 
 
 Comments:
