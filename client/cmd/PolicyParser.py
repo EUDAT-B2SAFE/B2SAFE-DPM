@@ -99,7 +99,7 @@ class PolicyParser():
 
         self.logger.debug('Getting xml doc from url ' + url)
 
-        response = requests.get(url, auth=(username, password))
+        response = requests.get(url, auth=(username, password), verify=False)
         xmlData = response.text
 
         self.logger.debug("xmlData is %s" % xmlData)

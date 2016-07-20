@@ -158,7 +158,8 @@ def queryDpm(args, config, begin_date=None, end_date=None):
 
     # start interaction with DPM server
     logger.info('Getting policies [%s]' % url)
-    response = requests.post(url, data=post_data, auth=(username, password))
+    response = requests.post(url, data=post_data, 
+                             auth=(username, password), verify=False)
 
     print "response is ", response.text
     policy_files = response.text.split("\n")
