@@ -473,11 +473,14 @@ def read_local_config(local_cfg):
     cfg['cgi_url'] = local_conf.get("DEFAULT", "CGI_URL")
     cfg['cgi_path'] = local_conf.get("DEFAULT", "CGI_PATH")
     cfg['cli_url'] = local_conf.get("DEFAULT", "CLI_URL")
+    cfg['xml_url'] = local_conf.get("DEFAULT", "XML_URL")
     cfg['auth'] = local_conf.get("DEFAULT", "AUTH_TYPE")
     cfg['admin_name'] = local_conf.get("DEFAULT", "ADMIN_NAME")
     cfg['admin_user'] = local_conf.get("DEFAULT", "ADMIN_USER")
     cfg['admin_email'] = local_conf.get("DEFAULT", "ADMIN_EMAIL")
     cfg['root_url'] = local_conf.get("DEFAULT", "ROOT_URL")
+    cfg['xml_user'] = local_conf.get("DEFAULT", "XML_USER")
+    cfg['xml_pass'] = local_conf.get("DEFAULT", "XML_PASS")
     return cfg
 
 
@@ -485,6 +488,9 @@ def read_input(local_cfg):
     '''Read the input from the command line'''
     cgi_url = ''
     cli_url = ''
+    xml_url = ''
+    xml_user = ''
+    xml_pass = ''
     cgi_path = ''
     admin_user = ''
     admin_name = ''
@@ -492,8 +498,8 @@ def read_input(local_cfg):
     auth = '1'
     root_url = ''
     old_cfg = {'cgi_url': '', 'cli_url': '', 'root_url': '', 'cgi_path': '',
-               'auth': '1', 'admin_user': 'dpmadmin', 'admin_name': '',
-               'admin_email': ''}
+               'xml_url': '', 'auth': '1', 'admin_user': 'dpmadmin',
+               'admin_name': '', 'admin_email': ''}
 
     if os.path.isfile(local_cfg):
         old_cfg = read_local_config(local_cfg)
@@ -535,6 +541,39 @@ def read_input(local_cfg):
             sys.exit()
         elif len(cli_url) == 0:
             cli_url = old_cfg['cli_url']
+            break
+        else:
+            break
+
+    while 1:
+        print "Base URI for the XML database server: [%s]" % old_cfg['xml_url']
+        xml_url = raw_input()
+        if xml_url == 'q':
+            sys.exit()
+        elif len(xml_url) == 0:
+            xml_url = old_cfg['xml_url']
+            break
+        else:
+            break
+
+    while 1:
+        print "Username for access to XML database: [%s]" % old_cfg['xml_user']
+        xml_user = raw_input()
+        if xml_user == 'q':
+            sys.exit()
+        elif len(xml_user) == 0:
+            xml_user = old_cfg['xml_user']
+            break
+        else:
+            break
+
+    while 1:
+        print "Password for access to XML database: [%s]" % old_cfg['xml_pass']
+        xml_pass = raw_input()
+        if xml_pass == 'q':
+            sys.exit()
+        elif len(xml_pass) == 0:
+            xml_pass = old_cfg['xml_pass']
             break
         else:
             break
@@ -632,6 +671,9 @@ def read_input(local_cfg):
         fout.write("CGI_URL=%s\n" % cgi_url)
         fout.write("CGI_PATH=%s\n" % cgi_path)
         fout.write("CLI_URL=%s\n" % cli_url)
+        fout.write("XML_URL=%s\n" % xml_url)
+        fout.write("XML_USER=%s\n" % xml_user)
+        fout.write("XML_PASS=%s\n" % xml_pass)
         fout.write("ADMIN_USER=%s\n" % admin_user)
         fout.write("ADMIN_NAME=%s\n" % admin_name)
         fout.write("ADMIN_EMAIL=%s\n" % admin_email)
@@ -639,9 +681,10 @@ def read_input(local_cfg):
         fout.write("ROOT_URL=%s\n" % root_url)
         fout.close()
     out_args = {'cgi_url': cgi_url, 'cli_url': cli_url, 'root_url': root_url,
-                'cgi_path': cgi_path,
-                'admin_user': admin_user, 'admin_name': admin_name,
-                'admin_email': admin_email, 'auth_type': auth_type}
+                'xml_url': xml_url, 'xml_user': xml_user, 'xml_pass': xml_pass,
+                'cgi_path': cgi_path, 'admin_user': admin_user,
+                'admin_name': admin_name, 'admin_email': admin_email,
+                'auth_type': auth_type}
     return out_args
 
 
@@ -688,6 +731,15 @@ def configure_files(cfgfile_tmpl, cfgfile, clifile_tmpl, clifile, adminfile,
             if "CGI_URL" in line:
                 can = string.Template(line)
                 line = can.substitute(CGI_URL=in_args['cgi_url'])
+            if "XML_PATH" in line:
+                can = string.Template(line)
+                line = can.substitute(XML_PATH=in_args['xml_url'])
+            if "XML_USER" in line:
+                can = string.Template(line)
+                line = can.substitute(XML_USER=in_args['xml_user'])
+            if "XML_PASS" in line:
+                can = string.Template(line)
+                line = can.substitute(XML_PASS=in_args['xml_pass'])
             if "HTMLUSER" in line:
                 can = string.Template(line)
                 line = can.substitute(HTMLUSER=in_args['admin_user'])
@@ -744,9 +796,10 @@ def configure_dbase(config, root_url):
 
     lines = []
 
-    dbfile_template = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                   config.get("DATABASE_LOADING",
-                                                              "profile_page_template")))
+    dbfile_template =\
+        os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                     config.get("DATABASE_LOADING",
+                                                "profile_page_template")))
     dbfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                           config.get("DATABASE_LOADING",
                                                      "profile_page")))
@@ -793,6 +846,7 @@ def copy_files(target_dir, source_dirs):
                     print err
                     sys.exit(-10)
 
+
 def create_virtualenv(deploy_dir, indirs):
     '''Create the virtualenv for the WSGI server for CLI access'''
     # Create the virtualenv
@@ -818,7 +872,8 @@ def create_virtualenv(deploy_dir, indirs):
     output, error = proc.communicate()
     return_code = proc.poll()
     if return_code != 0:
-        print 'Error: problem configuring the python virtualenv, rc: ', return_code
+        print 'Error: problem configuring the python virtualenv, rc: ',\
+            return_code
         print output
         print error
         sys.exit(return_code)
@@ -852,6 +907,12 @@ def print_done(deploy_dir, indirs, data_dir, root_url, cgi_url, cli_url):
     print "- Please make sure the directory corresponding to the url:"
     print "'%s'" % data_url
     print "is writeable by your webserver."
+    print ""
+    print "- You will need to make sure that your baseX database exists before"
+    print "using the web interface."
+    print "WARNING: creating a database will DELETE an existing database."
+    print "You must verify a database does not exist before creating it."
+    print ""
     print "- You may need to remove the '.htaccess' file from your web pages"
     print "directory if you are running in STANDALONE mode."
     print ""
@@ -866,8 +927,8 @@ if __name__ == '__main__':
     local_cfg = ".dpm.cfg"
     deploy_dir = '../../deploy'
     data_dir = 'config/data'
-    build_dirs = {'cgi':'../cgi', 'html':'../html', 'wsgi':'../wsgi',
-                  'wsgi-test':'../wsgi-test'}
+    build_dirs = {'cgi': '../cgi', 'html': '../html', 'wsgi': '../wsgi',
+                  'wsgi-test': '../wsgi-test'}
 
     opts, args = getopt.getopt(sys.argv[1:], 'hfc:', ['help', 'force',
                                                       'config='])

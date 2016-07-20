@@ -8,6 +8,8 @@ import sqlite3
 import csv
 import os
 import re
+import requests
+import xml.etree.ElementTree
 
 
 def usage():
@@ -49,6 +51,7 @@ def get_user(config):
             username = config.get("HTMLENV", "user")
     return username
 
+
 def get_communities(config, username):
     '''Get the communities from the database. If the user is an
     admin return all the communities'''
@@ -81,17 +84,26 @@ def get_communities(config, username):
 
     return communities
 
+
 def get_columns(config):
     '''Get the columns to display'''
 
     columns = []
     # Read the configs and get database keys
-    visible_keys = [x.strip() for x in config.get("DATABASE",
-                                                  "default_visible").split(',')]
+    visible_keys = [x.strip() for x in
+                    config.get("DATABASE", "default_visible").split(',')]
 
     # Keys to skip
     skip_keys = [x.strip() for x in config.get("DATABASE",
                                                "skip_keys").split(',')]
+    skip_keys = skip_keys + ["policy_id", "policy_md5", "policy_ctime",
+                             "policy_community", "action_type",
+                             "action_trigger_action", "policy_removed",
+                             "action_trigger_type", "src_identifier",
+                             "src_type", "src_hostname", "src_resource",
+                             "tgt_identifier", "tgt_type", "tgt_hostname",
+                             "tgt_resource"]
+
     sections = ["POLICY_SCHEMA", "ACTIONS_SCHEMA", "SOURCES_SCHEMA",
                 "TARGETS_SCHEMA"]
     columns = []
@@ -105,6 +117,7 @@ def get_columns(config):
             else:
                 columns.append((val, "false"))
     return columns
+
 
 def get_last_index(cursor):
     '''Return the index of the last policy stored in the database'''
@@ -121,6 +134,7 @@ def get_last_index(cursor):
         last_index = 0
     return last_index
 
+
 def get_mcolls(cursor, in_array):
     '''Get the collections with multiple values
     '''
@@ -134,6 +148,7 @@ def get_mcolls(cursor, in_array):
         mcolls = mcolls + tcol
     return mcolls
 
+
 def get_data(config):
     '''Function to return the policies from the database
     '''
@@ -143,6 +158,9 @@ def get_data(config):
 
     # Get the communities from the Database
     communities = get_communities(config, username)
+
+    # TODO: we might need to change this function in order to match the
+    # elements in the XML file
 
     # Get the columns to display
     columns = get_columns(config)
@@ -160,7 +178,47 @@ def get_data(config):
     data = []
     last_index = get_last_index(cur)
 
-    # print "last_index is ", last_index
+    # Get the list of policies from the database
+    url = config.get("XMLDATABASE", "name")
+    response = requests.get(url, auth=(config.get("XMLDATABASE", "user"),
+                                       config.get("XMLDATABASE", "pass")))
+    if response.status_code == 200:
+        xml_response =\
+            xml.etree.ElementTree.ElementTree(
+                xml.etree.ElementTree.fromstring(response.text))
+
+        xml_files = []
+        for xml_node in xml_response.getiterator():
+            if "resource" in xml_node.tag:
+                if xml_node.text.strip() not in xml_files:
+                    xml_files.append(xml_node.text.strip())
+    else:
+        print "Problem querying the database: ", response.status_code
+        print response.text
+        sys.exit(response.status_code)
+
+    # Loop over the policies and get the atributes for the policies
+    attributes = {"name": "", "uniqueid": "", "author": "", "version": ""}
+    for policy in xml_files:
+        for attribute in attributes.keys():
+            query = url + "/%s" % policy + "?query=//*/@%s" % attribute
+            response = requests.get(query,
+                                    auth=(config.get("XMLDATABASE", "user"),
+                                          config.get("XMLDATABASE", "pass")))
+            if response.status_code == 200:
+                attrib_name = "%s=" % attribute
+                attributes[attribute] =\
+                    response.text.split(attrib_name)[1].strip('"')
+            else:
+                print "Problem querying the database: ", response.status_code
+                print response.text
+                sys.exit(response.status_code)
+
+        data.append([[attributes["name"], "true"],
+                    [attributes["version"], "true"],
+                    [attributes["author"], "true"],
+                    [attributes["uniqueid"], "true"]])
+
     for idx in range(0, last_index+1):
         col_names = []
         src_multi = []
@@ -191,78 +249,79 @@ def get_data(config):
         # print "col_names ", col_names
 
         # Get the keys from the database for the multi-elements
-        mcolls = []
-        conn.create_function("regexp", 2, match_multi)
-        cur = conn.cursor()
-        mcolls = get_mcolls(cur, src_multi)
-        mcolls = mcolls + get_mcolls(cur, tgt_multi)
+        # mcolls = []
+        # conn.create_function("regexp", 2, match_multi)
+        # cur = conn.cursor()
+        # mcolls = get_mcolls(cur, src_multi)
+        # mcolls = mcolls + get_mcolls(cur, tgt_multi)
 
         # Get the data from the database
-        vals = {}
-        for col_name in col_names:
+        # vals = {}
+        # for col_name in col_names:
             # print "coll_name ", col_name
-            cur.execute("select value from policies where key = ?",
-                        (col_name,))
-            result = cur.fetchall()
+        #    cur.execute("select value from policies where key = ?",
+        #                (col_name,))
+        #    result = cur.fetchall()
             # print "result ", result
-            vals[col_name] = result[0][0]
-        mvals = {}
-        for mcoll in mcolls:
-            cur.execute("select value from policies where key = ?",
-                        (mcoll,))
-            mvals[mcoll] = cur.fetchall()[0][0]
+        #    vals[col_name] = result[0][0]
+        # mvals = {}
+        # for mcoll in mcolls:
+        #    cur.execute("select value from policies where key = ?",
+        #                (mcoll,))
+        #    mvals[mcoll] = cur.fetchall()[0][0]
 
-        #print "vals ", vals
-        #print "mvals ", mvals
+        # print "vals ", vals
+        # print "mvals ", mvals
 
         # Check if the user belongs to the policy community
         # if not skip the policy
-        if community_key in vals:
-            if vals[community_key] not in communities:
-                continue
+        # if community_key in vals:
+        #    if vals[community_key] not in communities:
+        #        continue
 
         # Loop over the columns and store the values
-        #print "columns ", columns
-        for cid in range(0, len(columns)):
+        # print "columns ", columns
+        # for cid in range(0, len(columns)):
             # print "column ", columns[cid]
-            pat = re.compile('%s_[0-9]+_{0,1}[0-9]*' % columns[cid][0])
-            for key in vals.keys():
-                if pat.match(key):
-                    dvals.append((vals[key], columns[cid][1]))
-                    break
+        #    pat = re.compile('%s_[0-9]+_{0,1}[0-9]*' % columns[cid][0])
+        #    for key in vals.keys():
+        #        if pat.match(key):
+        #            dvals.append((vals[key], columns[cid][1]))
+        #            break
             # Loop over the columns with multivalues and concatenate
             # the results
-            multiple_values = False
-            multi_string = ""
-            sub_dict = {}
-            for akey in mvals.keys():
-                if pat.match(akey):
-                    sub_dict[akey] = mvals[akey]
+        #    multiple_values = False
+        #    multi_string = ""
+        #    sub_dict = {}
+        #    for akey in mvals.keys():
+        #        if pat.match(akey):
+        #            sub_dict[akey] = mvals[akey]
 
-            if len(sub_dict) > 0:
-                multiple_values = True
-                #print 'sub_dict ', sub_dict
-                tkeys = sub_dict.keys()
+        #    if len(sub_dict) > 0:
+        #        multiple_values = True
+                # print 'sub_dict ', sub_dict
+        #        tkeys = sub_dict.keys()
                 # print 'tkeys ', tkeys
-                tkeys.sort(key=lambda x: int(x.split('_')[-2]))
-                for key in tkeys:
+        #        tkeys.sort(key=lambda x: int(x.split('_')[-2]))
+        #        for key in tkeys:
                     # print 'key ', key
                     # print 'mvals ', mvals[key]
-                    if len(multi_string) == 0:
-                        if mvals[key] is not None:
-                            multi_string = mvals[key]
-                    else:
-                        if mvals[key] is not None:
-                            multi_string = "%s, %s" % (multi_string, mvals[key])
-                        else:
-                            multi_string = "%s, " % (multi_string)
-            if multiple_values:
-                dvals.append((multi_string, columns[cid][1]))
+        #            if len(multi_string) == 0:
+        #                if mvals[key] is not None:
+        #                    multi_string = mvals[key]
+        #            else:
+        #                if mvals[key] is not None:
+        #                    multi_string = "%s, %s" %\
+        #                        (multi_string, mvals[key])
+        #                else:
+        #                    multi_string = "%s, " % (multi_string)
+        #    if multiple_values:
+        #        dvals.append((multi_string, columns[cid][1]))
 
-        data.append(dvals)
+        # data.append(dvals)
 
     # Sort the list according to timestamp
-    data.sort(key=lambda x: x[time_idx][0], reverse=True)
+    # data.sort(key=lambda x: x[time_idx][0], reverse=True)
     print json.dumps(data)
 
 if __name__ == '__main__':
