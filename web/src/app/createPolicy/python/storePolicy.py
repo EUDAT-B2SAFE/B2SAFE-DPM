@@ -29,7 +29,7 @@ class Policy(object):
         conn = sqlite3.connect(config.get("DATABASE", "name").strip())
         cur = conn.cursor()
         cur.execute('''create table if not exists policies (key text, value
-                text)''')
+                    text)''')
         conn.commit()
 
     def process_form(self):
@@ -40,7 +40,7 @@ class Policy(object):
         run_now = 'immediately'
 
         self.policy[self.config.get('POLICY_SCHEMA',
-                                     'ctime').strip()] = int(time.time())
+                                    'ctime').strip()] = int(time.time())
 
         self.policy[self.config.get('POLICY_SCHEMA',
                                     'removed').strip()] = 'false'
@@ -289,6 +289,7 @@ class Policy(object):
         self.policy[self.config.get("POLICY_SCHEMA", "md5").strip()] =\
             md5
 
+
 def policy_exists(pol, config):
     '''Function to check if the policy exists in the database by comparing
     checksums
@@ -340,6 +341,7 @@ def dump_to_xml_store(pol, config):
             resp.status_code
         print resp.text
         sys.exit(-100)
+
 
 def dump_to_store(pol, config):
     '''Function to dump the policy to a key-value pair database
@@ -417,7 +419,7 @@ def run_store():
     # if policy_exists(policy.policy, config):
     #    exists = True
     # else:
-        # Write the policy to a database
+    # Write the policy to a database
     #    dump_to_store(policy.policy, config)
 
     print ""

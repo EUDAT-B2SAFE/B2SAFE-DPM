@@ -80,7 +80,7 @@ def get_value(conn, key):
     cur.execute('''select value from policies where key = ?''',
                 (key,))
     result = cur.fetchone()
-    if (type(result) is not None):
+    if (type(result) is not type(None)):
         if (len(result) > 0):
             value = result[0]
     return value
@@ -134,27 +134,31 @@ def getLogs(config, username, admin):
         pol_name = get_value(conn, pol_name_key)
 
         uuid_val = get_value(conn, auuid)
-        log_entries = get_log_entries(conn, config.get("LOG_SCHEMA", "id"),
+        log_entries = get_log_entries(conn, config.get("LOG_SCHEMA",
+                                                       "identifier"),
                                       uuid_val)
 
         if (log_entries >= 0):
             for log_num in range(0, int(log_entries)):
-                log_state = get_value(conn, "%s_%s" %
+                log_state = get_value(conn, "%s_%s%s" %
                                       (config.get("LOG_SCHEMA", "state"),
-                                       log_num))
-                log_timestamp = get_value(conn, "%s_%s" %
+                                       log_num,
+                                       uuid_num))
+                log_timestamp = get_value(conn, "%s_%s%s" %
                                           (config.get("LOG_SCHEMA",
                                                       "timestamp"),
-                                           log_num))
-                log_center = get_value(conn, "%s_%s" %
-                                       (config.get("LOG_SCHEMA", "center"),
-                                        log_num))
+                                           log_num,
+                                           uuid_num))
+                log_center = get_value(conn, "%s_%s%s" %
+                                       (config.get("LOG_SCHEMA", "hostname"),
+                                        log_num,
+                                        uuid_num))
                 policy_log_data.append((pol_name, uuid_val, log_state,
                                         log_center, float(log_timestamp)*1000))
     policy_logs["columns"] = [config.get("POLICY_SCHEMA", "name"),
                               config.get("POLICY_SCHEMA", "uniqueid"),
                               config.get("LOG_SCHEMA", "state"),
-                              config.get("LOG_SCHEMA", "center"),
+                              config.get("LOG_SCHEMA", "hostname"),
                               config.get("LOG_SCHEMA", "timestamp")]
     # Reverse the order of the log data so the most recent timestamps are
     # first

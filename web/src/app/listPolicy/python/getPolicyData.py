@@ -123,10 +123,12 @@ def get_last_index(cursor):
     '''Return the index of the last policy stored in the database'''
 
     last_index = None
+    last_idx = None
     cursor.execute("select value from policies where key = 'last_index'")
     result = cursor.fetchone()
-    if result is not None and len(result) > 0:
-        last_idx = result[0]
+    if result is not None:
+        if len(result) > 0:
+            last_idx = result[0]
 
     if last_idx is not None:
         last_index = int(last_idx)
@@ -304,8 +306,8 @@ def get_data(config):
                 # print 'tkeys ', tkeys
         #        tkeys.sort(key=lambda x: int(x.split('_')[-2]))
         #        for key in tkeys:
-                    # print 'key ', key
-                    # print 'mvals ', mvals[key]
+        # print 'key ', key
+        # print 'mvals ', mvals[key]
         #            if len(multi_string) == 0:
         #                if mvals[key] is not None:
         #                    multi_string = mvals[key]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #
-# Generated Mon Jan 11 17:05:53 2016 by generateDS.py version 2.12b.
+# Generated Wed Jul 13 14:31:37 2016 by generateDS.py version 2.12b.
 #
 
 import sys
@@ -75,8 +75,8 @@ ExternalEncoding = 'ascii'
 
 
 class policySub(supermod.policy):
-    def __init__(self, version=None, name=None, uniqueid=None, author=None, dataset=None, actions=None, anytypeobjs_=None):
-        super(policySub, self).__init__(version, name, uniqueid, author, dataset, actions, anytypeobjs_, )
+    def __init__(self, name=None, created=None, author=None, community=None, version=None, uniqueid=None, dataset=None, actions=None, anytypeobjs_=None):
+        super(policySub, self).__init__(name, created, author, community, version, uniqueid, dataset, actions, anytypeobjs_, )
 supermod.policy.subclass = policySub
 # end class policySub
 
@@ -119,20 +119,17 @@ supermod.triggerActionType.subclass = triggerActionTypeSub
 class coordinatesSub(supermod.coordinates):
     def __init__(self, site=None, path=None, resource=None, anytypeobjs_=None):
         super(coordinatesSub, self).__init__(site, path, resource, anytypeobjs_, )
-
-    def export(self, outfile, level, namespace_='tns:',
-               name_='coordinates',
-               namespacedef_='xmlns:tns="http://eudat.eu/2013/policy"',
+    def export(self, outfile, level, namespace_ = 'tns:',
+               name_ = 'coordinates',
+               namespacedef_ = 'xmlns:tns="http://eudat.eu/2013/policy"',
                pretty_print=True):
-        # We need to fix the superclass namespaces when exporting the
-        # xml file
+        # We need to fix the superclass namespaces when exporting the XML file
         super(coordinatesSub, self).export(outfile, level, 'tns:',
                 name_, 'xmlns:tns="http://eudat.eu/2013/policy"',
                 True)
     def exportChildren(self, outfile, level, namespace_='irodsns:',
             name_='coordinates', fromsubclass=False, pretty_print=True):
-        # We need to fix the children name spaces for the exported xml
-        # file
+        # We need to fix the children name spaces for the exported xml file
         super(coordinatesSub, self).exportChildren(outfile, level,
                 'irodsns:', name_, fromsubclass, pretty_print)
 supermod.coordinates.subclass = coordinatesSub

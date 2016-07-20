@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #
-# Generated Mon Jan 11 17:02:43 2016 by generateDS.py version 2.12b.
+# Generated Wed Jul 13 14:25:23 2016 by generateDS.py version 2.12b.
 #
 
 import sys
@@ -75,8 +75,8 @@ ExternalEncoding = 'ascii'
 
 
 class policySub(supermod.policy):
-    def __init__(self, version=None, name=None, uniqueid=None, author=None, dataset=None, actions=None, anytypeobjs_=None):
-        super(policySub, self).__init__(version, name, uniqueid, author, dataset, actions, anytypeobjs_, )
+    def __init__(self, name=None, created=None, author=None, community=None, version=None, uniqueid=None, dataset=None, actions=None, anytypeobjs_=None):
+        super(policySub, self).__init__(name, created, author, community, version, uniqueid, dataset, actions, anytypeobjs_, )
 supermod.policy.subclass = policySub
 # end class policySub
 
