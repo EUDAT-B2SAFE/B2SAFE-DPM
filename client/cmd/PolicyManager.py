@@ -5,14 +5,13 @@ __author__ = 'Willem Elbers (MPI-TLA) <willem.elbers@mpi.nl> \
 
 import sys
 import argparse
-import urllib2
+import requests
 import json
 import logging
 import logging.handlers
 import os
 import glob
 from crontab import CronTab
-from croniter import croniter
 from datetime import datetime
 from datetime import date
 from PolicyParser import PolicyParser
@@ -50,6 +49,7 @@ def parseFromFile(args):
     pParser.parseFromFile(policypath, xmlSchemaDoc)
     runPolicy(pParser.policy, usermap, test, 'PolicyManager', debug)
 
+
 def loadUserMap(mapFilename):
     """
     Load the file of account mapping into a dictionary
@@ -68,6 +68,7 @@ def loadUserMap(mapFilename):
 
     return usermap
 
+
 def cleanScheduledPolicies(args):
     """
     Remove expired (or all) policies from crontab
@@ -81,7 +82,7 @@ def cleanScheduledPolicies(args):
     for job in cron:
         logger.debug('checking job command: %s', job.command)
         if job.command.startswith("export clientUserName") \
-        and 'irule' in job.command:
+                and 'irule' in job.command:
             if args.all:
                 jobList.append(job)
             else:
@@ -108,69 +109,82 @@ def cleanScheduledPolicies(args):
     cron.write_to_user(user=True)
     logger.info('Policies removed')
 
+
 def runPolicy(policy, usermap, test, loggerName, debug):
 
     runner = PolicyRunner(usermap, test, loggerName, debug)
     runner.runPolicy(policy)
 
-def queryDpm(args, config, begin_date=None, end_date=None):
 
-    #load properties from configuration
+def queryDpm(args, config, begin_date=None, end_date=None):
+    # load properties from configuration
     with open(config.SectionMap('DpmServer')['tokenfile'], 'r') as fin:
         token_map = json.loads(fin.read())
         fin.close()
     username = token_map['token']
-    password = ''
-    url = '%s://%s:%s%s?community=%s&site=%s' % \
-          (config.SectionMap('DpmServer')['scheme'],
-           config.SectionMap('DpmServer')['hostname'],
-           config.SectionMap('DpmServer')['port'],
-           config.SectionMap('DpmServer')['path'],
-           config.SectionMap('Community')['id'],
-           config.SectionMap('Center')['id'])
+    password = token_map['pword']
+    # TODO: we need to replace this URL with a URL for the baseX database.
+    # this should be easy to do. The center is the hostname. We need to
+    # remove the check for the checksum and we need to update the url for
+    # the begindate and enddate.
+    url = '%s://%s:%s%s' % (config.SectionMap('DpmServer')['scheme'],
+                            config.SectionMap('DpmServer')['hostname'],
+                            config.SectionMap('DpmServer')['port'],
+                            config.SectionMap('DpmServer')['path'])
 
-    #apply parameters
-    if not begin_date is None:
-        url += '&begin_date=%s' % begin_date
-    if not end_date is None:
-        url += '&end_date=%s' % end_date
+    start_time = 0
+    end_time = 1000000000000000000
+    if begin_date is not None:
+        start_time = begin_date
+    if end_date is not None:
+        end_time = end_date
 
-    #start interaction with DPM server
-    logger.info('Listing policies [%s]' % url)
-    authinfo = urllib2.HTTPPasswordMgrWithDefaultRealm()
-    authinfo.add_password(None, url, username, password)
-    handler = urllib2.HTTPBasicAuthHandler(authinfo)
-    myopener = urllib2.build_opener(handler)
-    urllib2.install_opener(myopener)
-    response = urllib2.urlopen(url)
+    post_data = '''<rest:query xmlns:rest="http://basex.org/rest">
+                      <rest:text>
+                         let $results :=
+                         collection("policy")//*:policy[matches(@community,
+                                                        "%s")]
+                         for $policy in $results
+                         where $policy//*:site[matches(text(), "%s")]
+                         and $policy[@created > %s]
+                         and not($policy[@created > %s])
+                         let $policies := string-join(("%s", db:path($policy)),
+                                                       "/")
+                         return $policies
+                      </rest:text>
+                 </rest:query>''' % (config.SectionMap('Community')['id'],
+                                     config.SectionMap('Center')['id'],
+                                     start_time, end_time, url)
 
-    json_data = response.read()
+    # start interaction with DPM server
+    logger.info('Getting policies [%s]' % url)
+    response = requests.post(url, data=post_data, auth=(username, password))
 
-    if json_data is None:
+    print "response is ", response.text
+    policy_files = response.text.split("\n")
+
+    if policy_files is None:
         logger.info('No response found')
     else:
-        _json = json.loads(json_data)
-        logger.info('Found %d policies' % (len(_json)))
-        for entry in _json:
-            logger.info('entry %s' % entry)
-            url = entry['identifier']
-            ts = int(entry['ctime'])
-            checksum_value = entry['checksum']
-            checksum_algo = entry["checksum_type"]
+        logger.info('Found %d policies' % (len(policy_files)))
+        for entry in policy_files:
+            url = entry
 
             if not url.endswith('.html'):
-                logger.info('Processing policy: %s [%s, %s, %s]', url, ts,
-                            checksum_value, checksum_algo)
-                pParser = PolicyParser(None, args.test, 'PolicyManager', args.verbose)
-                xmlSchemaDoc = pParser.parseXmlSchema(args.schemaurl, args.schemapath)
-                pParser.parseFromUrl(url, username, password, xmlSchemaDoc,
-                                     checksum_algo, checksum_value)
-                if not pParser.policy is None:
+                logger.info('Processing policy: %s', url)
+                pParser = PolicyParser(None, args.test, 'PolicyManager',
+                                       args.verbose)
+                xmlSchemaDoc = pParser.parseXmlSchema(args.schemaurl,
+                                                      args.schemapath)
+                pParser.parseFromUrl(url, username, password, xmlSchemaDoc)
+                if pParser.policy is not None:
                     mapFilename = config.SectionMap('AccountMapping')['file']
                     usermap = loadUserMap(mapFilename)
-                    runPolicy(pParser.policy, usermap, args.test, 'PolicyManager', args.verbose)
+                    runPolicy(pParser.policy, usermap, args.test,
+                              'PolicyManager', args.verbose)
             else:
                 logger.error('invalid policy location [%s]', url)
+
 
 def updatePolicyStatus(args):
     """
@@ -188,28 +202,35 @@ def updatePolicyStatus(args):
         json_input = json.loads(fin.read())
         username = json_input['token']
         fin.close()
-    policies = conn.listPolicies()
-    if policies is not None:
-        for entry in policies:
-            logger.debug('entry %s' % type(entry))
-            url = str(entry['identifier'])
-            ts = int(entry['ctime'])
-            checksum_value = str(entry['checksum'])
-            checksum_algo = str(entry['checksum_type'])
+    if (args.id):
+        state = getPolicyStatus(args.id, debug)
+        conn.updateStatus(args.id, state)
+    else:
+        policies = conn.listPolicies()
+        if policies is not None:
+            for entry in policies:
+                logger.debug('entry %s' % type(entry))
+                url = str(entry['identifier'])
+                ts = int(entry['ctime'])
+                checksum_value = str(entry['checksum'])
+                checksum_algo = str(entry['checksum_type'])
 
-            if not url.endswith('.html'):
-                logger.info('Processing policy: %s [%s, %s, %s]', url, ts,
-                            checksum_value, checksum_algo)
-                pParser = PolicyParser(None, args.test, 'PolicyManager', debug)
-                xmlSchemaDoc = pParser.parseXmlSchema(args.schemaurl, args.schemapath)
-                pParser.parseFromUrl(url, username, password, xmlSchemaDoc,
-                                     checksum_algo, checksum_value)
-                if not pParser.policy is None:
-                    id = pParser.policy.policyId
-                    state = getPolicyStatus(id, debug)
-                    conn.updateStatus(id, state)
-            else:
-                logger.error('invalid policy location [%s]', url)
+                if not url.endswith('.html'):
+                    logger.info('Processing policy: %s [%s, %s, %s]', url, ts,
+                                checksum_value, checksum_algo)
+                    pParser = PolicyParser(None, args.test, 'PolicyManager',
+                                           debug)
+                    xmlSchemaDoc = pParser.parseXmlSchema(args.schemaurl,
+                                                          args.schemapath)
+                    pParser.parseFromUrl(url, username, password, xmlSchemaDoc,
+                                         checksum_algo, checksum_value)
+                    if pParser.policy is not None:
+                        id = pParser.policy.policyId
+                        state = getPolicyStatus(id, debug)
+                        conn.updateStatus(id, state)
+                else:
+                    logger.error('invalid policy location [%s]', url)
+
 
 def getPolicyStatus(id, debug):
     """
@@ -217,9 +238,9 @@ def getPolicyStatus(id, debug):
     """
 
     rulePath = os.path.join(os.path.dirname(sys.path[0]), 'rules')
-    ruleFiles = glob.glob(rulePath +'/replicate.' + id + '*')
+    ruleFiles = glob.glob(rulePath + '/replicate.' + id + '*')
     resPath = os.path.join(os.path.dirname(sys.path[0]), 'output')
-    resFiles = glob.glob(resPath +'/response.' + id + '*')
+    resFiles = glob.glob(resPath + '/response.' + id + '*')
     if ruleFiles is not None and len(ruleFiles) > 0:
         status = 'QUEUED'
         if resFiles is not None and len(resFiles) > 0:
@@ -239,7 +260,7 @@ def setLoggingSystem(config, debug):
 
     logfilepath = config.SectionMap('Logging')['logfile']
     loglevel = config.SectionMap('Logging')['loglevel']
-    ll = {'INFO': logging.INFO, 'DEBUG': logging.DEBUG, \
+    ll = {'INFO': logging.INFO, 'DEBUG': logging.DEBUG,
           'ERROR': logging.ERROR, 'WARNING': logging.WARNING}
     logger.setLevel(ll[loglevel])
     if (debug):
@@ -247,8 +268,8 @@ def setLoggingSystem(config, debug):
     rfh = logging.handlers.RotatingFileHandler(logfilepath,
                                                maxBytes=6000000,
                                                backupCount=9)
-    formatter = logging.Formatter('%(asctime)s %(levelname)s: '
-                                + '[%(funcName)s] %(message)s')
+    formatter = logging.Formatter('%(asctime)s %(levelname)s: ' +
+                                  '[%(funcName)s] %(message)s')
     rfh.setFormatter(formatter)
     logger.addHandler(rfh)
 
@@ -279,6 +300,7 @@ def main():
     parser_clean.set_defaults(func=cleanScheduledPolicies)
 
     parser_update = subparsers.add_parser('update', help='Update policy status in the central DB')
+    parser_update.add_argument('-i', '--id', help='id of the policy')
     parser_update.set_defaults(func=updatePolicyStatus)
 
     args = argp.parse_args()

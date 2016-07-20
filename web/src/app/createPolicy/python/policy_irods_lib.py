@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Generated Mon Jan 11 17:05:53 2016 by generateDS.py version 2.12b.
+# Generated Wed Jul 13 14:31:37 2016 by generateDS.py version 2.12b.
 #
 
 import sys
@@ -622,11 +622,13 @@ class policy(GeneratedsSuper):
     the data set."""
     subclass = None
     superclass = None
-    def __init__(self, version=None, name=None, uniqueid=None, author=None, dataset=None, actions=None, anytypeobjs_=None):
-        self.version = _cast(None, version)
+    def __init__(self, name=None, created=None, author=None, community=None, version=None, uniqueid=None, dataset=None, actions=None, anytypeobjs_=None):
         self.name = _cast(None, name)
-        self.uniqueid = _cast(None, uniqueid)
+        self.created = _cast(int, created)
         self.author = _cast(None, author)
+        self.community = _cast(None, community)
+        self.version = _cast(None, version)
+        self.uniqueid = _cast(None, uniqueid)
         self.dataset = dataset
         self.actions = actions
         self.anytypeobjs_ = anytypeobjs_
@@ -642,14 +644,18 @@ class policy(GeneratedsSuper):
     def set_actions(self, actions): self.actions = actions
     def get_anytypeobjs_(self): return self.anytypeobjs_
     def set_anytypeobjs_(self, anytypeobjs_): self.anytypeobjs_ = anytypeobjs_
-    def get_version(self): return self.version
-    def set_version(self, version): self.version = version
     def get_name(self): return self.name
     def set_name(self, name): self.name = name
-    def get_uniqueid(self): return self.uniqueid
-    def set_uniqueid(self, uniqueid): self.uniqueid = uniqueid
+    def get_created(self): return self.created
+    def set_created(self, created): self.created = created
     def get_author(self): return self.author
     def set_author(self, author): self.author = author
+    def get_community(self): return self.community
+    def set_community(self, community): self.community = community
+    def get_version(self): return self.version
+    def set_version(self, version): self.version = version
+    def get_uniqueid(self): return self.uniqueid
+    def set_uniqueid(self, uniqueid): self.uniqueid = uniqueid
     def hasContent_(self):
         if (
             self.dataset is not None or
@@ -676,18 +682,24 @@ class policy(GeneratedsSuper):
         else:
             outfile.write('/>%s' % (eol_, ))
     def exportAttributes(self, outfile, level, already_processed, namespace_='tns:', name_='policy'):
-        if self.version is not None and 'version' not in already_processed:
-            already_processed.add('version')
-            outfile.write(' version=%s' % (self.gds_format_string(quote_attrib(self.version).encode(ExternalEncoding), input_name='version'), ))
         if self.name is not None and 'name' not in already_processed:
             already_processed.add('name')
             outfile.write(' name=%s' % (self.gds_format_string(quote_attrib(self.name).encode(ExternalEncoding), input_name='name'), ))
-        if self.uniqueid is not None and 'uniqueid' not in already_processed:
-            already_processed.add('uniqueid')
-            outfile.write(' uniqueid=%s' % (self.gds_format_string(quote_attrib(self.uniqueid).encode(ExternalEncoding), input_name='uniqueid'), ))
+        if self.created is not None and 'created' not in already_processed:
+            already_processed.add('created')
+            outfile.write(' created="%s"' % self.gds_format_integer(self.created, input_name='created'))
         if self.author is not None and 'author' not in already_processed:
             already_processed.add('author')
             outfile.write(' author=%s' % (self.gds_format_string(quote_attrib(self.author).encode(ExternalEncoding), input_name='author'), ))
+        if self.community is not None and 'community' not in already_processed:
+            already_processed.add('community')
+            outfile.write(' community=%s' % (self.gds_format_string(quote_attrib(self.community).encode(ExternalEncoding), input_name='community'), ))
+        if self.version is not None and 'version' not in already_processed:
+            already_processed.add('version')
+            outfile.write(' version=%s' % (self.gds_format_string(quote_attrib(self.version).encode(ExternalEncoding), input_name='version'), ))
+        if self.uniqueid is not None and 'uniqueid' not in already_processed:
+            already_processed.add('uniqueid')
+            outfile.write(' uniqueid=%s' % (self.gds_format_string(quote_attrib(self.uniqueid).encode(ExternalEncoding), input_name='uniqueid'), ))
     def exportChildren(self, outfile, level, namespace_='tns:', name_='policy', fromsubclass_=False, pretty_print=True):
         if pretty_print:
             eol_ = '\n'
@@ -706,22 +718,30 @@ class policy(GeneratedsSuper):
         if self.hasContent_():
             self.exportLiteralChildren(outfile, level, name_)
     def exportLiteralAttributes(self, outfile, level, already_processed, name_):
-        if self.version is not None and 'version' not in already_processed:
-            already_processed.add('version')
-            showIndent(outfile, level)
-            outfile.write('version="%s",\n' % (self.version,))
         if self.name is not None and 'name' not in already_processed:
             already_processed.add('name')
             showIndent(outfile, level)
             outfile.write('name="%s",\n' % (self.name,))
-        if self.uniqueid is not None and 'uniqueid' not in already_processed:
-            already_processed.add('uniqueid')
+        if self.created is not None and 'created' not in already_processed:
+            already_processed.add('created')
             showIndent(outfile, level)
-            outfile.write('uniqueid="%s",\n' % (self.uniqueid,))
+            outfile.write('created=%d,\n' % (self.created,))
         if self.author is not None and 'author' not in already_processed:
             already_processed.add('author')
             showIndent(outfile, level)
             outfile.write('author="%s",\n' % (self.author,))
+        if self.community is not None and 'community' not in already_processed:
+            already_processed.add('community')
+            showIndent(outfile, level)
+            outfile.write('community="%s",\n' % (self.community,))
+        if self.version is not None and 'version' not in already_processed:
+            already_processed.add('version')
+            showIndent(outfile, level)
+            outfile.write('version="%s",\n' % (self.version,))
+        if self.uniqueid is not None and 'uniqueid' not in already_processed:
+            already_processed.add('uniqueid')
+            showIndent(outfile, level)
+            outfile.write('uniqueid="%s",\n' % (self.uniqueid,))
     def exportLiteralChildren(self, outfile, level, name_):
         if self.dataset is not None:
             showIndent(outfile, level)
@@ -749,22 +769,33 @@ class policy(GeneratedsSuper):
             self.buildChildren(child, node, nodeName_)
         return self
     def buildAttributes(self, node, attrs, already_processed):
-        value = find_attr_value_('version', node)
-        if value is not None and 'version' not in already_processed:
-            already_processed.add('version')
-            self.version = value
         value = find_attr_value_('name', node)
         if value is not None and 'name' not in already_processed:
             already_processed.add('name')
             self.name = value
-        value = find_attr_value_('uniqueid', node)
-        if value is not None and 'uniqueid' not in already_processed:
-            already_processed.add('uniqueid')
-            self.uniqueid = value
+        value = find_attr_value_('created', node)
+        if value is not None and 'created' not in already_processed:
+            already_processed.add('created')
+            try:
+                self.created = int(value)
+            except ValueError, exp:
+                raise_parse_error(node, 'Bad integer attribute: %s' % exp)
         value = find_attr_value_('author', node)
         if value is not None and 'author' not in already_processed:
             already_processed.add('author')
             self.author = value
+        value = find_attr_value_('community', node)
+        if value is not None and 'community' not in already_processed:
+            already_processed.add('community')
+            self.community = value
+        value = find_attr_value_('version', node)
+        if value is not None and 'version' not in already_processed:
+            already_processed.add('version')
+            self.version = value
+        value = find_attr_value_('uniqueid', node)
+        if value is not None and 'uniqueid' not in already_processed:
+            already_processed.add('uniqueid')
+            self.uniqueid = value
     def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
         if nodeName_ == 'dataset':
             obj_ = datasetType.factory()

@@ -5,7 +5,7 @@ import hashlib
 import logging
 import logging.handlers
 from lxml import etree
-import urllib2
+import requests
 from ReplicationPolicy import *
 
 
@@ -99,15 +99,8 @@ class PolicyParser():
 
         self.logger.debug('Getting xml doc from url ' + url)
 
-        authinfo = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        authinfo.add_password(None, url, username, password)
-        handler = urllib2.HTTPBasicAuthHandler(authinfo)
-        myopener = urllib2.build_opener(handler)
-        urllib2.install_opener(myopener)
-        response = urllib2.urlopen(url)
-        response_data = response.read()
-        data = json.loads(response_data)
-        xmlData = data["policy"]
+        response = requests.get(url, auth=(username, password))
+        xmlData = response.text
 
         self.logger.debug("xmlData is %s" % xmlData)
 

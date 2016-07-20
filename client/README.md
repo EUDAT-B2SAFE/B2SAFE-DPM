@@ -11,6 +11,7 @@ Required Python Modules:
  * argparse
  * urllib
  * urllib2
+ * requests
  * json
  * hashlib
  * crontab
