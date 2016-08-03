@@ -45,10 +45,10 @@ class PolicyParser():
 
     def parseXmlSchema(self, schemaurl, schemapath):
 
-        if schemaurl:
+        if schemaurl and schemaurl[0]:
             self.logger.debug('xml schema URL: ' + schemaurl[0])
             xmlSchemaDoc = self.parseXmlSchemaFromUrl(schemaurl[0])
-        elif schemapath:
+        elif schemapath and schemapath[0]:
             self.logger.debug('xml schema path: ' + schemapath[0])
             xmlSchemaDoc = etree.parse(schemapath[0])
         else:
@@ -67,7 +67,7 @@ class PolicyParser():
         if not xmlschema(root):
             self.logger.error(xmlschema.error_log.last_error)
             errorMessage = xmlschema.error_log.last_error.message
-            if errorMessage.startswith("Element '{http://eudat.eu/2013/policy}time'"):
+            if errorMessage.startswith("Element '{{}}time'".format(self.dpmNS)):
                 self.timeErrorManager(root, xmlschema)
             else:
                 exit()
@@ -85,24 +85,19 @@ class PolicyParser():
         if not xmlschema(root):
             self.logger.error(xmlschema.error_log.last_error)
             errorMessage = xmlschema.error_log.last_error.message
-            if errorMessage.startswith("Element '{http://eudat.eu/2013/policy}time'"):
+            if errorMessage.startswith("Element '{{}}time'".format(self.dpmNS)):
                 self.timeErrorManager(root, xmlschema)
             else:
                 exit()
         self.parse(root)
 
-    def parseFromUrl(self, url, username, password, xmlSchemaDoc,
+    def parseFromUrl(self, url, xmlSchemaDoc, conn,
                      checksum_algo=None, checksum_value=None):
         """
         Create an xml document from url input
         """
 
-        self.logger.debug('Getting xml doc from url ' + url)
-
-        response = requests.get(url, auth=(username, password), verify=False)
-        xmlData = response.text
-
-        self.logger.debug("xmlData is %s" % xmlData)
+        xmlData = conn.getDocumentByUrl(url)
 
         #Decide if checksum verification is needed and if yes, compute the checksum for the downloaded policy
         checksumVerificationNeeded = not checksum_algo == None
@@ -110,9 +105,9 @@ class PolicyParser():
         if checksumVerificationNeeded:
             self.logger.debug('Checksum computation: '),
             checksumVerification = False
-            if checksum_algo == 'md5':
+            if checksum_algo.lower() == 'md5':
                 self.logger.debug('md5')
-                newChecksumValue = hashlib.md5(xmlData).hexdigest()
+                newChecksumValue = hashlib.md5(xmlData.encode()).hexdigest()
                 checksumVerified = newChecksumValue == checksum_value
                 self.logger.debug('checksum computed %s read %s' % \
                   (newChecksumValue, checksum_value))
@@ -128,7 +123,6 @@ class PolicyParser():
         else:
             self.logger.error('failed')
 
-        response.close()
 
     def parse(self, policy):
         """
@@ -149,7 +143,7 @@ class PolicyParser():
 
         self.logger.debug('trying to fix year extra field in time element')
         timeElemList = root.xpath('//b:time',
-                                 namespaces={'b':'http://eudat.eu/2013/policy'})
+                                 namespaces={'b':self.dpmNS})
         for timeElem in timeElemList:
             self.logger.debug('Element: ' + etree.tostring(timeElem))
             if len(timeElem.text.split()) < 6:

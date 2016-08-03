@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://eudat.eu/2016/policy-status"
+ attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://eudat.eu/2016/policy-status">
+
+  <xs:element name="policy" type="tns:policyType"/>
+  <xs:complexType name="policyType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="name"/>
+      <xs:element type="xs:string" name="version"/>
+      <xs:element type="tns:checksumType" name="checksum"/>
+      <xs:element type="tns:statusType" name="status"/>
+      <xs:element type="xs:dateTime" name="timestamp"/> 
+    </xs:sequence>
+    <xs:attribute name="uniqueid" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="checksumType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="method" type="tns:checkSumMethod" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:simpleType name="checkSumMethod">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="none"/>
+      <xs:enumeration value="MD5"/>
+      <xs:enumeration value="SHA256"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="statusType">
+    <xs:annotation>
+      <xs:documentation>This is the list of states associated to a policy</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="DONE"/>
+      <xs:enumeration value="FAILED"/>
+      <xs:enumeration value="RUNNING"/>
+      <xs:enumeration value="QUEUED"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>
