@@ -6,7 +6,7 @@ VERS_CONFIG=./version.sh
 if [ "$USERNAME" = "root" ]
 then
 	echo "We are NOT allowed to run as root, exit"
-        echo "Run this script/procedure as the user who run's iRODS"
+        echo "Run this script/procedure as any user except root"
 	exit 1
 fi
 
