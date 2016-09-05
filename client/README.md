@@ -113,6 +113,50 @@ iRODS policy is not started.
 
 `./PolicyManager.py -t -v -c /opt/eudat/b2safe-dpm-client/conf/config.ini file -p ./policy_test.xml`
 
+```
+$ ./PolicyManager.py -v -c conf/config.ini list -e
+
+https://130.186.13.115:8443/BaseX851/rest/policies/Cineca_first.xml
+version = 1.0
+name = Cineca_first
+uniqueid = 5439064f-0d3e-4971-8cfe-5bde89d10f8b
+author = claudio
+community = Mycommunity
+created = 1462809008
+status = DONE
+checksum = 93ed6021618e1f451d2307244fdd4db0
+                                        
+https://130.186.13.115:8443/BaseX851/rest/policies/Cineca_second.xml
+version = 1.0
+name = Cineca_second
+uniqueid = 4439064v-0d8i-3171-8cfe-5ope89d10u8l
+author = claudio
+community = Myothercommunity
+created = 1472809345
+status = RUNNING
+checksum = 9585f39a963aeaf47a31142a09d99643
+                                        
+https://130.186.13.115:8443/BaseX851/rest/policies/Cineca_third.xml
+version = 1.0
+name = Cineca_third
+uniqueid = 2139064v-0d8i-4971-8cfe-5bde89d10k1z
+author = marco
+community = Mythirdcommunity
+created = 1472809661
+status = RUNNING
+checksum = 9585f39a963aeaf47a31142a09d99643
+                                        
+https://130.186.13.115:8443/BaseX851/rest/policies/Cineca_third2.xml
+version = 2.0
+name = Cineca_third2
+uniqueid = 4569064v-0d8h-4971-8cfe-5bde89d10d9u
+author = marco
+community = Mythirdcommunity
+created = 1470096000
+status = FAILED
+checksum = 269f2c017edd0d6825efb656b6549e94
+```
+
 ### Data send to the DPM server ###
 
 The `update` positional command tells to the PolicyManager to check if the expected list of policies is accepted from the local sites, already enforced or never scheduled. Then the status of each policy is updated in the central DPM DB.
