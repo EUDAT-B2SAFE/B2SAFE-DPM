@@ -33,6 +33,7 @@ class ServerConnector:
         """
         # Namespaces constants, they could be moved to a centralized place"
         self.polNs = 'http://eudat.eu/2013/policy'
+        self.irodsNs='http://eudat.eu/2013/iRODS-policy'
         self.staNs = 'http://eudat.eu/2016/policy-status'
 
         # logging initialization
@@ -184,39 +185,63 @@ class ServerConnector:
         return True
 
 
-    def listPolicies(self, start_date=0, end_date=2544652800):
+    def listPolicies(self, attributes=None, start_date=0, end_date=2544652800):
         """ This method lists the policies which satisfied input requirements 
-
+        @type  attributes: dictionary
+        @param attributes: The list of key-value pairs to filter the policies
         @type  start_date: string
         @param start_date: The start date, as unix timestamp, of the range 
                            considered to search for policies (default=None)
         @type  end_date:   string
         @param end_date:   The end date, as unix timestamp, of the range 
                            considered to search for policies (default=2050/08)
-        @rtype:          list of string
+        @rtype:          list of strings
         @return:         A list of urls, pointing to the policies in the DB
         """
         policiesdb = self.config.SectionMap('DpmServer')['policiesdbname']
 
-        # xquery request to select policy docs from the DB according to three
-        # requirements: date range, data hosting center, community
+        # xquery filter condition clause built from the attributes dictionary
+        data_filter = ''
+        if attributes:
+            for key in attributes.keys():
+                if key.startswith('source') or key.startswith('target'):
+                    pair = key.split('.')
+                    if len(pair) != 2:
+                        return None
+                    if pair[1] == 'site':
+                        data_filter += (' and $policy//tns:{}/tns:location/'
+                                       +'irodsns:site[matches(text(), "{}")]'
+                                       ).format(pair[0], attributes[key])
+                    elif pair[1] == 'pid':
+                        data_filter += (' and $policy//tns:{}/'
+                                       +'tns:persistentIdentifier'
+                                       +'[starts-with(text(), "{}")]'
+                                       ).format(pair[0], attributes[key])
+                    continue
+                if key == 'action':
+                    data_filter += (' and $policy//tns:action/tns:type[matches('
+                                   +'text(), "{}")]'.format(attributes[key]))
+                    continue
+                data_filter += ' and $policy[matches(@{},"{}")]'.format(key, 
+                                                                 attributes[key])
+        # xquery request to select policy docs from the DB according to the
+        # requirements provided as input
         post_data = '''<rest:query xmlns:rest="http://basex.org/rest">
                           <rest:text>
-                             let $results :=
-                             collection("%s")//*:policy[matches(@community,
-                                                        "%s")]
-                             for $policy in $results
-                                 where $policy//*:site[matches(text(), "%s")]
+                             declare namespace tns = "%s";
+                             declare namespace irodsns = "%s";
+                             let $results := collection("%s")/tns:policy
+                             for $policy in $results where $policy
+                                 %s
                                  and $policy[@created > %s]
                                  and not($policy[@created > %s])
                                      let $policies := string-join(("%s/%s", 
                                                          db:path($policy)), "/")
-                             return $policies
+                             return $policies 
                           </rest:text>
-                     </rest:query>''' % (policiesdb,
-                                     self.config.SectionMap('Community')['id'],
-                                     self.config.SectionMap('Center')['id'],
-                                     start_date, end_date, self.url, policiesdb)
+                     </rest:query>''' % (self.polNs, self.irodsNs, policiesdb, 
+                                         data_filter, start_date, end_date, 
+                                         self.url, policiesdb)
 
         self.logger.info('Listing policies [%s]' % self.url)
         self.logger.debug('post_data: ' + post_data + '; auth: ' + 
@@ -225,17 +250,17 @@ class ServerConnector:
         # perform the HTTP POST request to the DB
         response = requests.post(self.url, data=post_data, 
                                  auth=self.auth, verify=self.veri)
-
         self.logger.debug("response is: " + response.text)
 
         # response is split because a list of policies is returned
-        policy_files = response.text.split("\n")
-        if policy_files is None:
+        policy_urls = response.text.strip().split("\n")
+        if (policy_urls is None or len(policy_urls) == 0 
+            or (len(policy_urls) == 1 and len(policy_urls[0]) == 0)):
             self.logger.info('No response found')
+            return None
         else:
-            self.logger.info('Found %d policies' % (len(policy_files)))
-
-        return policy_files
+            self.logger.info('Found %d policies' % (len(policy_urls)))
+            return policy_urls
 
 
     def getDocumentByUrl(self, url, query=None):
@@ -295,7 +320,7 @@ class ServerConnector:
         statusdb = self.config.SectionMap('DpmServer')['policiesdbname']
         doc = self.getDocumentById(policyId, statusdb, self.polNs)
         if doc is not None:
-            # it use the "xmltodict" module to transform the XML doc to a python
+            # it uses the "xmltodict" module to transform the XML doc to a python
             # dictionary, taking into account the namespaces
             return (xmltodict.parse(doc, process_namespaces=True), doc)
         return (None, doc)

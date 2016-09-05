@@ -49,7 +49,16 @@ class PolicyRunner:
             """
             a_id += 1
             c_id = 0
-            for collection in policy.dataset.collections:
+            if action.sources is None:
+                if policy.dataset is not None:
+                    source_list = policy.dataset.collections
+                else:
+                    self.logger.error("missing sources")
+                    sys.exit(1)
+            else:
+                source_list =  action.sources
+                    
+            for source in source_list:
                 c_id += 1
                 t_id = 0
                 for target in action.targets:
@@ -60,7 +69,7 @@ class PolicyRunner:
 
                     if self.shouldRuleBeRun(action, rulePath):
                         jobId = policyId + '_' + str(a_id) + '_' + str(c_id) + '_' + str(t_id)
-                        self.createAndRunRule(policyId, action, collection, target, author, rulePath, jobId)
+                        self.createAndRunRule(policyId, action, source, target, author, rulePath, jobId)
 
 
     def shouldRuleBeRun(self, action, rulePath):
@@ -78,42 +87,35 @@ class PolicyRunner:
             return False
 
 
-    def createAndRunRule(self, policyId, action, collection, target, author, rulePath, jobId):
+    def createAndRunRule(self, policyId, action, source, target, author, rulePath, jobId):
         """
         Create a rule file and run it
         """
         self.logger.info('Generating rule')
-        self.generateRule(rulePath, collection, target.location.path, target.location.resource, policyId)
+        self.generateRule(rulePath, source, target.location.path, target.location.resource, policyId)
         path = os.path.join(os.path.dirname(sys.path[0]), 'output')
         resultPath = path + '/response.' + jobId + '.json'
 
         if action.triggerType == 'runonce':
             self.logger.info('Executing the rule just one time')
             result = self.executeRule(author, rulePath)
-            if not self.test:
-                resultJson = json.loads(result.strip().replace("'",'"'))
-                with open(resultPath, 'w') as outfile:
-                    json.dump(resultJson, outfile)
-            else:
-                self.logger.info(result)
-                
+            resultJson = json.loads(result.strip().replace("'",'"'))
+            with open(resultPath, 'w') as outfile:
+                json.dump(resultJson, outfile)
         elif action.triggerType == 'time':
             self.logger.info('Scheduling the rule execution via system crontab')
-            if not self.test:
-                cronJob_iter = self.crontab.find_comment(jobId)
-                if sum(1 for _ in cronJob_iter) == 0:
-                    cmd = 'export clientUserName=' + author + '; ' + self.iruleCmd + \
-                          ' -F ' + rulePath + ' > ' + resultPath
-                    cronJob = self.crontab.new(command=cmd, comment=jobId)
-                    self.logger.debug('time trigger: ' + action.trigger)
-                    cronJob.setall((action.trigger).split())
-                    cronJob.enable()
-                    self.crontab.write_to_user(user=True)
-                else:
-                    self.logger.info('Skipping rule execution, policy already '
-                                   + 'scheduled [id=%s]', policyId)
+            cronJob_iter = self.crontab.find_comment(jobId)
+            if sum(1 for _ in cronJob_iter) == 0:
+                cmd = 'export clientUserName=' + author + '; ' + self.iruleCmd + \
+                      ' -F ' + rulePath + ' > ' + resultPath
+                cronJob = self.crontab.new(command=cmd, comment=jobId)
+                self.logger.debug('time trigger: ' + action.trigger)
+                cronJob.setall((action.trigger).split())
+                cronJob.enable()
+                self.crontab.write_to_user(user=True)
             else:
-                self.logger.info('skipped in test mode')
+                self.logger.info('Skipping rule execution, policy already '
+                               + 'scheduled [id=%s]', policyId)
         else:
             self.logger.error('Unkown trigger type [%s]', action.triggerType)
 
@@ -137,31 +139,36 @@ class PolicyRunner:
                 self.logger.info('Command executed')
         else:
             self.logger.info('skipped in test mode')
-            output = 'skipped in test mode'
 
         return output
 
 
-    def generateRule(self, ruleFilePath, collection, path, resource, id):
+    def generateRule(self, ruleFilePath, source, path, resource, id):
+
         f = open(ruleFilePath,'w')
         f.write('replicate {\n')
-        f.write('\tlogInfo("DPM Client call to replicate.r");\n')
-        f.write('\tlogInfo("Source: *sourceNode");\n')
-        f.write('\tlogInfo("Destination: *destRootCollection");\n')
-        f.write('\tlogInfo("Destination resource: *destResource");\n')
-        f.write('\tlogInfo("Policy id: *policyId");\n')
+        f.write('\tlogInfo("DPM Client replicate rule");\n')
 
-        if collection.type == 'pid':
-            f.write('\tEUDATeURLsearch(*sourceNode, *sourceUrl);\n')
-            f.write('\tlogInfo("Source url: *sourceUrl");\n')
-            f.write('\t*sourcePath = "/" ++ triml(triml(*sourceUrl, "//"),"/");\n')
-        else:
-            f.write('\t*sourcePath = *sourceNode;\n')
-        f.write('\tlogInfo("Source path: *sourcePath");\n')
+        if source.type == 'eudat pid' or source.type == 'pid':
+            f.write('\t*pidValue = "{}";\n'.format(source.value))
+            # expected a sourceNode of type 
+            # irods://130.186.13.115:1247/cinecaDMPZone2/home/claudio/coll_C
+            f.write('\tEUDATeURLsearch(*pidValue, *url);\n')
+            f.write('\tmsiSubstr("*url", "8", "-1", *remaining);\n')
+            f.write('\t*pathList = split(*remaining, "/");\n')
+            f.write('\t*sourcePathList = tl(*pathList);\n')
+            f.write('\t*sourceNode = "";\n')
+            f.write('\tforeach(*sourcePathList) {\n')
+            f.write('\t\t*sourceNode = *sourceNode ++ "/" ++ *sourcePathList;\n')
+            f.write('\t}\n')
 
+        f.write('\tlogInfo(*sourceNode);\n')
+        f.write('\tlogInfo(*destRootCollection);\n')
+        f.write('\tlogInfo(*destResource);\n')
+        f.write('\tlogInfo(*policyId);\n')
         f.write('\t*recursive = bool("true");\n')
         f.write('\t*registered = bool("true");\n')
-        f.write('\t*result = EUDATReplication(*sourcePath, *destRootCollection,'
+        f.write('\t*result = EUDATReplication(*sourceNode, *destRootCollection,'
               + '*registered, *recursive, *response);\n')
         f.write('\twriteLine("serverLog","Generated replication for policy '
               + '[*policyId]");\n')
@@ -170,6 +177,11 @@ class PolicyRunner:
         f.write('}\n')
 
         outString = 'INPUT *sourceNode="%s",*destRootCollection="%s",*destResource="%s",*policyId="%s"\n'
-        f.write(outString % (collection.value, path, resource, id))
+        if source.type == 'eudat pid' or source.type == 'pid':
+            outString = 'INPUT *destRootCollection="%s",*destResource="%s",*policyId="%s"\n'
+            f.write(outString % (path, resource, id))
+        else:
+            outString = 'INPUT *sourceNode="%s",*destRootCollection="%s",*destResource="%s",*policyId="%s"\n'
+            f.write(outString % (source.value, path, resource, id))
         f.write('OUTPUT ruleExecOut\n')
         f.close()

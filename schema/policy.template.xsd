@@ -17,7 +17,7 @@ elementFormDefault="qualified" targetNamespace="http://eudat.eu/2013/policy">
     </xs:annotation>
     <xs:complexType>
       <xs:sequence>
-        <xs:element name="dataset">
+        <xs:element name="dataset" minOccurs="0">
           <xs:annotation>
             <xs:documentation>the dataset represents a set of collections, which are the target of the policy</xs:documentation>
           </xs:annotation>

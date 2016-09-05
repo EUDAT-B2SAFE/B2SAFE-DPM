@@ -12,6 +12,9 @@ import logging
 import logging.handlers
 import os
 import glob
+import xmltodict
+import time
+
 from crontab import CronTab
 from datetime import datetime
 from datetime import date
@@ -164,19 +167,13 @@ def runPolicy(policy, usermap, test, loggerName, debug):
     runner.runPolicy(policy)
 
 
-def queryDpm(args, config, begin_date=None, end_date=None):
+def queryDpm(args, config):
     """ Download the policies from the DB and execute the related B2SAFE workflow
 
     @type  args:       list of objects
     @param args:       The list of input parameters
     @type  config:     ConfigLoader object
     @param config:     It contains the configuration parameters
-    @type  begin_date: string
-    @param begin_date: The start date, as unix timestamp, of the range 
-                       considered to search for policies (default=None)
-    @type  end_date:   string
-    @param end_date:   The end date, as unix timestamp, of the range 
-                       considered to search for policies (default=None)
     """
     debug = args.verbose
     # manage the checksum verification
@@ -191,8 +188,7 @@ def queryDpm(args, config, begin_date=None, end_date=None):
         policySchemaUrl = policySchema
     # get the list of policies matching the input criteria
     conn = ServerConnector(args.config, args.test, "PolicyManager", debug)
-    policy_files = conn.listPolicies()
-
+    policy_files = getInfoPolicies(args,logger)
     if policy_files is not None:
         for url in policy_files:
             logger.info('Processing policy: %s', url)
@@ -295,6 +291,88 @@ def getPolicyStatus(id, debug):
     return status
 
 
+def getInfoPolicies(args, logger=None):
+    """ Download the policies from the DB and execute the related B2SAFE workflow
+
+    @type  args:       list of objects
+    @param args:       The list of input parameters
+                       considered to search for policies 
+    @type logger:      loggin.logger object
+    @param logger:     the logger
+    """
+    debug = args.verbose
+    config = ConfigLoader(args.config)
+    if logger is None:
+         setLoggingSystem(config, debug)
+    logger.info('Start to list the policies')
+    conn = ServerConnector(args.config, args.test, "PolicyManager", debug)
+    # if a policy id is provided the whole policy doc is shown
+    if args.subcmd == 'list' and args.id:
+        logger.debug('Policy with id [{}] is downloaded'.format(args.id))
+        polDict, polDoc = conn.getPolicy(args.id)
+        print polDoc
+        return None
+    attributes = {}
+    # loading the default from config
+    if len(config.SectionMap('PolicyFilters')) > 0:
+        logger.debug('Loading the filter parameters from the config file')
+        for par in config.SectionMap('PolicyFilters'):
+            attributes[par] = config.SectionMap('PolicyFilters')[par]
+    # loading the filter parameters from the input
+    if args.filter:
+        logger.debug('Loading the filter parameters from the input')
+        pairs = args.filter.split(',')
+        for pair in pairs:
+            try:
+                key, value = pair.split(':')
+            except:
+                print 'wrong value [{}] as a filter'.format(str(pair))
+                sys.exit(1)
+            attributes[key] = value
+    # filter policies according to input time interval
+    if args.start is not None:
+        sdate = datetime.strptime(args.start, "%d-%m-%Y %H:%M")
+        start = int(time.mktime(sdate.timetuple()))
+        policies = conn.listPolicies(attributes, start)
+        if args.end is not None:
+            edate = datetime.strptime(args.end, "%d-%m-%Y %H:%M")
+            end = int(time.mktime(edate.timetuple()))
+            policies = conn.listPolicies(attributes, start, end)
+    elif args.end is not None:
+        edate = datetime.strptime(args.end, "%d-%m-%Y %H:%M")
+        end = int(time.mktime(edate.timetuple()))
+        policies = conn.listPolicies(attributes, 0, end)
+    else:
+        policies = conn.listPolicies(attributes)
+    # listing of the policies matching the criteria of the dict "attributes"
+    if policies is not None:
+        for url in policies:
+            print url
+            if args.subcmd == 'list'and args.ext:
+                # listing policies with extended attributes
+                xmldoc = conn.getDocumentByUrl(url)
+                pol = xmltodict.parse(xmldoc, process_namespaces=True)
+                for key in pol[polNs+':policy']:
+                    if isinstance(key, basestring) and key.startswith('@'):
+                        print '{} = {}'.format(key[1:], 
+                                               pol[polNs+':policy'][key])
+                # get the status doc from the DB
+                status, doc = conn.getStatus(pol[polNs+':policy']['@uniqueid'])
+                if status is None:
+                    print 'status = '
+                    print 'checksum = '
+                else:
+                    print 'status = {}'.format(
+                           status[staNs+':policy'][staNs+':status'])
+                    print 'checksum = {}'.format(
+                           status[staNs+':policy'][staNs+':checksum']['#text'])
+            print '{: ^40}'.format('')
+    else:
+        print 'Nothing found'
+    
+    return policies
+
+
 def setLoggingSystem(config, debug):
     """
     Initialize the logging system
@@ -324,32 +402,60 @@ def setLoggingSystem(config, debug):
 
 
 def main():
-    argp = argparse.ArgumentParser(description="EUDAT Data Policy Manager (DPM) client")
-    argp.add_argument('-T', '--type', choices=['periodic', 'hook', 'cli'], required=True,
-                        help='Specify if this invokation is triggered periodic or via an irods hook')
+    argp = argparse.ArgumentParser(description="EUDAT Data Policy Manager cli")
     argp.add_argument('-t', '--test', action='store_true', required=False,
-                        help='Test the DPM client (does not trigger an actual replication)')
+                        help='Test the DPM client (does not trigger an actual' 
+                            +' replication)')
     argp.add_argument('-v', '--verbose', action='store_true', required=False,
                         help='Run the DPM client in verbose mode')
     argp.add_argument('-c', '--config', required=True, help='Path to config.ini')
 
-    subparsers = argp.add_subparsers(help='sub-command help')
+    subparsers = argp.add_subparsers(help='sub-command help', dest='subcmd')
     parser_url = subparsers.add_parser('http', help='Fetch policy over http')
+    parser_url.add_argument('-f', '--filter', help='filter the policies')
+    parser_url.add_argument('-st', '--start',
+                            help='filter the policies based on this start date'
+                                +' (format: day-month-year hour:minute)')
+    parser_url.add_argument('-en', '--end',
+                            help='filter the policies based on this end date'
+                                +' (format: day-month-year hour:minute)')    
     parser_url.set_defaults(func=parseOverHttp)
 
     parser_file = subparsers.add_parser('file', help='Fetch policy from a file')
-    parser_file.add_argument('-p', '--path', required=True, help='Path to the policy file')
+    parser_file.add_argument('-p', '--path', required=True, 
+                             help='Path to the policy file')
     parser_file.set_defaults(func=parseFromFile)
 
-    parser_clean = subparsers.add_parser('clean', help='Clean the expired policies from crontab')
-    parser_clean.add_argument('-a', '--all', action='store_true', help='clean all the policies')
+    parser_clean = subparsers.add_parser('clean', 
+                                         help='Remove the expired policies from'
+                                             +' crontab')
+    parser_clean.add_argument('-a', '--all', action='store_true', 
+                              help='Remove all the policies')
     parser_clean.set_defaults(func=cleanScheduledPolicies)
 
-    parser_update = subparsers.add_parser('update', help='Update policy status in the central DB')
+    parser_update = subparsers.add_parser('update', 
+                                          help='Update policy status in the DB')
     parser_update.add_argument('-i', '--id', help='id of the policy')
     parser_update.set_defaults(func=updatePolicyStatus)
 
+    parser_list = subparsers.add_parser('list', 
+                                        help='list policies in the central DB')
+    parser_list.add_argument('-i', '--id', help='id of the policy')
+    parser_list.add_argument('-e', '--ext', action='store_true', 
+                             help='extended set of information')
+    parser_list.add_argument('-f', '--filter', help='filter the policies')
+    parser_list.add_argument('-st', '--start', 
+                             help='filter the policies based on this start date'
+                                 +' (format: day-month-year hour:minute)')   
+    parser_list.add_argument('-en', '--end', 
+                             help='filter the policies based on this end date'
+                                 +' (format: day-month-year hour:minute)')
+    parser_list.set_defaults(func=getInfoPolicies)    
+
     args = argp.parse_args()
+    if args.subcmd == 'list' and args.id and (args.ext or args.filter):
+        print "-i and -e|-f are mutually exclusive ..."
+        sys.exit(2)
     args.func(args)
 
 if __name__ == '__main__':
