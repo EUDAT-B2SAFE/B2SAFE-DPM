@@ -70,24 +70,22 @@ the center's B2SAFE instance.
 
 to get help on how to use the script run `./PolicyManager.py -h`:
 ```
-usage: PolicyManager.py [-h] -T {periodic,hook,cli} [-t] [-v] -c CONFIG
-                        {http,file,clean,update} ...
+usage: PolicyManager.py [-h] [-t] [-v] -c CONFIG
+                        {http,file,clean,update,list} ...
 
-EUDAT Data Policy Manager (DPM) client
+EUDAT Data Policy Manager cli
 
 positional arguments:
-  {http,file,clean,update}
+  {http,file,clean,update,list}
                         sub-command help
     http                Fetch policy over http
     file                Fetch policy from a file
-    clean               Clean the expired policies from crontab
-    update              Update policy status in the central DB
+    clean               Remove the expired policies from crontab
+    update              Update policy status in the DB
+    list                list policies in the central DB
 
 optional arguments:
   -h, --help            show this help message and exit
-  -T {periodic,hook,cli}, --type {periodic,hook,cli}
-                        Specify if this invokation is triggered periodic or
-                        via an irods hook
   -t, --test            Test the DPM client (does not trigger an actual
                         replication)
   -v, --verbose         Run the DPM client in verbose mode
@@ -95,10 +93,6 @@ optional arguments:
                         Path to config.ini
 ```
 Required parameters:
-
-the -T parameter is used to specify what is invoking the script. Is it an iRODS
-system hook, is it a periodic invocation running at set intervals or if it is 
-started from the command line.
 
 The script has two modes to operate, (1) the http mode and (2) the file mode. 
 The http mode requires the URL of the policy DB in the configuration file. 
@@ -115,9 +109,9 @@ iRODS policy is not started.
 
 ### Examples ###
 
-`./PolicyManager.py -t -v -T cli -c /opt/eudat/b2safe-dpm-client/conf/config.ini http`
+`./PolicyManager.py -t -v -c /opt/eudat/b2safe-dpm-client/conf/config.ini http`
 
-`./PolicyManager.py -t -v -T cli file -p ./policy_test.xml`
+`./PolicyManager.py -t -v -c /opt/eudat/b2safe-dpm-client/conf/config.ini file -p ./policy_test.xml`
 
 ### Data send to the DPM server ###
 
