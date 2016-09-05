@@ -291,7 +291,7 @@ def getPolicyStatus(id, debug):
     return status
 
 
-def getInfoPolicies(args, logger=None):
+def getInfoPolicies(args, mylogger=None):
     """ Download the policies from the DB and execute the related B2SAFE workflow
 
     @type  args:       list of objects
@@ -302,8 +302,10 @@ def getInfoPolicies(args, logger=None):
     """
     debug = args.verbose
     config = ConfigLoader(args.config)
-    if logger is None:
-         setLoggingSystem(config, debug)
+    if mylogger is None:
+        logger = setLoggingSystem(config, debug)
+    else:
+        logger = mylogger
     logger.info('Start to list the policies')
     conn = ServerConnector(args.config, args.test, "PolicyManager", debug)
     # if a policy id is provided the whole policy doc is shown
@@ -399,6 +401,7 @@ def setLoggingSystem(config, debug):
                                   '[%(funcName)s] %(message)s')
     rfh.setFormatter(formatter)
     logger.addHandler(rfh)
+    return logger
 
 
 def main():
