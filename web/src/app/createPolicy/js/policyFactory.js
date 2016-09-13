@@ -16,6 +16,7 @@ var policy = function() {
     var target_organisation = {name: 'EUDAT'};
     var source_identifier = {name: ''};
     var target_identifier = {name: ''};
+    var policy_action_id = {name: ''};
 
     var sources = new Array({
         identifier: source_identifier,
@@ -42,6 +43,7 @@ var policy = function() {
         trigger_period: trigger_period,
         trigger_date: trigger_date,
         dateString: dateString,
+        policy_action_id: policy_action_id,
         sources: sources,
         targets: targets};
     return policyObj;

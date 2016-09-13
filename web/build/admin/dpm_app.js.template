@@ -430,14 +430,19 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
   policy, pristineFlags, invalidFlags, dataLocation, identifierFlags,
         submitFlag) {
     $scope.policy = policy;
+    $scope.src_policies = [];
+    $scope.showSrcPolColl = false;
+    $scope.showSrcPolPid = false;
     $scope.showSrcColl = identifierFlags.showSrcColls;
     $scope.showTgtColl = identifierFlags.showTgtColls;
     $scope.showSrcPID = identifierFlags.showSrcPIDs;
     $scope.showTgtPID = identifierFlags.showTgtPIDs;
+    $scope.showSrcPolicy = identifierFlags.showSrcPolicy;
     $scope.pristineFlags = pristineFlags;
     $scope.invalidFlags = invalidFlags;
     var locations = dataLocation.getLocations();
     var collType = '';
+    $scope.policy.policy_action_id.name = "--- Select ---";
 
     // Call the base dpm controller for the next/previous pages
     $injector.invoke(dpmCtrl, this, {$scope: $scope});
@@ -458,6 +463,13 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
             }
         }
         $scope.identifier_types = identifiers.types;
+        $scope.target_identifier_types = [];
+        for (var i = 0; i < identifiers.types.length; i++) {
+          if (identifiers.types[i].name !== "policy") {
+            $scope.target_identifier_types.push({'name':
+              identifiers.types[i].name});
+          }
+        }
         data_identifier.setIdentifiers(identifiers);
     });
 
@@ -536,12 +548,22 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
             $scope.invalidFlags.sources[index].coll = false;
             $scope.pristineFlags.sources[index].coll = false;
             $scope.showSrcColl[index] = true;
+            $scope.showSrcPolColl = false;
+            $scope.showSrcPolicy[index] = false;
             $scope.showSrcPID[index] = false;
           } else if (typeName === 'pid') {
             $scope.invalidFlags.sources[index].pid = false;
             $scope.pristineFlags.sources[index].pid = false;
             $scope.showSrcPID[index] = true;
+            $scope.showSrcPolColl = false;
+            $scope.showSrcPolicy[index] = false;
             $scope.showSrcColl[index] = false;
+          } else if (typeName === 'policy') {
+            $scope.invalidFlags.sources[index].identifier = false;
+            $scope.pristineFlags.sources[index].identifier = false;
+            $scope.showSrcPID[index] = false;
+            $scope.showSrcColl[index] = false;
+            getPolicies(index);
           }
         }
         if (ctype === 'target') {
@@ -602,6 +624,53 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
           targetCopy.push({'name': locations.target_collections[j].name});
         }
         $scope.policy.targets[index].identifier = targetCopy[collIndex];
+      }
+    };
+
+    // Get the policies from the database
+    var policy_data = [];
+    function getPolicies(index) {
+      var policies = $http({method: 'GET', url: '${CGI_URL}/fetch_policies.py'});
+      policies.then(function(results) {
+        policy_data = results.data;
+        // We want to now pre-fill the policies with values
+        var pol_ids = [];
+        for (var i = 0; i < policy_data.length; i++) {
+          pol_ids.push({"name": policy_data[i].uniqueid});
+        }
+        $scope.src_policies[index] = pol_ids;
+        $scope.showSrcPolicy[index] = true;
+        $scope.policy.sources[index].hostname.name = "";
+        $scope.policy.sources[index].identifier.name = "";
+      });
+    }
+
+    $scope.updateSrcPolicy = function(index, ptype) {
+      console.log("identifier is " + JSON.stringify($scope.policy.policy_action_id.name));
+      $scope.pristineFlags.identifiers[index].name = false;
+      for (var i = 0; i < policy_data.length; i++) {
+        if ($scope.policy.policy_action_id.name === policy_data[i].uniqueid) {
+          $scope.policy.sources[index].type.name = policy_data[i].type;
+          if (policy_data[i].type === "collection") {
+            $scope.showSrcPolColl = true;
+            $scope.showSrcPolPid = true;
+            $scope.pristineFlags.sources[index].site = false;
+            $scope.pristineFlags.sources[index].coll = false;
+            $scope.invalidFlags.sources[index].coll = false;
+            $scope.policy.sources[index].hostname.name =
+              policy_data[i].irodssite;
+            $scope.policy.sources[index].identifier.name =
+              policy_data[i].irodspath;
+          } else if (policy_data[i].type === "pid") {
+            $scope.showSrcPolPid = true;
+            $scope.showSrcPolColl = false;
+            $scope.invalidFlags.sources[index].pid = false;
+            $scope.pristineFlags.sources[index].pid = false;
+            $scope.policy.sources[index].hostname.name = "";
+            $scope.policy.sources[index].identifier.name =
+              policy_data[i].persistentIdentifier;
+          }
+        }
       }
     };
 
@@ -1072,11 +1141,13 @@ dpmApp.service("disabled_flags", function() {
 
 var identifierFlags = function() {
   var showSrcPIDs = [];
+  var showSrcPolicy = [];
   var showSrcColls = [];
   var showTgtColls = [];
   var showTgtPIDs = [];
   var identifierFlagObj = {showSrcPIDs: showSrcPIDs, showSrcColls: showSrcColls,
-  showTgtColls: showTgtColls, showTgtPIDs: showTgtPIDs};
+  showTgtColls: showTgtColls, showTgtPIDs: showTgtPIDs,
+  showSrcPolicy: showSrcPolicy};
   return identifierFlagObj;
 };
 
@@ -1159,6 +1230,7 @@ var policy = function() {
     var target_organisation = {name: 'EUDAT'};
     var source_identifier = {name: ''};
     var target_identifier = {name: ''};
+    var policy_action_id = {name: ''};
 
     var sources = new Array({
         identifier: source_identifier,
@@ -1185,6 +1257,7 @@ var policy = function() {
         trigger_period: trigger_period,
         trigger_date: trigger_date,
         dateString: dateString,
+        policy_action_id: policy_action_id,
         sources: sources,
         targets: targets};
     return policyObj;
@@ -1200,7 +1273,9 @@ function pristineFlags() {
       system: true, site: true, resource: true, coll: true, pid: true});
     var sources = new Array({organisation: true, location_type: true,
       system: true, site: true, resource: true, coll: true, pid: true});
-    var pristine = {action: action, sources: sources, targets: targets};
+    var identifiers = new Array({name: true});
+    var pristine = {action: action, sources: sources,
+      identifiers: identifiers, targets: targets};
     return pristine;
 }
 

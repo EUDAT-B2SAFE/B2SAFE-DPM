@@ -20,6 +20,7 @@ last_index=log_last_index
 
 [ACTIONS_SCHEMA]
 type=action_type
+policy_id=policy_action_id
 trigger=action_trigger_action
 trigger_type=action_trigger_type
 

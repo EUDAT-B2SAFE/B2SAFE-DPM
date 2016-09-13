@@ -141,6 +141,39 @@
             </div>
           </div>
 
+          <div id="policy" data-ng-show="showSrcPolicy[$index + currentPage*3]">
+            <div class="policyblock">
+              <p>Policy identifier</p>
+              <select name="srcpolicy" class="policy"
+                data-ng-options="p.name for p in src_policies[$index + currentPage*3]"
+                data-ng-model="policy.policy_action_id"
+                data-ng-change="updateSrcPolicy($index + currentPage*3, 'srcpolicy')"
+                data-validate-select required>
+                  <option name="policy.policy_action_id.name" value="">
+                    {{policy.policy_action_id.name}}
+                  </option>
+              </select>
+              <div data-ng-show="submitted">
+                <span id="error"
+                  data-ng-show="pristineFlags.identifiers[$index + currentPage*3].name">
+                  Policy is required
+                </span>
+              </div>
+              <div class="hostblock" data-ng-show="showSrcPolColl">
+                <p>Hostname</p>
+                <input name="srchost" type="text" id="srchost"
+                  data-ng-change="changeHost($index+currentPage*3, 'source', 'pid')"
+                  data-ng-model="policy.sources[$index + currentPage*3].hostname.name" readonly="readonly"/>
+              </div>
+              <div class="pidblock" data-ng-show="showSrcPolPid">
+                  <p>Identifier</p>
+                  <input name="srcpid" type="text" id="identifier"
+                    data-ng-change="changeColl($index+currentPage*3, 'source', 'pid')"
+                    data-ng-model="policy.sources[$index + currentPage*3].identifier.name" readonly="readonly"/>
+              </div>
+            </div>
+          </div>
+
           <div id="srcColl" data-ng-show="showSrcColl[$index + currentPage*3]">
             <div class="hostblock">
               <p>Hostname</p>
@@ -165,8 +198,8 @@
             <div class="pidblock">
               <p>Identifier</p>
               <input name="srcpid" type="text" id="identifier"
-                data-ng-change="changeColl($index+currentPage*3, 'source', 'pid')"
-                data-ng-model="policy.sources[$index + currentPage*3].identifier.name" />
+              data-ng-change="changeColl($index+currentPage*3, 'source', 'pid')"
+              data-ng-model="policy.sources[$index + currentPage*3].identifier.name" />
 
               <div data-ng-show="submitted">
                 <span id="error"
@@ -174,7 +207,6 @@
                   The identifier is required
                 </span>
               </div>
-
             </div>
           </div>
         </div>
@@ -193,14 +225,14 @@
           Add More
         </button>
       -->
-      
+
         <h3 class="field">Targets</h3>
         <div data-ng-repeat="target in policy.targets | startFrom:currentPage*3 | limitTo:3">
           <div class="datasets">
             <div class="collblock">
               <p>Type</p>
               <select name="tgtid" id="colltype"
-                data-ng-options="id.name for id in identifier_types"
+                data-ng-options="id.name for id in target_identifier_types"
                 data-ng-change="typeSelected($index + currentPage*3, 'target')"
                 data-ng-model="policy.targets[$index + currentPage*3].type"
                 data-validate-select required>

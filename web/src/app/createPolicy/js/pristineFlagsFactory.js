@@ -5,7 +5,9 @@ function pristineFlags() {
       system: true, site: true, resource: true, coll: true, pid: true});
     var sources = new Array({organisation: true, location_type: true,
       system: true, site: true, resource: true, coll: true, pid: true});
-    var pristine = {action: action, sources: sources, targets: targets};
+    var identifiers = new Array({name: true});
+    var pristine = {action: action, sources: sources,
+      identifiers: identifiers, targets: targets};
     return pristine;
 }
 
