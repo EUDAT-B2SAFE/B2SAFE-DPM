@@ -95,14 +95,10 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         locations.target_collections = [];
         for (var idx = 0; idx < data.length; ++idx) {
           if (data[idx].length > 0) {
-            locations.source_sites =
-            storeData(locations.source_sites, data[idx][0]);
-            locations.target_sites =
-            storeData(locations.target_sites, data[idx][0]);
-            locations.source_collections =
-            storeData(locations.source_collections, data[idx][1]);
-            locations.target_collections =
-            storeData(locations.target_collections, data[idx][1]);
+            locations.source_sites.push({name: data[idx][0]});
+            locations.target_sites.push({name: data[idx][0]});
+            locations.source_collections.push({name: data[idx][1]});
+            locations.target_collections.push({name: data[idx][1]});
           }
         }
 
