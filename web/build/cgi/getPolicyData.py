@@ -169,16 +169,17 @@ def get_data(config):
 
     # Open the database (first time around it's not really an error the db
     # doesn't exist)
-    dbfile = config.get("DATABASE", "name").strip()
-    if not os.path.isfile(dbfile):
-        sys.stderr.write("Warning: Database %s does not exist\n" % dbfile)
-        sys.exit(-100)
+#    dbfile = config.get("DATABASE", "name").strip()
+#    if not os.path.isfile(dbfile):
+#        sys.stderr.write("Warning: Database %s does not exist\n" % dbfile)
+#        sys.exit(-100)
 
-    conn = sqlite3.connect(dbfile)
-    cur = conn.cursor()
+#    conn = sqlite3.connect(dbfile)
+#    cur = conn.cursor()
 
     data = []
-    last_index = get_last_index(cur)
+    last_index = 0
+#    last_index = get_last_index(cur)
 
     # Get the list of policies from the database
     url = config.get("XMLDATABASE", "name")
