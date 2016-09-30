@@ -40,6 +40,11 @@ class PolicyRunner:
         self.logger.debug(policy.toString())
 
         path = os.path.join(os.path.dirname(sys.path[0]), 'rules')
+        if policy.author not in self.usermap.keys():
+            msg = 'EUDAT account [{}] is not mapped locally'.format(
+                                                             policy.author)
+            self.logger.error(msg)
+            return msg
         author = self.usermap[policy.author]
         policyId = policy.policyId
         a_id = 0
@@ -49,15 +54,15 @@ class PolicyRunner:
             """
             a_id += 1
             c_id = 0
-            if action.sources is None:
+            if action.sources is None or len(action.sources) == 0:
                 if policy.dataset is not None:
                     source_list = policy.dataset.collections
                 else:
-                    self.logger.error("missing sources")
-                    sys.exit(1)
+                    msg = 'missing sources'
+                    self.logger.error(msg)
+                    return msg
             else:
                 source_list =  action.sources
-                    
             for source in source_list:
                 c_id += 1
                 t_id = 0
@@ -70,6 +75,7 @@ class PolicyRunner:
                     if self.shouldRuleBeRun(action, rulePath):
                         jobId = policyId + '_' + str(a_id) + '_' + str(c_id) + '_' + str(t_id)
                         self.createAndRunRule(policyId, action, source, target, author, rulePath, jobId)
+        return None  
 
 
     def shouldRuleBeRun(self, action, rulePath):
@@ -83,7 +89,11 @@ class PolicyRunner:
         elif not os.path.isfile(rulePath):
             return True
         else:
-            self.logger.info("Skipped: Reason = runonce with existing rule file [%s]", rulePath)
+            self.logger.info("Skipped: Reason = runonce with existing rule file "
+                            + "[%s]", rulePath)
+            if self.test:
+                print ('[Test mode] Skipped: Reason = runonce with existing '
+                      + 'rule file [{}]'.format(rulePath))
             return False
 
 
@@ -98,26 +108,35 @@ class PolicyRunner:
 
         if action.triggerType == 'runonce':
             self.logger.info('Executing the rule just one time')
+            if self.test:
+                print '[Test mode] Executing the rule just one time'
             result = self.executeRule(author, rulePath)
             resultJson = json.loads(result.strip().replace("'",'"'))
             with open(resultPath, 'w') as outfile:
                 json.dump(resultJson, outfile)
         elif action.triggerType == 'time':
             self.logger.info('Scheduling the rule execution via system crontab')
-            cronJob_iter = self.crontab.find_comment(jobId)
-            if sum(1 for _ in cronJob_iter) == 0:
-                cmd = 'export clientUserName=' + author + '; ' + self.iruleCmd + \
-                      ' -F ' + rulePath + ' > ' + resultPath
-                cronJob = self.crontab.new(command=cmd, comment=jobId)
-                self.logger.debug('time trigger: ' + action.trigger)
-                cronJob.setall((action.trigger).split())
-                cronJob.enable()
-                self.crontab.write_to_user(user=True)
+            if self.test:
+                print '[Test mode] Scheduling the execution via system crontab'
             else:
-                self.logger.info('Skipping rule execution, policy already '
-                               + 'scheduled [id=%s]', policyId)
+                cronJob_iter = self.crontab.find_comment(jobId)
+                if sum(1 for _ in cronJob_iter) == 0:
+                    cmd = ('export clientUserName=' + author + '; '
+                          + self.iruleCmd + ' -F ' + rulePath + ' > ' 
+                          + resultPath)
+                    cronJob = self.crontab.new(command=cmd, comment=jobId)
+                    self.logger.debug('time trigger: ' + action.trigger)
+                    cronJob.setall((action.trigger).split())
+                    cronJob.enable()
+                    self.crontab.write_to_user(user=True)
+                else:
+                    self.logger.info('Skipping rule execution, policy already '
+                                   + 'scheduled [id=%s]', policyId)
         else:
             self.logger.error('Unkown trigger type [%s]', action.triggerType)
+            if self.test:
+                print 'ERROR: unkown trigger type [{}]'.format(
+                                                        action.triggerType)
 
 
     def executeRule(self, author, rulePath):
@@ -138,7 +157,11 @@ class PolicyRunner:
                 self.logger.debug("msg=%s", output)
                 self.logger.info('Command executed')
         else:
-            self.logger.info('skipped in test mode')
+            print ('[Test mode] executing command: ' + self.iruleCmd + ' -F ' 
+                  + rulePath)
+            output = ("{'policyId':'', 'result':'', "
+                                    + "'response':'Skipped in test mode'}")
+            self.logger.info('Skipped in test mode')
 
         return output
 

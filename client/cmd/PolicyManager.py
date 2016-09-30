@@ -96,9 +96,9 @@ def loadUserMap(mapFilename):
     return usermap
 
 
-def cleanScheduledPolicies(args):
+def cleanPolicies(args):
     """
-    Remove expired (or all) policies from crontab
+    Remove policies from the system
 
     @type  args: list of objects
     @param args: The list of input parameters
@@ -106,44 +106,93 @@ def cleanScheduledPolicies(args):
     debug = args.verbose
     config = ConfigLoader(args.config)
     setLoggingSystem(config, debug)
-    logger.info('Start to remove old policies')
+    logger.info('Start to remove policies')
+    if not args.cron and not args.filesystem:
+        #remove from crontab
+        cleanScheduledPolicies(args.id, logger)
+        #remove rules and outputs
+        cleanRules(args.id, logger, args.test)
+    else:
+        if args.cron:
+            cleanScheduledPolicies(args.id, logger)
+        if args.filesystem: 
+            cleanRules(args.id, logger, args.test)
+
+
+def cleanScheduledPolicies(policyId, logger):
+    """
+    Remove policies from crontab
+
+    @type  policy: policy object
+    @param policy: The policy to be scheduled
+    @type  logger: logger type
+    @param logger: The logger
+    """
+    logger.info('Start to remove scheduled policies')
     cron = CronTab(user=True)
     jobList = []
     for job in cron:
         logger.debug('checking job command: %s', job.command)
         # find the scheduled cron jobs based on iRODS icommand keywords
         if job.command.startswith("export clientUserName") \
-                and 'irule' in job.command:
-            if args.all:
-                # add all the scheduled cron jobs to the remove list
-                jobList.append(job)
-            else:
-                # add only the expired cron jobs to the remove list
-                logger.debug('checking if the job is expired')
-                schedule = job.schedule()
-                # get the date of the next expected execution of the job
-                datetime = schedule.get_next()
-                # the expiration is decided based on the year only
-                if datetime.year > (date.today()).year:
-                    logger.debug('removing the expired job')
+            and 'irule' in job.command:
+            if policyId is not None: 
+                if job.comment.startswith(policyId):
                     jobList.append(job)
-
+            else:
+                jobList.append(job)
     for job in jobList:
         logger.info('removing the job ' + job.comment)
         # remove the job
         cron.remove(job)
-        # remove rule files from the local file system
-        path = os.path.join(os.path.dirname(sys.path[0]), 'rules')
-        rulePath = path + '/replicate.' + job.comment + '.r'
-        logger.debug('Removing the file: ' + rulePath)
-        try:
-            os.remove(rulePath)
-            logger.debug('File removed')
-        except OSError, e:
-            logger.exception('Impossible to remove the file')
     # commit the change to the cron scheduler
     cron.write_to_user(user=True)
     logger.info('Policies removed')
+
+
+def cleanRules(policyId, logger, test):
+    """
+    Remove rule files from the local file system
+
+    @type  policy: policy object
+    @param policy: The policy to be scheduled
+    @type  logger: logger type
+    @param logger: The logger
+    @type  test:   boolean type
+    @param test:   True if the test mode is enabled
+    """
+    logger.info('Start to remove rules')
+    rulePath = os.path.join(os.path.dirname(sys.path[0]), 'rules')
+    resPath = os.path.join(os.path.dirname(sys.path[0]), 'output')
+    logger.debug('Policy id: ' + str(policyId))
+    if policyId is None:
+        policyId = ''
+    if not test:
+        test = ''
+    else:
+        test = '_test'
+    ruleFullPath = rulePath + '/replicate' + test + '.' + policyId + '*'
+    resFullPath = resPath + '/response.' + policyId + '*'
+    logger.debug('ruleFullPath: ' + ruleFullPath)
+    ruleFiles = glob.glob(ruleFullPath)
+    logger.debug('ruleFiles: ' + str(ruleFiles))
+    resFiles = glob.glob(resFullPath)
+    for path in ruleFiles:
+        logger.debug('Removing the file: ' + path)
+        try:
+            os.remove(path)
+            logger.debug('File removed')
+        except OSError, e:
+            logger.exception('Impossible to remove the file')
+    logger.info('Rules removed')
+    for path in resFiles:
+        logger.debug('Removing the file: ' + path)
+        try:
+            os.remove(path)
+            logger.debug('File removed')
+        except OSError, e:
+            logger.exception('Impossible to remove the file')
+    logger.info('Outputs removed')
 
 
 def runPolicy(policy, usermap, test, loggerName, debug):
@@ -164,7 +213,10 @@ def runPolicy(policy, usermap, test, loggerName, debug):
     @param debug:      If True the debug is enabled
     """
     runner = PolicyRunner(usermap, test, loggerName, debug)
-    runner.runPolicy(policy)
+    errMsg = runner.runPolicy(policy)
+    if errMsg is not None:
+        print 'ERROR: ' + errMsg
+        exit(1)
 
 
 def queryDpm(args, config):
@@ -202,12 +254,15 @@ def queryDpm(args, config):
                 # get the status doc from the DB for the checksum
                 status, doc = conn.getStatus(policyId)
                 # parse the policy and validate against schema and checksum
-                pParser.parseFromUrl(url, policySchemaDoc, conn, 
-                        status[staNs+':policy'][staNs+':checksum']['@method'],
-                        status[staNs+':policy'][staNs+':checksum']['#text'])
+                errMsg = pParser.parseFromUrl(url, policySchemaDoc, conn, 
+                         status[staNs+':policy'][staNs+':checksum']['@method'],
+                         status[staNs+':policy'][staNs+':checksum']['#text'])
             else:
                 # parse the policy and validate against schema
-                pParser.parseFromUrl(url, policySchemaDoc, conn)
+                errMsg = pParser.parseFromUrl(url, policySchemaDoc, conn)
+            if errMsg is not None:
+                print 'ERROR: ' + errMsg
+                exit(1)            
             if pParser.policy is not None:
                 # load user mapping
                 mapFilename = config.SectionMap('AccountMapping')['file']
@@ -234,11 +289,9 @@ def updatePolicyStatus(args):
     loggerName = 'PolicyManager'
     # update the status related to policies
     conn = ServerConnector(args.config, args.test, loggerName, debug)
-    if (args.id):
-        # get the local status of a policy based on the id
-        state = getPolicyStatus(args.id, debug)
-        # update the status doc on the DB
-        response = conn.updateStatus(args.id, state)
+    if args.id:
+        response = statusManagement(args.suspended, args.rejected, args.show, 
+                                    args.id, debug, logger, conn)
     else:
         # get the list of the policies to be updated
         policies = conn.listPolicies()
@@ -248,10 +301,9 @@ def updatePolicyStatus(args):
                 # get the policy id from the DB
                 policyId = conn.getDocumentByUrl(url, '//*:policy/@uniqueid/data()')
                 if policyId is not None:
-                    # get the local status of a policy based on the id
-                    state = getPolicyStatus(policyId, debug)
-                    # update the status doc on the DB
-                    response = conn.updateStatus(policyId, state)
+                    response = statusManagement(args.suspended, args.rejected, 
+                                                args.show, policyId, debug, 
+                                                logger, conn)
                 else:
                     logger.info('policy id not found')
 
@@ -268,7 +320,7 @@ def getPolicyStatus(id, debug):
     @param debug: If True the debug is enabled    
     @rtype:       string
     @return:      The status of the enforcement of the policy:
-                  [QUEUED | RUNNING | DONE | FAILED]
+                  [QUEUED | RUNNING | DONE | WAITING]
     """
     # define the paths where to find the irods rules and the related output
     rulePath = os.path.join(os.path.dirname(sys.path[0]), 'rules')
@@ -283,12 +335,58 @@ def getPolicyStatus(id, debug):
             status = 'RUNNING'
     else:
         # the policy is not currently translated to a rule
-        status = 'FAILED'
+        status = 'WAITING'
         if resFiles is not None and len(resFiles) > 0:
             # the rule has been executed and it is not scheduled
             status = 'DONE'
 
     return status
+
+
+def statusManagement(suspended, rejected, show, policyId, debug, logger, conn):
+    """
+    Manage the reading/writng of the status of the enforcement of a policy
+
+    @type  suspended: list
+    @param suspended: it means that the policy is suspended and the optional 
+                      argument is the message to explain why
+    @type  rejected: list
+    @param rejected: it means that the policy is rejected and the optional 
+                     argument is the message to explain why
+    @type  show:     boolean
+    @param show:     If True the status is only shown, the DB not updated
+    @type  policyId: string
+    @param policyId: The policy id
+    @type  debug:    boolean
+    @param debug:    If True the debug is enabled
+    @type  logger:   the logger type
+    @param logger:   The logger   
+    @rtype:       string
+    @return:      The status of the request to update the policy DB
+    """
+    response = None
+    # get the local status of a policy based on the id
+    state = getPolicyStatus(policyId, debug)
+    if show:
+        logger.debug('Just showing the status')
+        # show the status
+        print 'Policy id: ' + args.id
+        print 'Policy status: ' + state + '\n'
+    else:
+        # update the status doc on the DB
+#TODO manage the message of explanation associated to suspended/rejected states,
+#     adding a further option to the function updateStatus
+        if rejected is not None:
+            logger.debug('Updating the status to REJECTED')
+            response = conn.updateStatus(policyId, 'REJECTED')
+        elif suspended is not None:
+            logger.debug('Updating the status to SUSPENDED')
+            response = conn.updateStatus(policyId, 'SUSPENDED')
+        else:
+            logger.debug('Updating the status to ' + state)
+            response = conn.updateStatus(policyId, state)
+
+    return response
 
 
 def getInfoPolicies(args, mylogger=None):
@@ -390,7 +488,7 @@ def setLoggingSystem(config, debug):
     ll = {'INFO': logging.INFO, 'DEBUG': logging.DEBUG,
           'ERROR': logging.ERROR, 'WARNING': logging.WARNING}
     logger.setLevel(ll[loglevel])
-    if (debug):
+    if debug:
         logger.setLevel(logging.DEBUG)
 #TODO make the rotation parameters part of the configuration file
     # log to a file with rotation enabled
@@ -430,15 +528,26 @@ def main():
     parser_file.set_defaults(func=parseFromFile)
 
     parser_clean = subparsers.add_parser('clean', 
-                                         help='Remove the expired policies from'
-                                             +' crontab')
-    parser_clean.add_argument('-a', '--all', action='store_true', 
-                              help='Remove all the policies')
-    parser_clean.set_defaults(func=cleanScheduledPolicies)
+                                         help='Remove the policies from crontab'
+                                             +' and from the filesystem')
+    parser_clean.add_argument('-c', '--cron', action='store_true', 
+                              help='Remove the policies from crontab')
+    parser_clean.add_argument('-fs', '--filesystem', action='store_true',
+                              help='Remove the policies from filesystem')
+    parser_clean.add_argument('-i', '--id', help='id of the policy')
+    parser_clean.set_defaults(func=cleanPolicies)
 
     parser_update = subparsers.add_parser('update', 
                                           help='Update policy status in the DB')
     parser_update.add_argument('-i', '--id', help='id of the policy')
+    group_update = parser_update.add_mutually_exclusive_group()
+    group_update.add_argument('-s', '--show', action='store_true', 
+                              help='show the status without changing the DB')
+    group_update.add_argument('-rej', '--rejected', nargs='*', 
+                              help='reject the policy')
+    group_update.add_argument('-sus', '--suspended', nargs='*',
+                              help='suspend the policy')
+    
     parser_update.set_defaults(func=updatePolicyStatus)
 
     parser_list = subparsers.add_parser('list', 
