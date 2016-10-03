@@ -64,14 +64,11 @@ class PolicyParser():
         self.logger.debug('Parsing xml doc from text')
         xmlschema = etree.XMLSchema(xmlSchemaDoc)
         root = etree.fromstring(xmlData)
-        if not xmlschema(root):
-            self.logger.error(xmlschema.error_log.last_error)
-            errorMessage = xmlschema.error_log.last_error.message
-            if errorMessage.startswith("Element '{{}}time'".format(self.dpmNS)):
-                self.timeErrorManager(root, xmlschema)
-            else:
-                exit()
+        errMsg = self.validate(xmlschema, root)
+        if errMsg is not None:
+            return errMsg
         self.parse(root)
+        return None
 
     def parseFromFile(self, file, xmlSchemaDoc):
         """
@@ -82,14 +79,26 @@ class PolicyParser():
         xmlschema = etree.XMLSchema(xmlSchemaDoc)
         tree = etree.parse(file)
         root = tree.getroot()
+        errMsg = self.validate(xmlschema, root)
+        if errMsg is not None:
+            return errMsg        
+        self.parse(root)
+        return None
+
+    def validate(self, xmlschema, root):
+        """
+        Validate an xml document
+        """
+
         if not xmlschema(root):
             self.logger.error(xmlschema.error_log.last_error)
             errorMessage = xmlschema.error_log.last_error.message
             if errorMessage.startswith("Element '{{}}time'".format(self.dpmNS)):
-                self.timeErrorManager(root, xmlschema)
+                return self.timeErrorManager(root, xmlschema)
             else:
-                exit()
-        self.parse(root)
+                return str(xmlschema.error_log.last_error)
+        else:
+            return None
 
     def parseFromUrl(self, url, xmlSchemaDoc, conn,
                      checksum_algo=None, checksum_value=None):
@@ -116,12 +125,13 @@ class PolicyParser():
         self.logger.debug('Checksum verification: ')
         if checksumVerificationNeeded and checksumVerified:
             self.logger.debug('passed')
-            self.parseFromText(xmlData, xmlSchemaDoc)
+            return self.parseFromText(xmlData, xmlSchemaDoc)
         elif not checksumVerificationNeeded:
             self.logger.debug('disabled')
-            self.parseFromText(xmlData, xmlSchemaDoc)
+            return self.parseFromText(xmlData, xmlSchemaDoc)
         else:
             self.logger.error('failed')
+            return 'Checksum verification: failed'
 
 
     def parse(self, policy):
@@ -151,7 +161,8 @@ class PolicyParser():
                 timeElem.text = timeElem.text + ' *'
                 if not xmlschema(root):
                     self.logger.error(xmlschema.error_log.last_error)
-                    exit()
+                    return str(xmlschema.error_log.last_error)
             else:
                 self.logger.debug('Impossible to fix the error')
-                exit()
+                return 'Element: ' + etree.tostring(timeElem) + ' is wrong'
+        return None

@@ -77,12 +77,14 @@ EUDAT Data Policy Manager cli
 
 positional arguments:
   {http,file,clean,update,list}
-                        sub-command help
+                        sub-command help   
     http                Fetch policy over http
     file                Fetch policy from a file
-    clean               Remove the expired policies from crontab
+    clean               Remove the policies from crontab and from the
+                        filesystem
     update              Update policy status in the DB
     list                list policies in the central DB
+
 
 optional arguments:
   -h, --help            show this help message and exit
