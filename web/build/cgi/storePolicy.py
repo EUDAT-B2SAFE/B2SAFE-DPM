@@ -157,7 +157,8 @@ class Policy(object):
         action_key = self.config.get('ACTIONS_SCHEMA', 'type')
         action_policy_key = self.config.get('ACTIONS_SCHEMA', 'policy_id')
         xml_action_type = policy_lib.actionType()
-        xml_action_type.policyID = self.policy[action_policy_key]['name']
+        if len(self.policy[action_policy_key]['name']) > 0:
+            xml_action_type.policyID = self.policy[action_policy_key]['name']
         xml_action_type.valueOf_ = self.policy[action_key]
         return xml_action_type
 

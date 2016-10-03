@@ -14,7 +14,7 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
     $scope.invalidFlags = invalidFlags;
     var locations = dataLocation.getLocations();
     var collType = '';
-    $scope.policy.policy_action_id.name = "--- Select ---";
+    $scope.policy.policy_action_id.name = "";
 
     // Call the base dpm controller for the next/previous pages
     $injector.invoke(dpmCtrl, this, {$scope: $scope});
@@ -115,6 +115,7 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
           if (typeName === 'collection') {
             $scope.invalidFlags.sources[index].coll = false;
             $scope.pristineFlags.sources[index].coll = false;
+            $scope.policy.policy_action_id.name = "";
             $scope.showSrcColl[index] = true;
             $scope.showSrcPolColl = false;
             $scope.showSrcPolicy[index] = false;
@@ -122,6 +123,7 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
           } else if (typeName === 'pid') {
             $scope.invalidFlags.sources[index].pid = false;
             $scope.pristineFlags.sources[index].pid = false;
+            $scope.policy.policy_action_id.name = "";
             $scope.showSrcPID[index] = true;
             $scope.showSrcPolColl = false;
             $scope.showSrcPolicy[index] = false;
@@ -129,6 +131,7 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
           } else if (typeName === 'policy') {
             $scope.invalidFlags.sources[index].identifier = false;
             $scope.pristineFlags.sources[index].identifier = false;
+            $scope.policy.policy_action_id.name = "--- Select ---";
             $scope.showSrcPID[index] = false;
             $scope.showSrcColl[index] = false;
             getPolicies(index);
