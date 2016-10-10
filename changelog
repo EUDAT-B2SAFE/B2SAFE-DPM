@@ -1,0 +1,10 @@
+10/10/2016 - v1.1.0 beta
+
+- the web UI offers the possibility 
+  * to link together two policies via policy id,
+  * to address a collection using an iRODS path or a PID.
+- the back-end DB is now an XML DB, implemented through BASEX.
+- the agent is now able 
+  * to generate test rules for the downloaded policies
+  * to list the available policies in the DB filtering the list
+  * to update the status of the policy on the DB
