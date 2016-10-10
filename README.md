@@ -4,9 +4,10 @@ a web interface for creating and managing the policies. The policies are defined
 in an abstract language. Client scripts exist that allow users to download the
 policies and transform them into executable workflows.
 
-The code for the web interface is under the 'web' directory (please see the
-  README there). The client scripts under the 'client' directory provide examples
-  of how to use the policies.
+You can find information on installing the web interface in the web/README.md 
+file. The client/README.md contains information on the client application.
+The package wiki (https://github.com/EUDAT-B2SAFE/B2SAFE-DPM/wiki) contains 
+information on using the web interface and the client. 
 
 Comments:
 adilhasan2@gmail.com

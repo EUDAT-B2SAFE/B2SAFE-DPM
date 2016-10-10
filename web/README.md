@@ -1,22 +1,28 @@
 # The Data Policy Manager Web interface
 The DPM web interface consists of html, javascript, css and python scripts that
 allow users to create and manage policies. The policies themselves are stored in
-an baseX XML database. Please not the DPM has only been tested on Linux machines -
-you may experience problems installing on a Windows-based machine.
+an baseX XML database (http://basex.org/). Please not the DPM has only been
+tested on Linux machines - you may experience problems installing on a
+Windows-based machine.
 
 ## Deploying the DPM
 Most users will only be interested in deploying the DPM. The DPM makes use of a
 mailserver to send emails. By default the email host is set to localhost. If
-you want to change the host you need to edit the  updateAndEmail.py script to
-point to your email server.
+you want to change the host you need to edit the $DPMINSTALL/config/policy.cfg
+script to point to your email server.
 
-1. Make sure the python packages passlib  and virtualenv installed:
-sudo pip install passlib
-sudo pip install virtualenv
+1. Download the baseX XML database server (http://basex.org) and follow the
+instructions to install and run the server. NOTE: although the baseX server
+is populated by the DPM direct access to the DPM is needed for clients wishing to
+query or download policies.
 
-2. cd build/admin
+2. Make sure the python packages passlib  and virtualenv installed:
+pip install passlib
+pip install virtualenv
 
-3. run the script:
+3. cd build/admin
+
+4. run the script:
 '''
 ./configure_dpm.py
 '''
@@ -31,56 +37,28 @@ This will prompt you for the following paths:
 Please note that the STANDALONE method provides no authentication or access control
 and SHOULD NOT be used in production.
 * The name of the administrator of the DPM.
-* The username for the DPM admin. Note: for the AAI mode the username should be
+* The username for the DPM admin. NOTE: for the AAI mode the username should be
 the AAI persistent identifier for the administrator.
 * The email address of the DPM admin.
 * Root URI for the web pages.
 
 You can supply the input parameters via config file using the '-c' option (see
-  the 'Config File Schema' section for the structure of the file). The script will create the python virtual environment for the REST API, the databases for the DPM and assemble the web pages.
+the 'Config File Schema' section for the structure of the file). The script
+will create the python virtual environment for the REST API, the databases for
+the DPM and assemble the web pages.
 
-4. Once script has completed you will need to copy the 'html', 'cgi', 'wsgi'
+5. Once script has completed you will need to copy the 'html', 'cgi'
 directories under the 'deploy' directory to those that map to the corresponding
-URI.
+URI. NOTE: the wsgi directory does not need to be copied. This directory and its
+contents will be removed from future releases.
 
-5. Make sure that the 'data' directory for the 'cgi' directory is writeable by
-the webserver to allow the web server to populate the policy database. Since the REST API expects to be installed as a WSGI application running in your web server (see for example: http://flask.pocoo.org/docs/0.10/deploying/mod_wsgi/).
+6. Make sure that the 'data' directory for the 'cgi' directory is writeable by
+the webserver to allow the web server to populate the policy database.
 
 ## Using the DPM
 You can use the web interface to create a policy for replication (currently the
-  only supported policy). To create a policy follow these steps:
-
-1. Register to use the DPM. Select a community you belong to and a fill in your
-personal information. You will receive an email once your request has been processed.
-
-2. Once registered you will be able to create a policy by choosing the 'Create Polcy'
-tab. Fill in the required information for the replication policy and submit your
-policy for storage.
-
-3. To query policies to download use:
-curl -u<emailaddress>:<password> "<CLI_URL>/search/policy?community=<community>"
-
-This should result in a list of policy parameters where the parameters are:
-FETCH_URI, TIMESTAMP, CHECKSUMVALUE, "CHECKSUMALGORITHM".
-
-4. Use the FETCH_URL to download the policy:
-curl <FETCH_URI>
-
-5. You can upload log information associated to the policy using:
-curl -u<emailaddress>:<password> "<CLI-URI>/policy/log?state=<state>&community=<community>&timestamp=<timestamp>&hostname=<hostname>&identifier=<uuid>"
-
-where:
-* state = the state of the policy: QUEUED, RUNNING, DONE, FAILED
-* community = the community the policy belongs to
-* timestamp = the timestamp for the log message
-* hostname = the host where the policy is executed
-* identifier = the uuid of the policy
-
-6. To find the list of deactivated policies run:
-curl "<CLI_URL>/search/policy?community_id=<community>&deactivated=true"
-
-This should return a list of deactivated policies. The list contains:
-<policy uuid>, <md5 value>, <md5 algorithm>
+only supported policy). A description of how to create a policy can be found on
+the wiki: https://github.com/EUDAT-B2SAFE/B2SAFE-DPM/wiki/Quick-start:-definition-of-a-specific-data-policy
 
 
 ## Building the web interface
@@ -90,11 +68,11 @@ scripts that need to be assembled for deployment. The assembly is done using the
 grunt task manager tool. This means you need to have nodejs installed.
 
 1. If you don't have node (http://nodejs.org/) installed then download and
-   install it.
+   install it following the instructions on the nodejs site.
 
 2. Install the grunt command line interface
    (http://gruntjs.com/getting-started) globally (you may need to be root to
-   be root to do this):
+   do this):
 '''
 npm install -g grunt-cli
 '''

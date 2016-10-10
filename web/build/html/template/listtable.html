@@ -49,7 +49,7 @@
                 <td>
                     <select data-ng-model="polselected"
                     data-ng-change="actionPolicy()"
-                    data-ng-options="laction.name for laction in pol_data.listaction">
+                    data-ng-options="laction.name for laction in pol_data.listaction" disabled="disabled">
                     <option value=""> --- Select --- </option>
                     </select>
                 </td>
@@ -60,4 +60,3 @@
         {{policy_obj}}
     </textarea>
 </div>
-
