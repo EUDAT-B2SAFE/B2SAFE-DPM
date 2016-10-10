@@ -29,7 +29,7 @@ class Policy(object):
         conn = sqlite3.connect(config.get("DATABASE", "name").strip())
         cur = conn.cursor()
         cur.execute('''create table if not exists policies (key text, value
-                text)''')
+                    text)''')
         conn.commit()
 
     def process_form(self):
@@ -38,6 +38,12 @@ class Policy(object):
         trigger_val = ''
         periodic_type = 'date/time'
         run_now = 'immediately'
+
+        self.policy[self.config.get("ACTIONS_SCHEMA",
+                                    "policy_id").strip()] = \
+            self.form_data['policy_action_id']
+        self.policy[self.config.get('POLICY_SCHEMA',
+                                    'ctime').strip()] = int(time.time())
 
         self.policy[self.config.get('POLICY_SCHEMA',
                                     'removed').strip()] = 'false'
@@ -131,6 +137,9 @@ class Policy(object):
         xml_pol.version = formdata['version']
         xml_pol.name = formdata['name']
         xml_pol.author = formdata['author']
+        xml_pol.community = formdata['community']
+        xml_pol.created = self.policy[self.config.get('POLICY_SCHEMA',
+                                                      'ctime').strip()]
         xml_pol.dataset = xml_dataset
         xml_pol.actions = xml_actions
 
@@ -146,7 +155,9 @@ class Policy(object):
         '''Private method to build the action type node
         '''
         action_key = self.config.get('ACTIONS_SCHEMA', 'type')
+        action_policy_key = self.config.get('ACTIONS_SCHEMA', 'policy_id')
         xml_action_type = policy_lib.actionType()
+        xml_action_type.policyID = self.policy[action_policy_key]['name']
         xml_action_type.valueOf_ = self.policy[action_key]
         return xml_action_type
 
@@ -342,6 +353,7 @@ def dump_to_xml_store(pol, config):
         print resp.text
         sys.exit(-100)
 
+
 def dump_to_store(pol, config):
     '''Function to dump the policy to a key-value pair database
     '''
@@ -414,12 +426,11 @@ def run_store():
     # md5sum = md5.hexdigest()
     # policy.setmd5(md5sum)
     # policy.settime(int(time.time()))
-
     # Check if the policy exists in the database
     # if policy_exists(policy.policy, config):
     #    exists = True
     # else:
-        # Write the policy to a database
+    # Write the policy to a database
     #    dump_to_store(policy.policy, config)
 
     print ""

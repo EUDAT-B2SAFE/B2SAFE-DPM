@@ -33,7 +33,8 @@ class ReplicationPolicy(Policy):
 
         str = 'Policy:'
         str += Policy.toString(self);
-        str += self.dataset.toString('\t')
+        if self.dataset is not None:
+            str += self.dataset.toString('\t')
         str += '\tActions:\n'
         for action in self.actions:
             str += action.toString('\t\t')
@@ -180,7 +181,12 @@ class Action():
 
         #Process sources
         for source in element.findall(ns+'sources/'+ns+'source'):
-            self.sources.append(Location(source, nsi, loggerName, debug))
+            pids = source.findall(ns+'persistentIdentifier')
+            if pids is not None and len(pids) > 0:
+                self.sources.append(PersistentIdentifier(source, ns, loggerName, 
+                                                         debug))
+            else:
+                self.sources.append(Location(source, ns, loggerName, debug))
 
         #Process targets
         for target in element.findall(ns+'targets/'+ns+'target'):
@@ -193,11 +199,54 @@ class Action():
         str = '%sAction: %s [%s] running %s\n' % (prefix, self.name, self.type, self.trigger)
         str += '%s\tSources:\n' % (prefix)
         for source in self.sources:
-            str += '%s\t\tlocation [%s, %s, %s]\n' % (prefix, source.location.site, source.location.path, source.location.resource)
+            if isinstance(source, Location):
+                str += '%s\t\tlocation [%s, %s, %s]\n' % (prefix, 
+                                                          source.location.site, 
+                                                          source.location.path, 
+                                                          source.location.resource)
+            if isinstance(source, PersistentIdentifier):
+                str += '%s\t\tpid [%s, %s]\n' % (prefix, source.type, source.value)
         str += '%s\tTargets:\n' % (prefix)
         for target in self.targets:
-            str += '%s\t\tlocation [%s, %s, %s]\n' % (prefix, target.location.site, target.location.path, target.location.resource)
+            if isinstance(target, Location):
+                str += '%s\t\tlocation [%s, %s, %s]\n' % (prefix, 
+                                                          target.location.site, 
+                                                          target.location.path, 
+                                                          target.location.resource)
+            if isinstance(target, PersistentIdentifier):
+                str += '%s\t\tpid [%s, %s]\n' % (prefix, target.type, target.value) 
+            
         return str;
+
+
+"""
+ Class parsing the persistent iddentifier element
+"""
+class PersistentIdentifier():
+
+    def __init__(self, element, ns, loggerParentName=None, debug=False):
+
+        if loggerParentName: loggerName = loggerParentName + ".PersitentIdentifier"
+        else: loggerName = "PersitentIdentifier"
+        self.logger = logging.getLogger(loggerName)
+        self.loggerName = loggerName
+        self.debug = debug
+
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
+
+        self.id = element.get('id')
+        if self.id is not None:
+            self.logger.debug('Got PID id: ' + self.id)
+        #process persistent identifier
+        pid = element.findall(ns+'persistentIdentifier')
+        if pid:
+            self.type = pid[0].get('type').strip()
+            self.value = pid[0].text.strip()
+            self.logger.debug('Got pid type %s and value %s', self.type, 
+                                                              self.value)
 
 
 """
@@ -223,6 +272,8 @@ class Location():
             self.logger.debug('Got Location id: ' + self.id)
         for location in element.findall(ns+'location'):
             self.location = self.parseLocationType(location)
+            self.type = self.location.type
+            self.value = self.location.path
 
 
     def parseLocationType(self, location):
@@ -252,6 +303,7 @@ class IrodsLocation:
         else:
             self.logger.setLevel(logging.INFO)
 
+        self.type = 'irods'
         self.dpmIrodsns = '{http://eudat.eu/2013/iRODS-policy}'
         self.site = element.findall(self.dpmIrodsns+'site')[0].text.strip()
         if not element.findall(self.dpmIrodsns+'path')[0].text == None:

@@ -498,8 +498,8 @@ def read_input(local_cfg):
     auth = '1'
     root_url = ''
     old_cfg = {'cgi_url': '', 'cli_url': '', 'root_url': '', 'cgi_path': '',
-               'xml_url': '', 'auth': '1', 'admin_user': 'dpmadmin',
-               'admin_name': '', 'admin_email': ''}
+               'xml_url': '', 'xml_user': '', 'xml_pass': '', 'auth': '1',
+               'admin_user': 'dpmadmin', 'admin_name': '', 'admin_email': ''}
 
     if os.path.isfile(local_cfg):
         old_cfg = read_local_config(local_cfg)

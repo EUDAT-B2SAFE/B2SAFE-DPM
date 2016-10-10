@@ -123,10 +123,12 @@ def get_last_index(cursor):
     '''Return the index of the last policy stored in the database'''
 
     last_index = None
+    last_idx = None
     cursor.execute("select value from policies where key = 'last_index'")
     result = cursor.fetchone()
-    if result is not None and len(result) > 0:
-        last_idx = result[0]
+    if result is not None:
+        if len(result) > 0:
+            last_idx = result[0]
 
     if last_idx is not None:
         last_index = int(last_idx)
@@ -167,16 +169,17 @@ def get_data(config):
 
     # Open the database (first time around it's not really an error the db
     # doesn't exist)
-    dbfile = config.get("DATABASE", "name").strip()
-    if not os.path.isfile(dbfile):
-        sys.stderr.write("Warning: Database %s does not exist\n" % dbfile)
-        sys.exit(-100)
+#    dbfile = config.get("DATABASE", "name").strip()
+#    if not os.path.isfile(dbfile):
+#        sys.stderr.write("Warning: Database %s does not exist\n" % dbfile)
+#        sys.exit(-100)
 
-    conn = sqlite3.connect(dbfile)
-    cur = conn.cursor()
+#    conn = sqlite3.connect(dbfile)
+#    cur = conn.cursor()
 
     data = []
-    last_index = get_last_index(cur)
+    last_index = 0
+#    last_index = get_last_index(cur)
 
     # Get the list of policies from the database
     url = config.get("XMLDATABASE", "name")
@@ -304,8 +307,8 @@ def get_data(config):
                 # print 'tkeys ', tkeys
         #        tkeys.sort(key=lambda x: int(x.split('_')[-2]))
         #        for key in tkeys:
-                    # print 'key ', key
-                    # print 'mvals ', mvals[key]
+        #            # print 'key ', key
+        #            # print 'mvals ', mvals[key]
         #            if len(multi_string) == 0:
         #                if mvals[key] is not None:
         #                    multi_string = mvals[key]

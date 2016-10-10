@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tns:policy xmlns:tns="http://eudat.eu/2016/policy-status" uniqueid="5439064f-0d3e-4971-8cfe-5bde89d10f8b">
+    <tns:name>Cineca_first</tns:name>
+    <tns:version>1.0</tns:version>
+    <tns:checksum method="MD5">93ed6021618e1f451d2307244fdd4db0</tns:checksum>
+    <tns:status>DONE</tns:status>
+    <tns:timestamp>2016-08-21T09:30:10Z</tns:timestamp>
+</tns:policy>

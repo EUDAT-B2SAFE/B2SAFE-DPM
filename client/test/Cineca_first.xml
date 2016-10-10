@@ -1,4 +1,5 @@
-<tns:policy xmlns:tns="http://eudat.eu/2013/policy" xmlns:irodsns="http://eudat.eu/2013/iRODS-policy" version="1.0" name="Cineca_first" uniqueid="5439064f-0d3e-4971-8cfe-5bde89d10f8b" author="claudio">
+<?xml version="1.0" encoding="UTF-8"?>
+<tns:policy xmlns:tns="http://eudat.eu/2013/policy" xmlns:irodsns="http://eudat.eu/2013/iRODS-policy" version="1.0" name="Cineca_first" uniqueid="5439064f-0d3e-4971-8cfe-5bde89d10f8b" author="claudio" community="EPOS" created="1010">
     <tns:dataset xmlns:tns="http://eudat.eu/2013/policy">
         <tns:collection xmlns:tns="http://eudat.eu/2013/policy" id="0">
             <tns:persistentIdentifier xmlns:tns="http://eudat.eu/2013/policy" type="pid">/cinecaDMPZone/home/claudio/datum.txt</tns:persistentIdentifier>

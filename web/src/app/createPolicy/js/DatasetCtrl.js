@@ -2,14 +2,19 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
   policy, pristineFlags, invalidFlags, dataLocation, identifierFlags,
         submitFlag) {
     $scope.policy = policy;
+    $scope.src_policies = [];
+    $scope.showSrcPolColl = false;
+    $scope.showSrcPolPid = false;
     $scope.showSrcColl = identifierFlags.showSrcColls;
     $scope.showTgtColl = identifierFlags.showTgtColls;
     $scope.showSrcPID = identifierFlags.showSrcPIDs;
     $scope.showTgtPID = identifierFlags.showTgtPIDs;
+    $scope.showSrcPolicy = identifierFlags.showSrcPolicy;
     $scope.pristineFlags = pristineFlags;
     $scope.invalidFlags = invalidFlags;
     var locations = dataLocation.getLocations();
     var collType = '';
+    $scope.policy.policy_action_id.name = "--- Select ---";
 
     // Call the base dpm controller for the next/previous pages
     $injector.invoke(dpmCtrl, this, {$scope: $scope});
@@ -30,6 +35,13 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
             }
         }
         $scope.identifier_types = identifiers.types;
+        $scope.target_identifier_types = [];
+        for (var i = 0; i < identifiers.types.length; i++) {
+          if (identifiers.types[i].name !== "policy") {
+            $scope.target_identifier_types.push({'name':
+              identifiers.types[i].name});
+          }
+        }
         data_identifier.setIdentifiers(identifiers);
     });
 
@@ -83,14 +95,10 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         locations.target_collections = [];
         for (var idx = 0; idx < data.length; ++idx) {
           if (data[idx].length > 0) {
-            locations.source_sites =
-            storeData(locations.source_sites, data[idx][0]);
-            locations.target_sites =
-            storeData(locations.target_sites, data[idx][0]);
-            locations.source_collections =
-            storeData(locations.source_collections, data[idx][1]);
-            locations.target_collections =
-            storeData(locations.target_collections, data[idx][1]);
+            locations.source_sites.push({name: data[idx][0]});
+            locations.target_sites.push({name: data[idx][0]});
+            locations.source_collections.push({name: data[idx][1]});
+            locations.target_collections.push({name: data[idx][1]});
           }
         }
 
@@ -108,12 +116,22 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
             $scope.invalidFlags.sources[index].coll = false;
             $scope.pristineFlags.sources[index].coll = false;
             $scope.showSrcColl[index] = true;
+            $scope.showSrcPolColl = false;
+            $scope.showSrcPolicy[index] = false;
             $scope.showSrcPID[index] = false;
           } else if (typeName === 'pid') {
             $scope.invalidFlags.sources[index].pid = false;
             $scope.pristineFlags.sources[index].pid = false;
             $scope.showSrcPID[index] = true;
+            $scope.showSrcPolColl = false;
+            $scope.showSrcPolicy[index] = false;
             $scope.showSrcColl[index] = false;
+          } else if (typeName === 'policy') {
+            $scope.invalidFlags.sources[index].identifier = false;
+            $scope.pristineFlags.sources[index].identifier = false;
+            $scope.showSrcPID[index] = false;
+            $scope.showSrcColl[index] = false;
+            getPolicies(index);
           }
         }
         if (ctype === 'target') {
@@ -174,6 +192,53 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
           targetCopy.push({'name': locations.target_collections[j].name});
         }
         $scope.policy.targets[index].identifier = targetCopy[collIndex];
+      }
+    };
+
+    // Get the policies from the database
+    var policy_data = [];
+    function getPolicies(index) {
+      var policies = $http({method: 'GET', url: '${CGI_URL}/fetch_policies.py'});
+      policies.then(function(results) {
+        policy_data = results.data;
+        // We want to now pre-fill the policies with values
+        var pol_ids = [];
+        for (var i = 0; i < policy_data.length; i++) {
+          pol_ids.push({"name": policy_data[i].uniqueid});
+        }
+        $scope.src_policies[index] = pol_ids;
+        $scope.showSrcPolicy[index] = true;
+        $scope.policy.sources[index].hostname.name = "";
+        $scope.policy.sources[index].identifier.name = "";
+      });
+    }
+
+    $scope.updateSrcPolicy = function(index, ptype) {
+      console.log("identifier is " + JSON.stringify($scope.policy.policy_action_id.name));
+      $scope.pristineFlags.identifiers[index].name = false;
+      for (var i = 0; i < policy_data.length; i++) {
+        if ($scope.policy.policy_action_id.name === policy_data[i].uniqueid) {
+          $scope.policy.sources[index].type.name = policy_data[i].type;
+          if (policy_data[i].type === "collection") {
+            $scope.showSrcPolColl = true;
+            $scope.showSrcPolPid = true;
+            $scope.pristineFlags.sources[index].site = false;
+            $scope.pristineFlags.sources[index].coll = false;
+            $scope.invalidFlags.sources[index].coll = false;
+            $scope.policy.sources[index].hostname.name =
+              policy_data[i].irodssite;
+            $scope.policy.sources[index].identifier.name =
+              policy_data[i].irodspath;
+          } else if (policy_data[i].type === "pid") {
+            $scope.showSrcPolPid = true;
+            $scope.showSrcPolColl = false;
+            $scope.invalidFlags.sources[index].pid = false;
+            $scope.pristineFlags.sources[index].pid = false;
+            $scope.policy.sources[index].hostname.name = "";
+            $scope.policy.sources[index].identifier.name =
+              policy_data[i].persistentIdentifier;
+          }
+        }
       }
     };
 

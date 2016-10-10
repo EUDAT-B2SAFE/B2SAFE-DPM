@@ -5,7 +5,7 @@ import hashlib
 import logging
 import logging.handlers
 from lxml import etree
-import urllib2
+import requests
 from ReplicationPolicy import *
 
 
@@ -45,10 +45,10 @@ class PolicyParser():
 
     def parseXmlSchema(self, schemaurl, schemapath):
 
-        if schemaurl:
+        if schemaurl and schemaurl[0]:
             self.logger.debug('xml schema URL: ' + schemaurl[0])
             xmlSchemaDoc = self.parseXmlSchemaFromUrl(schemaurl[0])
-        elif schemapath:
+        elif schemapath and schemapath[0]:
             self.logger.debug('xml schema path: ' + schemapath[0])
             xmlSchemaDoc = etree.parse(schemapath[0])
         else:
@@ -64,14 +64,11 @@ class PolicyParser():
         self.logger.debug('Parsing xml doc from text')
         xmlschema = etree.XMLSchema(xmlSchemaDoc)
         root = etree.fromstring(xmlData)
-        if not xmlschema(root):
-            self.logger.error(xmlschema.error_log.last_error)
-            errorMessage = xmlschema.error_log.last_error.message
-            if errorMessage.startswith("Element '{http://eudat.eu/2013/policy}time'"):
-                self.timeErrorManager(root, xmlschema)
-            else:
-                exit()
+        errMsg = self.validate(xmlschema, root)
+        if errMsg is not None:
+            return errMsg
         self.parse(root)
+        return None
 
     def parseFromFile(self, file, xmlSchemaDoc):
         """
@@ -82,34 +79,34 @@ class PolicyParser():
         xmlschema = etree.XMLSchema(xmlSchemaDoc)
         tree = etree.parse(file)
         root = tree.getroot()
+        errMsg = self.validate(xmlschema, root)
+        if errMsg is not None:
+            return errMsg        
+        self.parse(root)
+        return None
+
+    def validate(self, xmlschema, root):
+        """
+        Validate an xml document
+        """
+
         if not xmlschema(root):
             self.logger.error(xmlschema.error_log.last_error)
             errorMessage = xmlschema.error_log.last_error.message
-            if errorMessage.startswith("Element '{http://eudat.eu/2013/policy}time'"):
-                self.timeErrorManager(root, xmlschema)
+            if errorMessage.startswith("Element '{{}}time'".format(self.dpmNS)):
+                return self.timeErrorManager(root, xmlschema)
             else:
-                exit()
-        self.parse(root)
+                return str(xmlschema.error_log.last_error)
+        else:
+            return None
 
-    def parseFromUrl(self, url, username, password, xmlSchemaDoc,
+    def parseFromUrl(self, url, xmlSchemaDoc, conn,
                      checksum_algo=None, checksum_value=None):
         """
         Create an xml document from url input
         """
 
-        self.logger.debug('Getting xml doc from url ' + url)
-
-        authinfo = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        authinfo.add_password(None, url, username, password)
-        handler = urllib2.HTTPBasicAuthHandler(authinfo)
-        myopener = urllib2.build_opener(handler)
-        urllib2.install_opener(myopener)
-        response = urllib2.urlopen(url)
-        response_data = response.read()
-        data = json.loads(response_data)
-        xmlData = data["policy"]
-
-        self.logger.debug("xmlData is %s" % xmlData)
+        xmlData = conn.getDocumentByUrl(url)
 
         #Decide if checksum verification is needed and if yes, compute the checksum for the downloaded policy
         checksumVerificationNeeded = not checksum_algo == None
@@ -117,9 +114,9 @@ class PolicyParser():
         if checksumVerificationNeeded:
             self.logger.debug('Checksum computation: '),
             checksumVerification = False
-            if checksum_algo == 'md5':
+            if checksum_algo.lower() == 'md5':
                 self.logger.debug('md5')
-                newChecksumValue = hashlib.md5(xmlData).hexdigest()
+                newChecksumValue = hashlib.md5(xmlData.encode()).hexdigest()
                 checksumVerified = newChecksumValue == checksum_value
                 self.logger.debug('checksum computed %s read %s' % \
                   (newChecksumValue, checksum_value))
@@ -128,14 +125,14 @@ class PolicyParser():
         self.logger.debug('Checksum verification: ')
         if checksumVerificationNeeded and checksumVerified:
             self.logger.debug('passed')
-            self.parseFromText(xmlData, xmlSchemaDoc)
+            return self.parseFromText(xmlData, xmlSchemaDoc)
         elif not checksumVerificationNeeded:
             self.logger.debug('disabled')
-            self.parseFromText(xmlData, xmlSchemaDoc)
+            return self.parseFromText(xmlData, xmlSchemaDoc)
         else:
             self.logger.error('failed')
+            return 'Checksum verification: failed'
 
-        response.close()
 
     def parse(self, policy):
         """
@@ -156,7 +153,7 @@ class PolicyParser():
 
         self.logger.debug('trying to fix year extra field in time element')
         timeElemList = root.xpath('//b:time',
-                                 namespaces={'b':'http://eudat.eu/2013/policy'})
+                                 namespaces={'b':self.dpmNS})
         for timeElem in timeElemList:
             self.logger.debug('Element: ' + etree.tostring(timeElem))
             if len(timeElem.text.split()) < 6:
@@ -164,7 +161,8 @@ class PolicyParser():
                 timeElem.text = timeElem.text + ' *'
                 if not xmlschema(root):
                     self.logger.error(xmlschema.error_log.last_error)
-                    exit()
+                    return str(xmlschema.error_log.last_error)
             else:
                 self.logger.debug('Impossible to fix the error')
-                exit()
+                return 'Element: ' + etree.tostring(timeElem) + ' is wrong'
+        return None

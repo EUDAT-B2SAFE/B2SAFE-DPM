@@ -202,7 +202,10 @@ div.hostblock {
   width: 40%;
   float: left;
 }
-
+div.policyblock {
+  width: 80%;
+  float: left;
+}
 /*
 div#sources {
     width: 50%;
@@ -256,6 +259,7 @@ div#submit_space {
 }
 
 .datasets {
+    width: 100%;
     display: inline-block;
 }
 
@@ -272,7 +276,12 @@ div#submit_space {
 }
 
 div#collection {
-    float left;
+    float: left;
+}
+
+div#policy {
+  width: 100%;
+  float: left;
 }
 
 div#pers {
@@ -416,6 +425,12 @@ select.host {
   -moz-border-radius: 0px;
   border-radius: 0px;
   margin-top: 0px;
+}
+
+select.policy {
+  width: 100%;
+  height: 22px;
+  padding: 0px 6px;
 }
 
 button#previouspage {
