@@ -331,8 +331,14 @@ def getPolicyStatus(id, debug):
         # the policy has been translated to a rule, but not executed
         status = 'QUEUED'
         if resFiles is not None and len(resFiles) > 0:
-            # the rule has been executed, but it is still scheduled
-            status = 'RUNNING'
+            cron = CronTab(user=True)
+            cronJob_iter = cron.find_comment(id)
+            if sum(1 for _ in cronJob_iter) == 0:
+                # the rule has been executed
+                status = 'DONE'
+            else:
+                # the rule has been executed, but it is still scheduled
+                status = 'RUNNING'
     else:
         # the policy is not currently translated to a rule
         status = 'WAITING'
@@ -370,7 +376,7 @@ def statusManagement(suspended, rejected, show, policyId, debug, logger, conn):
     if show:
         logger.debug('Just showing the status')
         # show the status
-        print 'Policy id: ' + args.id
+        print 'Policy id: ' + policyId
         print 'Policy status: ' + state + '\n'
     else:
         # update the status doc on the DB
@@ -513,7 +519,8 @@ def main():
 
     subparsers = argp.add_subparsers(help='sub-command help', dest='subcmd')
     parser_url = subparsers.add_parser('http', help='Fetch policy over http')
-    parser_url.add_argument('-f', '--filter', help='filter the policies')
+    parser_url.add_argument('-f', '--filter', 
+                            help='filter the policies (key:value)')
     parser_url.add_argument('-st', '--start',
                             help='filter the policies based on this start date'
                                 +' (format: day-month-year hour:minute)')
