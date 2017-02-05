@@ -13,9 +13,9 @@ removed=policy_removed
 [LOG_SCHEMA]
 state=log_state
 timestamp=log_timestamp
-hostname=log_hostname
-comment=log_comment
-identifier=log_policy_identifier
+uniqueid=policy_uniqueid
+name=policy_name
+version=policy_version
 last_index=log_last_index
 
 [ACTIONS_SCHEMA]
@@ -60,6 +60,7 @@ action_name=${CGI_PATH}/config/actions.db
 
 [XMLDATABASE]
 name=${XML_PATH}/policy
+status_name=${XML_PATH}/status
 user=${XML_USER}
 pass=${XML_PASS}
 

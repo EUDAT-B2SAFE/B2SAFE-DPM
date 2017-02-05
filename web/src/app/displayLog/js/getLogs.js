@@ -1,7 +1,7 @@
 function getLogs($scope, ngTableParams, $http, showLog,
         author, uuids) {
-    var get_author = $http({method: 'GET',
-        url: '${CGI_URL}/getPolicyLog.py',
+    var getAuthor = $http({method: 'GET',
+        url: '${CGI_URL}/getStatus.py',
         params: {username: author} }).then(function(results) {
             var data = results.data;
             var loglen = 0;
@@ -13,10 +13,14 @@ function getLogs($scope, ngTableParams, $http, showLog,
                 // is in the list of ids from the list page
                 for (var i = 0; i < loglen; i++) {
                     var logVisible = false;
-                    if (uuids.indexOf(data.data[i][1]) >= 0) {
+                    if (uuids.indexOf(data.data[i].policy_uniqueid) >= 0) {
                         logVisible = true;
                     }
-                    logData.push({visible: logVisible, row: data.data[i]});
+                    var statusList = [];
+                    for (var j = 0; j < data.columns.length; j++) {
+                        statusList.push(data.data[i][data.columns[j]]);
+                    }
+                    logData.push({visible: logVisible, row: statusList});
                 }
                 $scope.logData = logData;
                 $scope.data = logData;
