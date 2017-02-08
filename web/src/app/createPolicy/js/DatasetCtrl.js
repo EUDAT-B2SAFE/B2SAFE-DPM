@@ -95,6 +95,7 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         locations.target_collections = [];
         for (var idx = 0; idx < data.length; ++idx) {
           if (data[idx].length > 0) {
+            console.log("storing index " + idx + " " + JSON.stringify(data[idx]));
             locations.source_sites.push({name: data[idx][0]});
             locations.target_sites.push({name: data[idx][0]});
             locations.source_collections.push({name: data[idx][1]});
