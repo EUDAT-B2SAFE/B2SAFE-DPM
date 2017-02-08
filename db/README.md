@@ -25,4 +25,34 @@ In order to update the status of a policy considering its execution at each site
 ```$ ./DBCommander.py -c conf/config.ini update```  
 
 It searches through all the DBs starting with the prefix `status_site_prefix` using the policy id to collect the status of the executions per site.
-Then it add the list of states in the policy status document, like POL_Y_status.xml according to our example.
+Then it add the list of states in the policy status document, like POL_Y_status.xml according to our example.  
+Before the update:  
+```
+<ns0:policy xmlns:ns0="http://eudat.eu/2016/policy-status" uniqueid="245d8fe3-23fa-47b7-bd99-cdc34b8d2c22">
+  <ns0:name>MCP</ns0:name>
+  <ns0:version>1.0</ns0:version>
+  <ns0:checksum method="MD5">7dcc6ede40b6322b67a4fa0ad893cbf0</ns0:checksum>
+  <ns0:status>
+    <ns0:overall>NEW</ns0:overall>
+  </ns0:status>
+  <ns0:timestamp>2017-02-06T10:26:17Z</ns0:timestamp>
+</ns0:policy>
+```  
+After:
+```
+<ns0:policy xmlns:ns0="http://eudat.eu/2016/policy-status" uniqueid="245d8fe3-23fa-47b7-bd99-cdc34b8d2c22">
+  <ns0:name>MCP</ns0:name>
+  <ns0:version>1.0</ns0:version>
+  <ns0:checksum method="MD5">7dcc6ede40b6322b67a4fa0ad893cbf0</ns0:checksum>
+  <ns0:status>
+    <ns0:overall>QUEUED</ns0:overall>
+    <ns0:details>
+      <ns0:site name="status_site_1">QUEUED</ns0:site>
+      <ns0:site name="status_site_2">QUEUED</ns0:site>
+    </ns0:details>
+  </ns0:status>
+  <ns0:timestamp>2017-02-08T16:42:33Z</ns0:timestamp>
+</ns0:policy>
+```
+
+
