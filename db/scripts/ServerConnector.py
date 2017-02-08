@@ -35,7 +35,7 @@ class ServerConnector:
         self.polNs = 'http://eudat.eu/2013/policy'
         self.irodsNs='http://eudat.eu/2013/iRODS-policy'
         self.staNs = 'http://eudat.eu/2016/policy-status'
-
+   
         # logging initialization
         if logName: loggerName = logName + ".ServerConnector"
         else: logName = "ServerConnector"
@@ -51,9 +51,13 @@ class ServerConnector:
 
         # load properties from configuration
         self.config = ConfigLoader(config)
+
         # XML DB's prefixes
-        self.st_pre = self.config.SectionMap('DpmServer')['status_prefix']
+        self.st_pre = self.config.SectionMap('DpmServer')['status_prefix'] 
         self.pol_pre = self.config.SectionMap('DpmServer')['policies_prefix']
+        self.st_site_pre = ( 
+                      self.config.SectionMap('DpmServer')['status_site_prefix'])
+
         # load credentials
         self.auth = None
         with open(self.config.SectionMap('DpmServer')['tokenfile'], 'r') as fin:
@@ -81,70 +85,41 @@ class ServerConnector:
 
 #TODO verify if it is possible to merge update and create in a single function
 
-    def updateStatus(self, policyId, state, reason=None):
+    def updateStatus(self, policyId, states, dbname):
         """ This method updates or creates, if not already present, the status 
             document related to a specific policy document.
 
         @type  policyId: string
         @param policyId: The policy id
-        @type  state:    string
-        @param state:    The status value
-        @type  reason:   string
-        @param reason:   The reason behind the status
+        @type  state:    dictionary
+        @param state:    The list of states per site: 
+                         site {name -> [status, timestamp, reason]}
+        @type  dbname:   string
+        @param dbname:   The name of the XML DB related to the status of the policy
         @rtype:          string
         @return:         The response of the HTTP POST request to the DB
         """
-
         self.logger.debug('Updating the policy with id {} to the status {}'
-                          .format(policyId, state))
-        statusdb = self.config.SectionMap('DpmServer')['statusdbname']
-        # check if the status doc is already available, 
-        # if not it creates a new one
-        xmldict, doc = self.getStatus(policyId)
-        if xmldict is None:
-            if doc is not None:
-                return doc
-            else:
-                self.createStatus(policyId, state, statusdb)
+                          .format(policyId, str(states)))
+
+        status = None
+        xmlnode = '<ns0:details>'
+        for site in states.keys():      
+            xmlnode += '<ns0:site name="{}">{}</ns0:site>'.format(site,
+                                                             states[site][0])
+            if status is None:
+                status = states[site][0]
+            elif status != states[site][0]:
+                status = 'UNDEFINED'
+        xmlnode += '</ns0:details>'
+
+        if self.createStatus(policyId, status, dbname, xmlnode):
+            return 'Policy id: {}, status updated'.format(policyId)
+        else:
+            return 'Policy id: {}, status update failed'.format(policyId)
         
-        # get the current UNIX timestamp and convert to 2016-08-21T09:30:10Z
-        timestamp = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-        # set the reason element
-        re = ''
-        if reason is not None:
-            re = ("replace value of node $res/tns:status/tns:reason with '{}',"
-                 ).format(reason)
-        # xquery request to update the status doc fields: status and timestamp
-        post_data = '''<rest:query xmlns:rest="http://basex.org/rest">
-                         <rest:text>
-                           declare namespace tns = "{}";
-                           for $res in collection("{}")/tns:policy
-                             where $res[@uniqueid = "{}"]
-                             return(
-                             replace value of node $res/tns:status/tns:overall with '{}',
-                             {}
-                             replace value of node $res/tns:timestamp with '{}'
-                             )
-                      </rest:text>
-                    </rest:query>'''.format(self.staNs, statusdb, policyId, 
-                                            state, re, timestamp)
 
-        self.logger.info('Updating policies [{}]'.format(self.url))
-        self.logger.debug('post_data: ' + post_data + '; auth: ' +
-                          str(self.auth) + '; http verify: ' + str(self.veri))
-
-        # perform the HTTP POST request to the DB
-        response = requests.post(self.url, data=post_data,
-                                 auth=self.auth, verify=self.veri)
-
-        if response is not None and len(response.text) > 0:
-            self.logger.debug("response is: " + response.text)
-            return response.text
-        
-        return response
-
-
-    def createStatus(self, policyId, state, dbname):
+    def createStatus(self, policyId, state, dbname, details=None):
         """ This method create a new status document related to a specific policy 
 
         @type  policyId: string
@@ -173,6 +148,8 @@ class ServerConnector:
         chk_val = hashlib.md5(policyDoc.encode()).hexdigest()
         status = state
         timestamp = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        if details is None:
+            details = '<ns0:details/>'
         
         statusDoc = '''<?xml version="1.0" encoding="UTF-8"?>
                     <ns0:policy uniqueid="{}" xmlns:ns0="{}">
@@ -181,11 +158,12 @@ class ServerConnector:
                        <ns0:checksum method="{}">{}</ns0:checksum>
                        <ns0:status>
                           <ns0:overall>{}</ns0:overall>
-                          <ns0:reason/>
-                       </ns0:status> 
+                          {}
+                       </ns0:status>
                        <ns0:timestamp>{}</ns0:timestamp>
                     </ns0:policy>'''.format(policyId, self.staNs, name, ver,
-                                            chk_alg, chk_val, status, timestamp)
+                                            chk_alg, chk_val, status, details,
+                                            timestamp)
 
         # validate the the created status doc: 
         # if it is not valid do not perform any change to the DB
@@ -201,8 +179,11 @@ class ServerConnector:
         response = requests.put(put_url, data=statusDoc, headers=headers,
                                 auth=self.auth, verify=self.veri)
 
-        self.logger.debug("response is: " + response.text)
-        return response.text
+        if response.text is not None:
+            self.logger.debug("response is: " + response.text)
+            return response.text
+
+        return response
 
 
     def listPolicies(self, attributes=None, start_date=0, end_date=2544652800):
@@ -279,7 +260,7 @@ class ServerConnector:
                                          return $policies 
                                  ))
                           </rest:text>
-                     </rest:query>''' % (self.polNs, self.irodsNs, db_filter,
+                     </rest:query>''' % (self.polNs, self.irodsNs, db_filter, 
                                          data_filter, start_date, end_date, 
                                          self.url)
 
@@ -341,14 +322,13 @@ class ServerConnector:
         @rtype:          tuple(dictionary, string)
         @return:         A tuple of two representations of the same document
         """
-  
         self.logger.debug('Getting the status of the policy with id {}'
                           .format(policyId))
         if dbname is None:
             statusdb = self.config.SectionMap('DpmServer')['statusdbname']
         else:
             statusdb = dbname
-        self.logger.debug('from the DB: ' + statusdb)        
+        self.logger.debug('from the DB: ' + statusdb)
         doc = self.getDocumentById(policyId, statusdb, self.staNs)
         if doc is not None and self.validateXML(doc):
             # it uses the "xmltodict" module to transform the XML doc to a python
@@ -376,7 +356,7 @@ class ServerConnector:
         return (None, doc)
 
 
-    def getDocumentById(self, policyId, dbnames, ns, db_prefix=None):
+    def getDocumentById(self, policyId, dbnames, ns, db_prefix=''):
         """ Get a document from the DB based on its id 
 
         @type  policyId: string
@@ -386,7 +366,7 @@ class ServerConnector:
         @type  ns:       string
         @param ns:       The namespace related to the wanted document
         @type  db_prefix:string
-        @param db_prefix:The prefix of the BaseX DBs to query   
+        @param db_prefix:The prefix of the BaseX DBs to query        
         @rtype:          string
         @return:         The document if found, None otherwise
         """
@@ -394,11 +374,11 @@ class ServerConnector:
 
         db_filter = ''
         if dbnames is None or len(dbnames) == 0:
-            db_filter += ('let $dblist := db:list() '
+            db_filter += ('let $dblist := db:list()'
                          +'for $dbname in ($dblist)'
                          +' where starts-with($dbname, "' + db_prefix  + '")')
         else:
-            db_filter += ('let $dblist := tokenize("' + dbnames + '", ",") '
+            db_filter += ('let $dblist := tokenize("' + dbnames + '", ",")'
                          +'for $dbname in ($dblist)')
 
         # xquery request to select a single document based on the id
@@ -457,3 +437,47 @@ class ServerConnector:
             return False
         self.logger.debug('The xml is valid')
         return True
+
+
+    def getStates(self, policyId):
+        """ Get the status per site of a specific policy 
+
+        @type  policyId: string 
+        @param policyId: the policy ID
+        @rtype:          string
+        @return:         a dictionary with the site's name as key
+                         and as value the list [status, timestamp, reason]
+        """
+        self.logger.info('Getting site status of policy with id: ' + policyId)
+
+        post_data = '''<rest:query xmlns:rest="http://basex.org/rest">
+                         <rest:text>
+                           declare namespace tns = "{}";
+                           let $dblist := db:list()
+                           for $dbname in ($dblist) where starts-with($dbname, "{}")
+                             let $db := normalize-space($dbname)
+                             let $states := ()
+                             return insert-before($states,1,(
+                               for $res in collection($db)/tns:policy where $res[@uniqueid = "{}"]
+                                 return string-join(($db, $res/tns:status/tns:overall/data(), 
+                                                          $res/tns:timestamp, $res/tns:reason),";")
+                                                 ))
+                      </rest:text>
+                    </rest:query>'''.format(self.staNs, self.st_site_pre, policyId)
+
+        self.logger.debug('post_data: ' + post_data + '; auth: ' +
+                          str(self.auth) + '; http verify: ' + str(self.veri))
+
+        # perform the HTTP POST request to the DB
+        response = requests.post(self.url, data=post_data,
+                                 auth=self.auth, verify=self.veri)
+        if response is None or len(response.text) == 0:
+            self.logger.debug('No response')
+            return None
+        else:
+            self.logger.debug('response: [{}]'.format(response.text))
+            res = {}
+            for line in response.text.split():
+                tokens = line.split(';')
+                res[tokens[0]] = tokens[1:len(tokens)]
+            return res

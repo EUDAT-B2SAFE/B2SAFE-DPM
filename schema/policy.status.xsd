@@ -17,12 +17,12 @@
   <xs:complexType name="checksumType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
-        <xs:attribute name="method" type="tns:checkSumMethod" use="required"/>
+        <xs:attribute name="method" type="tns:checksumMethod" use="required"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
 
-  <xs:simpleType name="checkSumMethod">
+  <xs:simpleType name="checksumMethod">
     <xs:restriction base="xs:token">
       <xs:enumeration value="none"/>
       <xs:enumeration value="MD5"/>
@@ -30,7 +30,21 @@
     </xs:restriction>
   </xs:simpleType>
 
-  <xs:simpleType name="statusType">
+  <xs:complexType name="statusType">
+    <xs:sequence>
+      <xs:element type="tns:statusValueType" name="overall"/>
+      <xs:element type="xs:string" name="reason" minOccurs="0"/>
+      <xs:element name="details" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element type="tns:siteType" name="site"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>  
+  </xs:complexType>  
+
+  <xs:simpleType name="statusValueType">
     <xs:annotation>
       <xs:documentation>This is the list of states associated to a policy</xs:documentation>
     </xs:annotation>
@@ -39,7 +53,20 @@
       <xs:enumeration value="FAILED"/>
       <xs:enumeration value="RUNNING"/>
       <xs:enumeration value="QUEUED"/>
+      <xs:enumeration value="REJECTED"/>
+      <xs:enumeration value="SUSPENDED"/>
+      <xs:enumeration value="UNDEFINED"/>
+      <xs:enumeration value="UNKNOWN"/>
+      <xs:enumeration value="NEW"/>
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:complexType name="siteType">
+    <xs:simpleContent>
+      <xs:extension base="tns:statusValueType">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  
 </xs:schema>

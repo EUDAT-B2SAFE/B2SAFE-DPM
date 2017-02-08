@@ -189,8 +189,8 @@ class PolicyRunner:
         f.write('\tlogInfo(*destRootCollection);\n')
         f.write('\tlogInfo(*destResource);\n')
         f.write('\tlogInfo(*policyId);\n')
-        f.write('\t*recursive = bool("true");\n')
-        f.write('\t*registered = bool("true");\n')
+        f.write('\t*recursive = "true";\n')
+        f.write('\t*registered = "true";\n')
         f.write('\t*result = EUDATReplication(*sourceNode, *destRootCollection,'
               + '*registered, *recursive, *response);\n')
         f.write('\twriteLine("serverLog","Generated replication for policy '
