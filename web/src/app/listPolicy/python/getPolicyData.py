@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import cgi
 import json
 import ConfigParser
 import sqlite3
@@ -151,6 +150,33 @@ def get_mcolls(cursor, in_array):
     return mcolls
 
 
+def get_databases(base_url, config):
+    '''Return a dictionary of available databases'''
+
+    response = requests.get(base_url,
+                            auth=(config.get("XMLDATABASE", "user"),
+                                  config.get("XMLDATABASE", "pass")))
+    xml_databases = {}
+    if response.status_code == 200:
+        xml_response =\
+            xml.etree.ElementTree.ElementTree(
+                xml.etree.ElementTree.fromstring(response.text))
+
+        for xml_node in xml_response.getiterator():
+            if "database" in xml_node.tag:
+                if (len(xml_node.text.strip()) > 0 and xml_node.text.strip()
+                        not in xml_databases.values()
+                        and "policy_" in xml_node.text):
+                    community = xml_node.text.strip().split("_")[-1]
+                    xml_databases[community] = xml_node.text.strip()
+    else:
+        print "Problem querying the database: ", response.status_code
+        print response.text
+        sys.exit(response.status_code)
+
+    return xml_databases
+
+
 def get_data(config):
     '''Function to return the policies from the database
     '''
@@ -161,50 +187,44 @@ def get_data(config):
     # Get the communities from the Database
     communities = get_communities(config, username)
 
-    # TODO: we might need to change this function in order to match the
-    # elements in the XML file
-
     # Get the columns to display
     columns = get_columns(config)
 
-    # Open the database (first time around it's not really an error the db
-    # doesn't exist)
-#    dbfile = config.get("DATABASE", "name").strip()
-#    if not os.path.isfile(dbfile):
-#        sys.stderr.write("Warning: Database %s does not exist\n" % dbfile)
-#        sys.exit(-100)
-
-#    conn = sqlite3.connect(dbfile)
-#    cur = conn.cursor()
-
     data = []
     last_index = 0
-#    last_index = get_last_index(cur)
 
     # Get the list of policies from the database
-    url = config.get("XMLDATABASE", "name")
-    response = requests.get(url, auth=(config.get("XMLDATABASE", "user"),
-                                       config.get("XMLDATABASE", "pass")))
-    if response.status_code == 200:
-        xml_response =\
-            xml.etree.ElementTree.ElementTree(
-                xml.etree.ElementTree.fromstring(response.text))
+    basex_url = config.get("XMLDATABASE", "root_name")
+    databases = get_databases(basex_url, config)
+    xml_files = []
+    for community in communities:
+        if community in databases:
+            url = basex_url.strip() + "/%s" % databases[community]
+            response = requests.get(url,
+                                    auth=(config.get("XMLDATABASE", "user"),
+                                          config.get("XMLDATABASE", "pass")))
+            if response.status_code == 200:
+                xml_response =\
+                    xml.etree.ElementTree.ElementTree(
+                        xml.etree.ElementTree.fromstring(response.text))
 
-        xml_files = []
-        for xml_node in xml_response.getiterator():
-            if "resource" in xml_node.tag:
-                if xml_node.text.strip() not in xml_files:
-                    xml_files.append(xml_node.text.strip())
-    else:
-        print "Problem querying the database: ", response.status_code
-        print response.text
-        sys.exit(response.status_code)
+                for xml_node in xml_response.getiterator():
+                    if "resource" in xml_node.tag:
+                        if xml_node.text.strip() not in xml_files:
+                            xml_files.append((url, xml_node.text.strip()))
+            else:
+                print "Problem querying the database: ", response.status_code
+                print response.text
+                sys.exit(response.status_code)
 
     # Loop over the policies and get the atributes for the policies
     attributes = {"name": "", "uniqueid": "", "author": "", "version": ""}
-    for policy in xml_files:
+    for policy_url, policy in xml_files:
+        attributes["url"] = policy_url
         for attribute in attributes.keys():
-            query = url + "/%s" % policy + "?query=//*/@%s" % attribute
+            if attribute == "url":
+                continue
+            query = policy_url + "/%s" % policy + "?query=//*/@%s" % attribute
             response = requests.get(query,
                                     auth=(config.get("XMLDATABASE", "user"),
                                           config.get("XMLDATABASE", "pass")))
@@ -220,7 +240,8 @@ def get_data(config):
         data.append([[attributes["name"], "true"],
                     [attributes["version"], "true"],
                     [attributes["author"], "true"],
-                    [attributes["uniqueid"], "true"]])
+                    [attributes["uniqueid"], "true"],
+                    [attributes["url"], "false"]])
 
     for idx in range(0, last_index+1):
         col_names = []
@@ -327,14 +348,9 @@ def get_data(config):
     # data.sort(key=lambda x: x[time_idx][0], reverse=True)
     print json.dumps(data)
 
+
 if __name__ == '__main__':
     CFG_FILE = "./config/policy.cfg"
-
-    FIELDS = cgi.FieldStorage()
-
-    if "help" in FIELDS:
-        usage()
-        sys.exit()
 
     # Read the configs
     POLICY_CONFIG = ConfigParser.ConfigParser()

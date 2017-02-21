@@ -154,7 +154,6 @@ function listCtrl($scope, $sce, $http, $route,
                 var data = results.data;
                 uuids = clearArray(uuids);
                 for (i = 0; i < data.length; i++) {
-                  console.log(' data is ' + JSON.stringify(data[i]) + ' i ' + i);
                     var ddvals = [];
                     var is_visible = false;
                     for (j = 0; j < data[i].length; j++) {
@@ -174,21 +173,6 @@ function listCtrl($scope, $sce, $http, $route,
                     // Keep the uid for matching with the log files
                     uuids.push(data[i][dkeys.policy_uniqueid][0]);
                 }
-
-                // For removed or deactivated policies we need to
-                // remove the option to remove the policy
-                //var k;
-                //for (k = 0; k < dvals.length; k++) {
-                //  console.log("dvals " + JSON.stringify(dvals[k].pol_vals));
-                //  console.log("dkeys " + JSON.stringify(dkeys));
-                //    if (dvals[k].pol_vals[dkeys.policy_removed].name === "true") {
-                      // dvals[k].listaction = [{"name": "Reactivate"},
-                      //      {"name": "Modify"}];
-                //      dvals[k].listaction = [{"name": "Reactivate"}];
-                //    } else {
-                //      dvals[k].listaction = listaction;
-                //    }
-                //}
 
                 $scope.data = dvals;
                 var totlen = 0;
@@ -351,7 +335,8 @@ function listCtrl($scope, $sce, $http, $route,
         // corresponding to the uuid
         $http({method: "GET",
             url: "${CGI_URL}/getPolicy.py",
-            params: {uuid: pol_data.pol_vals[dkeys.policy_uniqueid].name} }).then(function(results) {
+            params: {uuid: pol_data.pol_vals[dkeys.policy_uniqueid].name,
+                     policyURL:  pol_data.pol_vals[pol_data.pol_vals.length-1].name}}).then(function(results) {
                 var data = results.data;
                 uuids = clearArray(uuids);
                 uuids.push(pol_data.pol_vals[dkeys.policy_uniqueid].name);

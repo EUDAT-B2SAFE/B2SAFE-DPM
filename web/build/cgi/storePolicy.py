@@ -3,7 +3,6 @@ import json
 import sys
 import ConfigParser
 import StringIO
-import hashlib
 import time
 import os
 import sqlite3
@@ -342,8 +341,9 @@ def dump_to_xml_store(pol, config):
 
     # Store the policy in the XML database. We assume the database exists
     # beforehand
-    policy_url = baseX_url + "/policy_%s.xml" %\
-        pol[config.get("POLICY_SCHEMA", "uniqueid")]
+    policy_url = baseX_url.strip() + "_%s/policy_%s.xml" %\
+        (pol[config.get("POLICY_SCHEMA", "community")],
+         pol[config.get("POLICY_SCHEMA", "uniqueid")])
     resp = requests.put(policy_url,
                         data=pol[config.get("POLICY_SCHEMA", "object")],
                         auth=(config.get("XMLDATABASE", "user"),
@@ -436,6 +436,7 @@ def run_store():
 
     print ""
     print json.dumps({'policy_exists': exists})
+
 
 if __name__ == '__main__':
     run_store()
