@@ -7,6 +7,7 @@ import time
 import os
 import sqlite3
 import requests
+import xml.etree.ElementTree
 
 sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])))
 import policy_irods_sub
@@ -331,13 +332,8 @@ def dump_to_xml_store(pol, config):
     '''Store the policy in the XML database'''
     baseX_url = config.get("XMLDATABASE", "name").strip()
 
-    # Check the database exists
-#    resp = requests.put(baseX_url, auth=(config.get("XMLDATABASE", "user"),
-#                                         config.get("XMLDATABASE", "pass")))
-#    if resp.status_code != 201:
-#        print "Problem creating the XML database: ", resp.status_code
-#        print resp.text
-#        sys.exit(-100)
+    # Create the database
+    create_database(config, pol[config.get("POLICY_SCHEMA", "community")])
 
     # Store the policy in the XML database. We assume the database exists
     # beforehand
@@ -353,6 +349,41 @@ def dump_to_xml_store(pol, config):
             resp.status_code
         print resp.text
         sys.exit(-100)
+
+
+def create_database(config, community):
+    '''Create the database if it doesn't exist. If it does do nothing'''
+    root_url = config.get("XMLDATABASE", "root_name")
+    response = requests.get(root_url,
+                            auth=(config.get("XMLDATABASE", "user"),
+                                  config.get("XMLDATABASE", "pass")))
+    if response.status_code != 200:
+        print "Problem querying the XML database: ", response.status_code
+        print response.text
+        sys.exit(-100)
+    else:
+        xml_response =\
+            xml.etree.ElementTree.ElementTree(
+                xml.etree.ElementTree.fromstring(response.text))
+        db_community = []
+        for xml_node in xml_response.getiterator():
+            if "database" in xml_node.tag:
+                if (len(xml_node.text.strip()) > 0
+                        and "policy_" in xml_node.text):
+                    xml_community = xml_node.text.strip().split("_")[-1]
+                    if xml_community not in db_community:
+                        db_community.append(xml_community)
+
+        if community not in db_community:
+            url = config.get("XMLDATABASE", "name").strip() + "_%s" % community
+            response = requests.put(url,
+                                    auth=(config.get("XMLDATABASE", "user"),
+                                          config.get("XMLDATABASE", "pass")))
+            if response.status_code != 201:
+                print "Problem creating the XML database: ",\
+                        response.status_code
+                print response.text
+                sys.exit(-300)
 
 
 def dump_to_store(pol, config):
