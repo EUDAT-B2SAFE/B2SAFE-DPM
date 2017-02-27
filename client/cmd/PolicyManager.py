@@ -484,13 +484,15 @@ def getInfoPolicies(args, mylogger=None):
                     st = status[staNs+':policy'][staNs+':status']
                     if args.all:
                         print 'overall status = {}'.format(st[staNs+':overall'])
-                        if isinstance(st[staNs+':details'][staNs+':site'], list):
-                            for line in st[staNs+':details'][staNs+':site']:
-                                print '{: ^4}status[{}] = {}'.format('', 
+                        if (st[staNs+':details'] is not None
+                            and st[staNs+':details'][staNs+':site'] is not None):
+                            if isinstance(st[staNs+':details'][staNs+':site'], list):
+                                for line in st[staNs+':details'][staNs+':site']:
+                                    print '{: ^4}status[{}] = {}'.format('', 
                                                                   line['@name'],
                                                                   line['#text'])
-                        else:
-                            print '{: ^4}status[{}] = {}'.format('',
+                            else:
+                                print '{: ^4}status[{}] = {}'.format('',
                                    st[staNs+':details'][staNs+':site']['@name'],
                                    st[staNs+':details'][staNs+':site']['#text'])
                     else:
