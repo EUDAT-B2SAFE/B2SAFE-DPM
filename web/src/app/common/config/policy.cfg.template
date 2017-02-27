@@ -59,8 +59,9 @@ resource_name=${CGI_PATH}/config/resources.db
 action_name=${CGI_PATH}/config/actions.db
 
 [XMLDATABASE]
-name=${XML_PATH}/policy
-status_name=${XML_PATH}/status
+root_name=${XML_PATH}
+name=${XML_PATH}/policy_community
+status_name=${XML_PATH}/status_community
 user=${XML_USER}
 pass=${XML_PASS}
 
