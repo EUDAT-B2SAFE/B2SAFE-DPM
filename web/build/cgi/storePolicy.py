@@ -81,35 +81,37 @@ class Policy(object):
         self.__fill_colls(self.form_data['sources'], 'SOURCES_SCHEMA')
         self.__fill_colls(self.form_data['targets'], 'TARGETS_SCHEMA')
 
-        # print "policy is ", self.policy
-
     def __fill_colls(self, form_colls, schema):
         '''Fill the collection attributes for the policy
         '''
         col_idx = 0
         col_idx2 = 0
         for acoll in form_colls:
-            key_type = "%s_%s" % (self.config.get(schema,
-                                                  'type').strip(), col_idx)
-            key_identifier = "%s_%s" % (self.config.get(schema,
-                                                        'identifier').strip(),
-                                        col_idx)
             key_hostname = "%s_%s" % (self.config.get(schema,
                                                       'hostname'),
                                       col_idx2)
             key_resource = "%s_%s" % (self.config.get(schema,
                                                       'resource'),
                                       col_idx2)
-            self.policy[key_type] = None
-            self.policy[key_identifier] = None
-            self.policy[key_hostname] = None
-            self.policy[key_resource] = None
-
             if acoll['type']['name'] == 'pid':
+                key_type = "%s_%s" %\
+                    (self.config.get(schema, 'type').strip(), col_idx)
+                key_identifier = "%s_%s" %\
+                    (self.config.get(schema, 'identifier').strip(),
+                     col_idx)
                 self.policy[key_type] = acoll['type']['name']
                 self.policy[key_identifier] = acoll['identifier']['name']
                 col_idx += 1
             elif acoll['type']['name'] == 'collection':
+                key_type = "%s_%s" %\
+                    (self.config.get(schema, 'type').strip(), col_idx2)
+                key_identifier = "%s_%s" %\
+                    (self.config.get(schema, 'identifier').strip(),
+                     col_idx2)
+                key_hostname = "%s_%s" %\
+                    (self.config.get(schema, 'hostname'), col_idx2)
+                key_resource = "%s_%s" %\
+                    (self.config.get(schema, 'resource'), col_idx2)
                 self.policy[key_hostname] = acoll['hostname']['name']
                 self.policy[key_resource] = acoll['resource']['name']
                 self.policy[key_identifier] = acoll['identifier']['name']
@@ -230,7 +232,6 @@ class Policy(object):
         xml_site = policy_irods_sub.siteType2Sub()
         xml_site.type_ = 'EUDAT'
         site_key = '%s%s' % (self.config.get(schema, 'hostname'), index)
-        print 'index is ', index
         xml_site.valueOf_ = self.policy[site_key]
         return xml_site
 

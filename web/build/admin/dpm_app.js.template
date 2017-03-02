@@ -472,37 +472,62 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         data_identifier.setIdentifiers(identifiers);
     });
 
-    $scope.currentPage = 0;
+    $scope.currentSourcePage = 0;
+    $scope.currentTargetPage = 0;
+    $scope.showAddSources = true;
+    $scope.showAddTargets = true;
 
-// TODO
-// The code below needs updating to allow adding more than one source
-// Unclear about datasets at the moment
-/*
-    $scope.addMore = function() {
-        ds_count += 1;
-        var id = 'dataset_' + ds_count;
+    $scope.addMoreSources = function() {
+        $scope.showAddTargets = false;
+        var flags = submitFlag.getObj();
+        flags.active = false;
+        submitFlag.setObj(flags);
+        $scope.policy.sources.push({identifier: '', hostname: '', type: '',
+            organisation: {name: 'EUDAT'}, system: '', resource: {name: ''}});
+        $scope.pristineFlags.sources.push({organisation: true,
+          location_type: true, system: true, site: true, resource: true});
+        $scope.invalidFlags.sources.push({coll: true, pid: true});
+    };
+    $scope.numberOfSourcePages = function() {
+        return Math.ceil($scope.policy.sources.length/3);
+    };
+    $scope.removeSourceCollection = function(array, index) {
+        array.splice(index, 1);
+    };
+
+
+    $scope.addMoreTargets = function() {
+        $scope.showAddSources = false;
         var flago = submitFlag.getObj();
         flago.active = false;
         submitFlag.setObj(flago);
-        $scope.policy.collections.push({name: '', type: {name: ''}});
-        $scope.invalidFlags.dataset.push({pid: true, coll: true});
-        $scope.pristineFlags.dataset.push({pid: true, coll: true});
-        $scope.pristineFlags.sources.push({organisation: true,
+        $scope.policy.targets.push({identifier: '', hostname: '', type: '',
+            organisation: {name: 'EUDAT'}, system: '', resource: {name: ''}});
+        $scope.pristineFlags.targets.push({organisation: true,
           location_type: true, system: true, site: true, resource: true});
-        $scope.policy.sources.push({loctype: '', organisation: '',
-          system: '', site: '', path: '', resource: ''
-        });
-        $scope.submitted = false;
-        $scope.invalidFlags.source.push({organisation: true, system: true,
-          site: true, resource: true});
+        $scope.invalidFlags.targets.push({coll: true, pid: true});
     };
-    $scope.numberOfPages = function() {
-        return Math.ceil($scope.policy.collections.length/3);
+    $scope.numberOfTargetPages = function() {
+        return Math.ceil($scope.policy.targets.length/3);
     };
-    $scope.removeCollection = function(array, index) {
+    $scope.removeSource = function(array, index) {
         array.splice(index, 1);
+        if (array.length === 1) {
+            $scope.showAddTargets = true;
+        }
+        $scope.pristineFlags.sources.splice(index, 1);
+        $scope.invalidFlags.sources.splice(index, 1);
     };
-*/
+    $scope.removeTarget = function(array, index) {
+        array.splice(index, 1);
+        if (array.length == 1) {
+            $scope.showAddSources = true;
+        }
+        $scope.pristineFlags.targets.splice(index, 1);
+        $scope.invalidFlags.targets.splice(index, 1);
+    };
+
+
 
     // When the source or target type is selected we populate the
     // select menus and display the correct fields
@@ -566,6 +591,7 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
           }
         }
         if (ctype === 'target') {
+          console.log('target pristine flag ' + JSON.stringify($scope.pristineFlags));
           $scope.pristineFlags.targets[index].location_type = false;
           typeName = $scope.policy.targets[index].type.name.replace(/^\s+|\s+$/g, '');
           if (typeName === 'collection') {
@@ -611,6 +637,7 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         }
         $scope.policy.sources[index].identifier = sourceCopy[collIndex];
       } else if (type === 'target') {
+        console.log('target pristine flag2 ' + JSON.stringify($scope.pristineFlags));
         $scope.pristineFlags.targets[index].col = false;
         $scope.pristineFlags.targets[index].pid = false;
         $scope.pristineFlags.targets[index].site = false;
