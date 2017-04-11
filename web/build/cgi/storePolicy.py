@@ -66,6 +66,8 @@ class Policy(object):
         self.policy[self.config.get('ACTIONS_SCHEMA',
                                     'type').strip()] = \
             self.form_data['type']['name']
+        self.policy['family'] = "%s-%s" % (self.form_data['community'],
+                                           self.form_data['uuid'])
         if self.form_data['trigger']['name'] == periodic_type:
             trigger_val = self.form_data['trigger_period']['name']
             self.trigger_time = True
@@ -104,19 +106,19 @@ class Policy(object):
                 col_idx += 1
             elif acoll['type']['name'] == 'collection':
                 key_type = "%s_%s" %\
-                    (self.config.get(schema, 'type').strip(), col_idx2)
+                    (self.config.get(schema, 'type').strip(), col_idx)
                 key_identifier = "%s_%s" %\
                     (self.config.get(schema, 'identifier').strip(),
-                     col_idx2)
+                     col_idx)
                 key_hostname = "%s_%s" %\
-                    (self.config.get(schema, 'hostname'), col_idx2)
+                    (self.config.get(schema, 'hostname'), col_idx)
                 key_resource = "%s_%s" %\
-                    (self.config.get(schema, 'resource'), col_idx2)
+                    (self.config.get(schema, 'resource'), col_idx)
                 self.policy[key_hostname] = acoll['hostname']['name']
                 self.policy[key_resource] = acoll['resource']['name']
                 self.policy[key_identifier] = acoll['identifier']['name']
                 self.policy[key_type] = acoll['type']['name']
-                col_idx2 += 1
+                col_idx += 1
 
     def create_xml(self, formdata):
         '''Method to create an XML policy
@@ -142,6 +144,7 @@ class Policy(object):
         xml_pol.community = formdata['community']
         xml_pol.created = self.policy[self.config.get('POLICY_SCHEMA',
                                                       'ctime').strip()]
+        xml_pol.family = self.policy['family']
         xml_pol.dataset = xml_dataset
         xml_pol.actions = xml_actions
 

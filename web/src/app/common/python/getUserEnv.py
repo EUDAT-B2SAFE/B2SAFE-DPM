@@ -8,8 +8,8 @@ def getUEnv():
     '''Function to get the user environment variable
     '''
     username = ''
-    if (os.environ.has_key('REMOTE_USER')):
-        username = os.environ['REMOTE_USER']
+    if (os.environ.has_key('persistentid')):
+        username = os.environ['persistentid']
     else:
         # Just for testing put a dummy username in case the REMOTE_USER
         # env variable doesn't exist

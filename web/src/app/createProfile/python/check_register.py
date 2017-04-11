@@ -123,8 +123,8 @@ if __name__ == '__main__':
     config.read(cfgfile)
     
     if (config.get("AUTHENTICATION", "type") == "AAI"):
-        if (os.environ.has_key("REMOTE_USER")):
-            username = os.environ["REMOTE_USER"]
+        if (os.environ.has_key("presistentid")):
+            username = os.environ["persistentid"]
         elif (os.environ.has_key("persistent_id")):
             username = os.environ["persistent_id"]
     elif (config.get("AUTHENTICATION", "type") == "STANDALONE"):

@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
 import sys
-import os
 import cgi
 import json
 import ConfigParser
-import sqlite3
 import requests
 
 
@@ -24,7 +22,7 @@ def getData(config, url, uuid):
     '''
 
     # Create the URL for the policy xml file
-    policy_url = url + "/policy_%s.xml" % uuid
+    policy_url = url + "/policy_%s.xml" % (uuid)
     response = requests.get(policy_url,
                             auth=(config.get("XMLDATABASE", "user"),
                                   config.get("XMLDATABASE", "pass")))

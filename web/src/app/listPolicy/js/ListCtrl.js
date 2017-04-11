@@ -1,12 +1,12 @@
 function listCtrl($scope, $sce, $http, $route,
         $filter, $location, logPageList,
         logData, policy, polList, uuids,
-        showLog, userProfile, listaction, ngTableParams) {
+        showLog, userProfile, listaction, policyService,
+        ngTableParams) {
 
     var keys = [];
     var dkeys = {};
     $scope.displayKeys = false;
-
 
     // Display the checkbox for the columns
     $scope.showCheckbox = function() {
@@ -24,78 +24,43 @@ function listCtrl($scope, $sce, $http, $route,
         for (i = 0; i < keys.length; i++) {
             dkeys[keys[i].name] = keys[i].idx;
         }
-        $scope.policy.name = this.pol_data.pol_vals[dkeys.policy_name].name;
-        $scope.policy.version = this.pol_data.pol_vals[dkeys.policy_version].name;
-        $scope.policy.author = this.pol_data.pol_vals[dkeys.policy_author].name;
-        $scope.policy.uuid = this.pol_data.pol_vals[dkeys.policy_uniqueid].name;
-        $scope.policy.id = this.pol_data.pol_vals[dkeys.policy_id].name;
+        var polSelected = this.polselected.name; 
+        $http({method: "GET", url: "${CGI_URL}/load_policy.py",
+               params: {uuid: this.pol_data.pol_vals[dkeys.policy_uniqueid].name,
+                        policyURL: this.pol_data.pol_vals[this.pol_data.pol_vals.length-1].name}}).then(function(results) {
+            var data = results.data;
+            console.log('data is ' + JSON.stringify(data));
+            $scope.policy.name = data.name;
+            $scope.policy.version = data.version;
+            $scope.policy.author = data.author;
+            $scope.policy.uuid = data.uuid;
+            $scope.policy.id = data.uuid;
+            $scope.policy.community = data.community.toLowerCase();
+            $scope.policy.sources = data.sources;
+            $scope.policy.targets = data.targets;
+            $scope.policy.action = {"name": data.trigger.name};
+            $scope.policy.type.name = data.type.name;
+            $scope.policy.trigger.name = data.trigger.name;
+            $scope.policy.dateString = data.dateString;
+            $scope.policy.trigger_date.name = data.trigger_date.name;
+            $scope.policy.trigger_period = {"name": data.trigger_period.name};
+            $scope.policy.trigger.value = "";
+            $scope.$parent.pol_cand = $scope.policy;
+            policyService.setObj($scope.policy);
+        
+            var url = "";
+            if (polSelected === "Modify") {
+                url = "template/modify.html";
+            } else if (polSelected === "Deactivate") {
+                url = "template/remove.html";
+                $scope.policy.saved_uuid = $scope.policy.uuid;
+            } else if (polSelected === "Reactivate") {
+                url = "template/reactivate.html";
+                $scope.policy.saved_uuid = $scope.policy.uuid;
+            }
+            $scope.$parent.changeLoc(url);
+        });
 
-        $scope.policy.community = this.pol_data.pol_vals[dkeys.policy_community].name.toLowerCase();
-        // We need to split the collection name as we display as
-        // a string of more than one collection
-        if (this.pol_data.pol_vals[dkeys.collection_persistentIdentifier].name === null) {
-          colls = ['none'];
-        } else {
-          colls = this.pol_data.pol_vals[dkeys.collection_persistentIdentifier].name.split(',');
-        }
-        if (this.pol_data.pol_vals[dkeys.collection_persistentIdentifier_type].name === null) {
-          coll_types = ['none'];
-        } else {
-          coll_types = this.pol_data.pol_vals[dkeys.collection_persistentIdentifier_type].name.split(',');
-        }
-        policy.collections = [];
-        for (var i = 0; i < colls.length; i++) {
-            var coll = colls[i].replace(/ /g,'');
-            var coll_type = coll_types[i].replace(/ /g,'');
-            policy.collections.push({"name": coll,
-                "type": coll_type});
-        }
-
-        // We need to split the source path, resource, site, organisation, system
-        // as there may be more than one source
-        var sources = [];
-        if (this.pol_data.pol_vals[dkeys.src_location_site_type].name === null) {
-          sources = [['none', 'none', 'none', 'none', 'none']];
-        } else {
-          var orgs = this.pol_data.pol_vals[dkeys.src_location_site_type].name.split(',');
-          var sites = this.pol_data.pol_vals[dkeys.src_location_site].name.split(',');
-          var resources = this.pol_data.pol_vals[dkeys.src_location_resource].name.split(',');
-          var systems = this.pol_data.pol_vals[dkeys.src_location_type].name.split(',');
-          var paths = this.pol_data.pol_vals[dkeys.src_location_path].name.split(',');
-          var k;
-          for (k = 0; k < orgs.length; k++) {
-            sources.push({organisation: {name: orgs[k]},
-                          site: {name: sites[k]},
-                          system: {name: systems[k]},
-                          resource: {name: resources[k]},
-                          path: paths[k]});
-          }
-        }
-        $scope.policy.sources = sources;
-        // console.log("sources " + JSON.stringify($scope.policy.sources));
-
-        $scope.policy.action.name = this.pol_data.pol_vals[dkeys.action_name].name;
-        $scope.policy.type.name = this.pol_data.pol_vals[dkeys.action_type].name;
-        $scope.policy.trigger.name = this.pol_data.pol_vals[dkeys.action_trigger_type].name;
-        $scope.policy.trigger.value = this.pol_data.pol_vals[dkeys.action_trigger_action].name;
-        $scope.policy.target.organisation.name = this.pol_data.pol_vals[dkeys.location_site_type].name;
-        $scope.policy.target.site.name = this.pol_data.pol_vals[dkeys.location_site].name;
-        $scope.policy.target.path = this.pol_data.pol_vals[dkeys.location_path].name;
-        $scope.policy.target.resource.name = this.pol_data.pol_vals[dkeys.location_resource].name;
-        $scope.policy.target.system.name = this.pol_data.pol_vals[dkeys.location_type].name;
-        //$scope.policy.target.loctype.name = this.pol_data.pol_vals[dkeys.loctype].name;
-
-        var url = "";
-        if (this.polselected.name === "Modify") {
-            url = "template/modify.html";
-        } else if (this.polselected.name === "Deactivate") {
-            url = "template/remove.html";
-            $scope.policy.saved_uuid = $scope.policy.uuid;
-        } else if (this.polselected.name === "Reactivate") {
-            url = "template/reactivate.html";
-            $scope.policy.saved_uuid = $scope.policy.uuid;
-        }
-        $scope.$parent.changeLoc(url);
     };
 
     // Read in from the config file the database schema. These will
@@ -152,6 +117,7 @@ function listCtrl($scope, $sce, $http, $route,
                 var i;
                 var j;
                 var data = results.data;
+                console.log("the data is " + JSON.stringify(results.data));
                 uuids = clearArray(uuids);
                 for (i = 0; i < data.length; i++) {
                     var ddvals = [];
@@ -169,7 +135,7 @@ function listCtrl($scope, $sce, $http, $route,
                     var polrm = false;
 
                     dvals.push({pol_vals: ddvals, visible: true,
-                        removed: polrm});
+                        removed: polrm, listaction: listaction});
                     // Keep the uid for matching with the log files
                     uuids.push(data[i][dkeys.policy_uniqueid][0]);
                 }
@@ -333,10 +299,12 @@ function listCtrl($scope, $sce, $http, $route,
     $scope.display_pol = function(pol_data) {
         // The 4th element is the id. Query the database to get the policy
         // corresponding to the uuid
+        console.log("uuid " + pol_data.pol_vals[dkeys.policy_uniqueid].name);
+        console.log("poldata " + JSON.stringify(pol_data));
         $http({method: "GET",
             url: "${CGI_URL}/getPolicy.py",
             params: {uuid: pol_data.pol_vals[dkeys.policy_uniqueid].name,
-                     policyURL:  pol_data.pol_vals[pol_data.pol_vals.length-1].name}}).then(function(results) {
+                     policyURL:  pol_data.pol_vals[pol_data.pol_vals.length-2].name}}).then(function(results) {
                 var data = results.data;
                 uuids = clearArray(uuids);
                 uuids.push(pol_data.pol_vals[dkeys.policy_uniqueid].name);

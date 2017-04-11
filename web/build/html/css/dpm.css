@@ -525,6 +525,15 @@ button#closehelp {
     background-color: red;
 }
 
+div#vspace {
+    width: 100%;
+    height: 110px;
+}
+
+.personalblock {
+    width: 100%;
+}
+
 .ng-table-rowselected tr {
     cursor: pointer;
 }

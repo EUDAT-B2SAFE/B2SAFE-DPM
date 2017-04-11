@@ -7,193 +7,124 @@ import hashlib
 import time
 import os
 import sqlite3
+import requests
 
 sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])))
 import policy_irods_sub
 import policy_irods_lib
 import policy_lib
 
-# We only want to consider versions at the same level (eg
-# A.B with C.D and not A.B with A.B.C)
 
-def highVer(versions):
-    '''Find the highest version
-    '''
-    high = -1
-    fversions = {}
-    if (len(versions) > 0):
-        for aver in versions:
-            vals = aver[0].split('.')
-            fval = ''.join(vals)
-            fversions[fval] = aver[0]
-
-        keys = fversions.keys()
-        keys.sort()
-        keys.reverse()
-        high = fversions[keys[0]]
-    return high
-
-def nextVersion(config, uid, version):
-    '''Function to get the last used version number from the database
-    and return the next available one
-    '''
-    vers = 0.0
-    dbfile = config.get("DATABASE", "name").strip()
-    if (not os.path.isfile(dbfile)):
-        sys.stderr.write("Cannot open the database: %s" % dbfile)
-
-    # Open the database
-    conn = sqlite3.connect(dbfile)
-    cur = conn.cursor()
-
-    # Get the keys for all policies containing this uuid
-    cur.execute("select key from policies where key like ? and value = ?",
-            ('policy_id%', uid))
-    results = cur.fetchall()
-
-    # What is the highest version number we have
-    highver = highVer(results)
-
-    # If we are at the highest version number we need to just
-    # bump the version number otherwise we need to go a level
-    # down and find the highest version number and bump that
-    if (version == highver):
-        intval = 1
-        # Since we are only interested in incrementing the smallest
-        # digit
-        vcpts = version.split('.')
-        lvers = int(vcpts[-1]) + int(intval)
-        vcpts[-1] = str(lvers)
-        vers = '.'.join(vcpts)
-    else:
-        newVersion = "%s.1" % (version)
-        ver_str = "%s%%" % config.get("POLICY_SCHEMA", "version")
-        cur.execute("select value from policies where key like ? and value=?",
-                (ver_str, newVersion))
-        results = cur.fetchall()
-
-        intval = 1
-        # No versions exist at this level so we are at the highest
-        # and set the version accordingly
-        if (len(results) == 0):
-            vers = newVersion
-        else:
-            highver = highVer(results)
-            if (highver > 0):
-                vcpts = highver.split('.')
-                lvers = int(vcpts[-1]) + int(intval)
-                vcpts[-1] = str(lvers)
-                vers = '.'.join(vcpts)
-    return vers
-
-class Policy():
+class Policy(object):
     '''policy class'''
-    def __init__(self, config):
+    def __init__(self, config, form_data):
         '''initialiser'''
         self.uuid = None
         self.policy = {}
+        self.form_data = form_data
         self.config = config
-        self.dateType = 'date'
-        self.periodicType = 'period'
-        self.irodsSystem = 'iRODS'
-        self.irodsNamespace = "irodsns:coordinates"
+        self.trigger_time = False
+        self.irods_system = 'iRODS'
+        self.irods_namespace = "irodsns:coordinates"
+        # Check the database exists - if not create it
+        conn = sqlite3.connect(config.get("DATABASE", "name").strip())
+        cur = conn.cursor()
+        cur.execute('''create table if not exists policies (key text, value
+                    text)''')
+        conn.commit()
 
-    def processForm(self, formdata):
-        '''process the form data and fill the obect attributes
+    def process_form(self):
+        '''process the form data and fill the object attributes
         '''
         trigger_val = ''
+        periodic_type = 'date/time'
+        run_now = 'immediately'
+
+        self.policy[self.config.get("ACTIONS_SCHEMA",
+                                    "policy_id").strip()] = \
+            self.form_data['policy_action_id']
         self.policy[self.config.get('POLICY_SCHEMA',
-            'community').strip()] = formdata['community']
+                                    'ctime').strip()] = int(time.time())
+
         self.policy[self.config.get('POLICY_SCHEMA',
-            'uniqueid').strip()] = formdata['uuid']
+                                    'removed').strip()] = 'false'
         self.policy[self.config.get('POLICY_SCHEMA',
-            'id').strip()] = formdata['id']
+                                    'community').strip()] = \
+            self.form_data['community']
         self.policy[self.config.get('POLICY_SCHEMA',
-            'name').strip()] = formdata['name']
+                                    'uniqueid').strip()] = \
+            self.form_data['uuid']
         self.policy[self.config.get('POLICY_SCHEMA',
-            'removed').strip()] = "false"
-        # For the version we need to query the db and get the
-        # highest version number that has been used and then
-        # use the next one.
+                                    'id').strip()] = self.form_data['id']
         self.policy[self.config.get('POLICY_SCHEMA',
-            'version').strip()] = nextVersion(self.config, formdata['id'],
-                    formdata['version'])
+                                    'name').strip()] = self.form_data['name']
         self.policy[self.config.get('POLICY_SCHEMA',
-            'author').strip()] = formdata['author']
+                                    'version').strip()] = \
+            self.form_data['version']
+        self.policy[self.config.get('POLICY_SCHEMA',
+                                    'author').strip()] = \
+            self.form_data['author']
         self.policy[self.config.get('ACTIONS_SCHEMA',
-            'type').strip()] = formdata['type']['name']
-        if (formdata['trigger']['name'] == self.dateType):
-            trigger_val = formdata['trigger']['value']
-        elif (formdata['trigger']['name'] == self.periodicType):
-            trigger_val = "%s, %s, %s, %s, %s" %\
-                (formdata['trigger_period']['minute']['name'],
-                 formdata['trigger_period']['hour']['name'],
-                 formdata['trigger_period']['day']['name'],
-                 formdata['trigger_period']['month']['name'],
-                 formdata['trigger_period']['weekday']['name'])
-        self.policy[self.config.get('ACTIONS_SCHEMA', 'trigger').strip()] = \
-            trigger_val
+                                    'type').strip()] = \
+            self.form_data['type']['name']
+        if self.form_data['trigger']['name'] == periodic_type:
+            trigger_val = self.form_data['trigger_period']['name']
+            self.trigger_time = True
+        elif self.form_data['trigger']['name'] == run_now:
+            self.trigger_time = False
+
         self.policy[self.config.get('ACTIONS_SCHEMA',
-                    'trigger_type').strip()] = \
-            formdata['trigger']['name'].strip()
-        self.policy[self.config.get('ACTIONS_SCHEMA', 'name').strip()] =\
-            formdata['action']['name']
+                                    'trigger').strip()] = trigger_val
+        self.policy[self.config.get('ACTIONS_SCHEMA',
+                                    'trigger_type').strip()] = \
+            self.form_data['trigger']['name'].strip()
+
+        self.__fill_colls(self.form_data['sources'], 'SOURCES_SCHEMA')
+        self.__fill_colls(self.form_data['targets'], 'TARGETS_SCHEMA')
+
+    def __fill_colls(self, form_colls, schema):
+        '''Fill the collection attributes for the policy
+        '''
         col_idx = 0
-        for acoll in formdata['collections']:
-            akeypid = "%s_%s" % (self.config.get('DATASETS_SCHEMA',
-                                 'pid').strip(), col_idx)
-            akeytype = "%s_%s" % (self.config.get('DATASETS_SCHEMA',
-                                  'type').strip(), col_idx)
-            src_site = "%s_%s" % (self.config.get('SOURCES_SCHEMA',
-                                  'site'), col_idx)
-            src_org = "%s_%s" % (self.config.get('SOURCES_SCHEMA',
-                                                 'site_type'),
-                                 col_idx)
-            src_system = "%s_%s" % (self.config.get('SOURCES_SCHEMA',
-                                                    'type'), col_idx)
-            src_resource = "%s_%s" % (self.config.get('SOURCES_SCHEMA',
+        col_idx2 = 0
+        for acoll in form_colls:
+            key_hostname = "%s_%s" % (self.config.get(schema,
+                                                      'hostname'),
+                                      col_idx2)
+            key_resource = "%s_%s" % (self.config.get(schema,
                                                       'resource'),
-                                      col_idx)
-            src_path = "%s_%s" % (self.config.get('SOURCES_SCHEMA',
-                                  'path'), col_idx)
-            self.policy[akeytype] = None
-            self.policy[akeypid] = None
-            self.policy[src_site] = None
-            self.policy[src_org] = None
-            self.policy[src_resource] = None
-            self.policy[src_path] = None
-            self.policy[src_system] = None
-            self.policy[akeypid] = acoll['name']
-            self.policy[akeytype] = acoll['type']
-
-            if (acoll['type']['name'] == 'pid'):
-                self.policy[akeytype] = acoll['type']['name']
-                self.policy[akeypid] = acoll['name']
+                                      col_idx2)
+            if acoll['type']['name'] == 'pid':
+                key_type = "%s_%s" %\
+                    (self.config.get(schema, 'type').strip(), col_idx)
+                key_identifier = "%s_%s" %\
+                    (self.config.get(schema, 'identifier').strip(),
+                     col_idx)
+                self.policy[key_type] = acoll['type']['name']
+                self.policy[key_identifier] = acoll['identifier']['name']
                 col_idx += 1
-            elif (acoll['type']['name'] == 'collection'):
-                scoll = formdata['sources'][col_idx]
-                self.policy[src_site] = scoll['site']['name']
-                self.policy[src_org] = scoll['organisation']['name']
-                self.policy[src_resource] = scoll['resource']['name']
-                self.policy[src_path] = scoll['path']
-                self.policy[src_system] = scoll['system']['name']
-                self.policy[akeytype] = acoll['type']['name']
+            elif acoll['type']['name'] == 'collection':
+                key_type = "%s_%s" %\
+                    (self.config.get(schema, 'type').strip(), col_idx)
+                key_identifier = "%s_%s" %\
+                    (self.config.get(schema, 'identifier').strip(),
+                     col_idx)
+                key_hostname = "%s_%s" %\
+                    (self.config.get(schema, 'hostname'), col_idx)
+                key_resource = "%s_%s" %\
+                    (self.config.get(schema, 'resource'), col_idx)
+                self.policy[key_hostname] = acoll['hostname']['name']
+                self.policy[key_resource] = acoll['resource']['name']
+                self.policy[key_identifier] = acoll['identifier']['name']
+                self.policy[key_type] = acoll['type']['name']
                 col_idx += 1
+ 
+    def new_version(self, old_version):
+        '''Return the new version number based on the old one'''
+        version = int(float(old_version)) + 1
+        return version
 
-        self.policy[self.config.get('TARGETS_SCHEMA', 'path').strip()] = \
-            formdata['target']['path']
-        self.policy[self.config.get('TARGETS_SCHEMA', 'site').strip()] = \
-            formdata['target']['site']['name']
-        self.policy[self.config.get('TARGETS_SCHEMA', 'resource').strip()] = \
-            formdata['target']['resource']['name']
-        self.policy[self.config.get('TARGETS_SCHEMA', 'site_type').strip()] = \
-            formdata['target']['organisation']['name']
-        self.policy[self.config.get('TARGETS_SCHEMA', 'type').strip()] = \
-            formdata['target']['system']['name']
-#        self.policy[self.config.get('TARGETS_SCHEMA', 'loctype').strip()] = \
-#                formdata['target']['loctype']['name']
-
-    def createXML(self, formdata):
+    def create_xml(self, formdata):
         '''Method to create an XML policy
         '''
         # Create instances of the classes generated from the schema
@@ -202,148 +133,183 @@ class Policy():
 
         # Build the dataset node
         xml_dataset = policy_lib.datasetType2()
-        xml_dataset.collection = self.__createColls(formdata)
+        xml_dataset.collection = self.__create_colls()
 
         # Build the action nodes
         xml_actions = policy_lib.actionsType()
-        xml_actions.action = self.__createActions(formdata)
+        xml_actions.action = self.__create_actions()
+
+        version = self.new_version(formdata['version'])
 
         # Build the policy node
         xml_pol = policy_lib.policy()
         xml_pol.uniqueid = formdata['uuid']
-        xml_pol.version = nextVersion(self.config, formdata['id'],
-                                      formdata['version'])
-
+        xml_pol.version = version
         xml_pol.name = formdata['name']
         xml_pol.author = formdata['author']
+        xml_pol.community = formdata['community']
+        xml_pol.created = self.policy[self.config.get('POLICY_SCHEMA',
+                                                      'ctime').strip()]
         xml_pol.dataset = xml_dataset
         xml_pol.actions = xml_actions
 
         # Output XML and store in key-value
         output = StringIO.StringIO()
-        xml_pol.export(output, 0,
-                       namespacedef_=self.config.get("XML_NAMESPACE",
-                                                     "namespacedef"))
+        xml_pol.export(output, 0, namespacedef_=self.config.get(
+            "XML_NAMESPACE", "namespacedef"))
 
         self.policy[self.config.get('POLICY_SCHEMA', 'object').strip()] = \
             output.getvalue()
 
-    def __createActionType(self, formdata):
+    def __create_action_type(self):
         '''Private method to build the action type node
         '''
+        action_key = self.config.get('ACTIONS_SCHEMA', 'type')
+        action_policy_key = self.config.get('ACTIONS_SCHEMA', 'policy_id')
         xml_action_type = policy_lib.actionType()
-        # xml_action_type.policyID = formdata[]
-        xml_action_type.valueOf_ = formdata['type']['name']
+        if len(self.policy[action_policy_key]['name']) > 0:
+            xml_action_type.policyID = self.policy[action_policy_key]['name']
+        xml_action_type.valueOf_ = self.policy[action_key]
         return xml_action_type
 
-    def __createTrigger(self, formdata):
+    def __create_trigger(self):
         '''Private method to build the trigger node
         '''
-        trigger_val = ''
-        dateSpecified = False
         xml_trigger = policy_lib.triggerType()
-        xml_trigger_action = policy_lib.actionType()
+        # xml_trigger_action = policy_lib.actionType()
 
         # Process the form data according to the type selected
-        if (formdata['trigger']['name'] == self.dateType):
-            # The date is in the wrong format according to XML schema
-            # it should be: secs mins hours day month year
-            trigger_tmp = formdata['trigger']['value'].split("-")
-            trigger_val = "0 0 0 %s %s %s" % (trigger_tmp[2], trigger_tmp[1],
-                                              trigger_tmp[0])
-            dateSpecified = True
-        elif (formdata['trigger']['name'] == self.periodicType):
-            trigger_val = "%s %s %s %s %s" %\
-                (formdata['trigger_period']['minute']['name'],
-                 formdata['trigger_period']['hour']['name'],
-                 formdata['trigger_period']['day']['name'],
-                 formdata['trigger_period']['month']['name'],
-                 formdata['trigger_period']['weekday']['name'])
-            dateSpecified = True
+        # trigger_key = self.config.get('ACTIONS_SCHEMA', 'trigger_type')
+        trigger_date_key = self.config.get('ACTIONS_SCHEMA', 'trigger')
 
-        if (dateSpecified):
-            xml_trigger.time = trigger_val
+        if self.trigger_time:
+            xml_trigger.time = self.policy[trigger_date_key]
         else:
-            xml_trigger_action.valueOf_ = trigger_val
-            xml_trigger.action = xml_trigger_action
+            runonce = policy_lib.runonceType()
+            xml_trigger.runonce = runonce
+            # xml_trigger_action.valueOf_ = self.policy[trigger_date_key]
+            # xml_trigger.action = xml_trigger_action
         return xml_trigger
 
-    def __createActions(self, formdata):
+    def __create_actions(self):
         '''Private method to build the action nodes
         '''
         xml_actions = []
         # We could potentially have many actions so will need to
         # loop in the future
         xml_action = policy_lib.actionType1()
-        xml_action.trigger = self.__createTrigger(formdata)
-        xml_action.type_ = self.__createActionType(formdata)
+        xml_action.trigger = self.__create_trigger()
+        xml_action.type_ = self.__create_action_type()
 
         xml_targets = policy_lib.targetsType()
-        xml_targets.target = self.__createTargets(formdata)
+        xml_targets.target = self.__create_targets()
         xml_action.targets = xml_targets
-        xml_action.name = formdata['action']['name']
+        # xml_action.name = formdata['action']['name']
         xml_actions.append(xml_action)
         return xml_actions
 
-    def __createLocation(self, formdata):
+    def __create_tgt_location(self, index):
         '''Private method to build the location node
         '''
         xml_location = policy_irods_sub.coordinatesSub()
-        xml_location.site = self.__createSite(formdata)
-        xml_location.resource = formdata['target']['resource']['name']
-        xml_location.path = formdata['target']['path']
+        xml_location.site = self.__create_site(index, 'TARGETS_SCHEMA')
+        xml_location.resource = ''
+        identifier_key = '%s%s' % (self.config.get('TARGETS_SCHEMA',
+                                                   'identifier'), index)
+        xml_location.path = self.policy[identifier_key]
         # Needed as the default location is abstract
-        if (formdata['target']['system']['name'] == self.irodsSystem):
-            xml_location.extensiontype_ = self.irodsNamespace
+        xml_location.extensiontype_ = self.irods_namespace
         return xml_location
 
-    def __createSite(self, formdata):
+    def __create_src_location(self, index):
+        '''Private method to build the location node
+        '''
+        xml_location = policy_irods_sub.coordinatesSub()
+        xml_location.site = self.__create_site(index, 'SOURCES_SCHEMA')
+        xml_location.resource = ''
+        identifier_key = "%s%s" % (self.config.get('SOURCES_SCHEMA',
+                                                   'identifier'), index)
+        xml_location.path = self.policy[identifier_key]
+        # Needed as the default location is abstract
+        xml_location.extensiontype_ = self.irods_namespace
+        return xml_location
+
+    def __create_site(self, index, schema):
         '''Private method to build the site node
         '''
         xml_site = policy_irods_sub.siteType2Sub()
-        xml_site.type_ = formdata['target']['organisation']['name']
-        xml_site.valueOf_ = formdata['target']['site']['name']
+        xml_site.type_ = 'EUDAT'
+        site_key = '%s%s' % (self.config.get(schema, 'hostname'), index)
+        xml_site.valueOf_ = self.policy[site_key]
         return xml_site
 
-    def __createTargets(self, formdata):
+    def __create_targets(self):
         '''Private method to build the target nodes
         '''
         xml_targets = []
-        tgt_idx = 0
-        # Currently we don't have more than one target so we just
-        # use that.
-        xml_target = policy_lib.locationPoint()
-        xml_target.location = self.__createLocation(formdata)
-        xml_targets.append(xml_target)
+        for key in self.policy.keys():
+            if self.config.get('TARGETS_SCHEMA', 'type') in key:
+                xml_target = policy_lib.locationPoint()
+                index = key.split(self.config.get('TARGETS_SCHEMA', 'type'))[1]
+
+                if self.policy[key] == 'pid':
+                    identifier_key = '%s%s' % \
+                        (self.config.get('TARGETS_SCHEMA', 'identifier'),
+                         index)
+                    xml_persistent_identifier = \
+                        policy_lib.persistentIdentifierType7()
+                    xml_persistent_identifier.valueOf_ = \
+                        self.policy[identifier_key]
+                    xml_persistent_identifier.type_ = self.policy[key]
+                    xml_target.persistentIdentifier = xml_persistent_identifier
+                elif self.policy[key] == 'collection':
+                    xml_target_location = self.__create_tgt_location(index)
+                    xml_target.location = xml_target_location
+
+                xml_target.id = int(index.split('_')[1])
+                xml_targets.append(xml_target)
         return xml_targets
 
-    def __createColls(self, formdata):
+    def __create_colls(self):
         '''Private method to fill the collections
         '''
         xml_collections = []
-        col_idx = 0
-        for acoll in formdata['collections']:
-            xml_collection = policy_lib.locationPoint()
-            xml_persistentIdentifier = policy_lib.persistentIdentifierType7()
-            xml_persistentIdentifier.valueOf_ = acoll['name']
-            xml_persistentIdentifier.type_ = acoll['type']
-            xml_collection.id = col_idx
-            xml_collection.persistentIdentifier = xml_persistentIdentifier
-            xml_collections.append(xml_collection)
-            col_idx += 1
+        for key in self.policy.keys():
+            if self.config.get('SOURCES_SCHEMA', 'type') in key:
+                xml_collection = policy_lib.locationPoint()
+                index = key.split(self.config.get('SOURCES_SCHEMA', 'type'))[1]
+
+                if self.policy[key] == 'pid':
+                    identifier_key = "%s%s" % \
+                        (self.config.get('SOURCES_SCHEMA', 'identifier'),
+                         index)
+                    xml_persistent_identifier = \
+                        policy_lib.persistentIdentifierType7()
+                    xml_persistent_identifier.valueOf_ = \
+                        self.policy[identifier_key]
+                    xml_persistent_identifier.type_ = self.policy[key]
+                    xml_collection.persistentIdentifier = \
+                        xml_persistent_identifier
+                elif self.policy[key] == 'collection':
+                    xml_source_location = self.__create_src_location(index)
+                    xml_collection.location = xml_source_location
+
+                xml_collection.id = int(index.split('_')[1])
+                xml_collections.append(xml_collection)
         return xml_collections
 
     def setmd5(self, md5):
         '''Method to store the md5 hash
         '''
         self.policy[self.config.get("POLICY_SCHEMA", "md5").strip()] =\
-                md5
+            md5
 
     def settime(self, ctime):
         '''Method to set the create time
         '''
         self.policy[self.config.get("POLICY_SCHEMA", "ctime").strip()] = \
-                ctime
+            ctime
+
 
 def policyExists(pol, config):
     '''Function to check if the policy exists in the database by comparing
@@ -363,49 +329,32 @@ def policyExists(pol, config):
     cur = conn.cursor()
     md5_str = "%s%%" % (config.get("POLICY_SCHEMA", "md5"))
     cur.execute("select key from policies where key like ? and value=?",
-            (md5_str, polmd5))
+                (md5_str, polmd5))
     results = cur.fetchall()
     if (len(results) > 0):
         exists = True
     return exists
 
-def dumpToKVDb(pol, config):
-    '''Function to dump the policy to a key-value pair database
-    '''
-    dbfile = config.get("DATABASE", "name").strip()
-    if (not os.path.isfile(dbfile)):
-        sys.stderr.write("Unable to open the database: %s" % dbfile)
+
+def dump_to_xml_store(pol, config):
+    '''Store the policy in the XML database'''
+    baseX_url = config.get("XMLDATABASE", "name").strip()
+
+    # Store the policy in the XML database. We assume the database exists
+    # beforehand
+    policy_url = baseX_url.strip() + "_%s/policy_%s.xml" %\
+        (pol[config.get("POLICY_SCHEMA", "community")],
+         pol[config.get("POLICY_SCHEMA", "uniqueid")])
+    resp = requests.put(policy_url,
+                        data=pol[config.get("POLICY_SCHEMA", "object")],
+                        auth=(config.get("XMLDATABASE", "user"),
+                              config.get("XMLDATABASE", "pass")))
+    if resp.status_code != 201:
+        print "Problem storing the policy in the XML database: ",\
+            resp.status_code
+        print resp.text
         sys.exit(-100)
 
-    # Open the database
-    conn = sqlite3.connect(dbfile)
-    cur = conn.cursor()
-
-    # get the last index from the database
-    last_index = config.get("DATABASE", "last_index").strip()
-    cur.execute("select value from policies where key = ?",
-            (last_index,))
-    result = cur.fetchone()
-    next_index = 0
-    if result:
-        next_index = int(result[0]) + 1
-    else:
-        next_index = 1
-
-    # Write the key-value pairs to the db
-    for akey in pol.keys():
-        key = "%s_%s" %(akey, next_index)
-        cur.execute("insert into policies (key, value) values (?,?)",
-                (key, pol[akey]))
-
-    # update the last index
-    if (next_index == 1):
-        cur.execute("insert into policies (key, value) values (?,?)",
-                ('last_index', next_index))
-    else:
-        cur.execute("update policies set value=? where key=?",
-                (next_index, 'last_index'))
-    conn.commit()
 
 def runStore():
     # Get the schema used for the key-value pair database
@@ -419,9 +368,9 @@ def runStore():
     print "Content-Type: application/json\n"
 
     # Process the form data and create policy
-    aPolicy = Policy(config)
-    aPolicy.processForm(aform)
-    aPolicy.createXML(aform)
+    aPolicy = Policy(config, aform)
+    aPolicy.process_form()
+    aPolicy.create_xml(aform)
 
     # Compute md5 for policy and the create time
     md5 = hashlib.md5()
@@ -435,7 +384,7 @@ def runStore():
         policy_exists = True
     else:
         # Write the policy to a database
-        dumpToKVDb(aPolicy.policy, config)
+        dump_to_xml_store(aPolicy.policy, config)
 
     #print "Input:"
     # print aform

@@ -1,7 +1,7 @@
 <data-ng-form name="datasetactions">
     <div id="policydetails">
       <fieldset>
-        <h3 class="field">Actions</h3>
+        <h3 class="field">Action</h3>
         <div class="stepblock">
           <p>Step</p>
           <select name="type" data-ng-options="ty.name for ty in actionTypes"
@@ -101,8 +101,8 @@
           </div>
         </div>
       </fieldset>
-
-      <h3 class="field">Sources</h3>
+      <br/>
+      <h3 class="field">Source</h3>
       <div data-ng-repeat="source in policy.sources | startFrom:currentSourcePage*3 | limitTo:3">
         <div class="datasets">
           <div class="collblock">

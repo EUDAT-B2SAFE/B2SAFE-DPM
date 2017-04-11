@@ -124,7 +124,6 @@ function actionCtrl($scope, $http, $injector, $controller, policy,
 
     // Update the Trigger
     $scope.updateTrigger = function() {
-      console.log('trigger value is ' + $scope.policy.trigger.name);
       if ($scope.policy.trigger.name === 'date/time') {
         var getTriggerDate = $http({method: 'GET',
             url: '${CGI_URL}/query_actions.py',
@@ -144,6 +143,11 @@ function actionCtrl($scope, $http, $injector, $controller, policy,
           $scope.trigger_date = action_obj.trigger_date;
           data_action.setActions(action_obj);
         });
+      }
+      if (typeof $scope.origPolicy !== "undefined") {
+        if ($scope.policy.trigger.name !== $scope.origPolicy.trigger.name) {
+            $scope.polChanged.trigger_name = true;
+        }
       }
       $scope.pristineFlags.action.trigger = false;
     };
@@ -169,8 +173,6 @@ function actionCtrl($scope, $http, $injector, $controller, policy,
       format: 'YYYY-MM-DDTHH:mmZ'
     }).on('dp.change',
       function(e){
-        //console.log('date is ' + e.date);
-        //console.log('e is ' + JSON.stringify(e));
         var pDate = new Date(e.date);
         var month = pDate.getMonth() + 1;
         var hours = pDate.getHours();
@@ -200,6 +202,11 @@ function actionCtrl($scope, $http, $injector, $controller, policy,
         } else {
           $scope.invalidFlags.action.period_date = false;
         }
+        if (typeof $scope.origPolicy !== "undefined") {
+            if ($scope.policy.dateString != $scope.origPolicy.dateString) {
+                $scope.polChanged.trigger_value = true;
+            }
+        }
         $scope.pristineFlags.action.period_date = false;
         // Since we are outside of angular we need to update the view
         $scope.$digest();
@@ -216,17 +223,13 @@ function actionCtrl($scope, $http, $injector, $controller, policy,
     };
 
     $scope.updatePeriodDate = function() {
-      //console.log('we are called! ' + $scope.policy.trigger_period.name);
-      //console.log('dateString ' + $scope.policy.dateString);
       var dateStamp = Date.parse($scope.policy.dateString);
-      //console.log('dateStamp ' + dateStamp);
       if (isNaN(dateStamp) === true) {
         $scope.policy.trigger_period.name = "";
         $scope.invalidFlags.action.period_date = true;
       } else {
         $scope.invalidFlags.action.period_date = false;
       }
-      //console.log('flag is ' + $scope.invalidFlags.action.period_date);
     };
 
     // invoke the SourceTarget control

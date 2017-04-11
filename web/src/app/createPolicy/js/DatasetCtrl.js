@@ -36,11 +36,15 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         }
         $scope.identifier_types = identifiers.types;
         $scope.target_identifier_types = [];
+        $scope.tgt_id_types = [];
+        $scope.id_types = [];
         for (var i = 0; i < identifiers.types.length; i++) {
           if (identifiers.types[i].name !== "policy") {
             $scope.target_identifier_types.push({'name':
               identifiers.types[i].name});
+            $scope.tgt_id_types.push(identifiers.types[i].name);
           }
+          $scope.id_types.push(identifiers.types[i].name);
         }
         data_identifier.setIdentifiers(identifiers);
     });
@@ -55,11 +59,16 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         var flags = submitFlag.getObj();
         flags.active = false;
         submitFlag.setObj(flags);
-        $scope.policy.sources.push({identifier: '', hostname: '', type: '',
+        if (typeof $scope.polChanged !== "undefined") {
+            $scope.polChanged.sources.push({pid: null, collection: null, policy: null,
+                                            hostname: null, identifier: null});
+        }
+        $scope.policy.sources.push({identifier: {name: ''}, hostname: '', type: '',
             organisation: {name: 'EUDAT'}, system: '', resource: {name: ''}});
         $scope.pristineFlags.sources.push({organisation: true,
           location_type: true, system: true, site: true, resource: true});
         $scope.invalidFlags.sources.push({coll: true, pid: true});
+        $scope.currentSourcePage = Math.ceil($scope.policy.sources.length/3) - 1;
     };
     $scope.numberOfSourcePages = function() {
         return Math.ceil($scope.policy.sources.length/3);
@@ -74,11 +83,16 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         var flago = submitFlag.getObj();
         flago.active = false;
         submitFlag.setObj(flago);
+        if (typeof $scope.polChanged !== "undefined") {
+            $scope.polChanged.targets.push({pid: null, collection: null,
+                                            hostname: null, identifier: null});
+        }
         $scope.policy.targets.push({identifier: '', hostname: '', type: '',
             organisation: {name: 'EUDAT'}, system: '', resource: {name: ''}});
         $scope.pristineFlags.targets.push({organisation: true,
           location_type: true, system: true, site: true, resource: true});
         $scope.invalidFlags.targets.push({coll: true, pid: true});
+        $scope.currentTargetPage = Math.ceil($scope.policy.targets.length/3) - 1;
     };
     $scope.numberOfTargetPages = function() {
         return Math.ceil($scope.policy.targets.length/3);
@@ -88,6 +102,9 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         if (array.length === 1) {
             $scope.showAddTargets = true;
         }
+        if (typeof $scope.polChanged !== "undefined") {
+            $scope.polChanged.sources.splice(index, 1);
+        }
         $scope.pristineFlags.sources.splice(index, 1);
         $scope.invalidFlags.sources.splice(index, 1);
     };
@@ -95,6 +112,9 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         array.splice(index, 1);
         if (array.length == 1) {
             $scope.showAddSources = true;
+        }
+        if (typeof $scope.polChanged !== "undefined") {
+            $scope.polChanged.targets.splice(index, 1);
         }
         $scope.pristineFlags.targets.splice(index, 1);
         $scope.invalidFlags.targets.splice(index, 1);
@@ -120,7 +140,6 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         locations.target_collections = [];
         for (var idx = 0; idx < data.length; ++idx) {
           if (data[idx].length > 0) {
-            console.log("storing index " + idx + " " + JSON.stringify(data[idx]));
             locations.source_sites.push({name: data[idx][0]});
             locations.target_sites.push({name: data[idx][0]});
             locations.source_collections.push({name: data[idx][1]});
@@ -136,9 +155,26 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         // Show the correct fields depending on the type chosen
         var typeName = '';
         if (ctype === 'source') {
+          if ($scope.pristineFlags.sources.length - 1 < index) {
+              $scope.pristineFlags.sources.push({});
+              $scope.invalidFlags.sources.push({});
+          }
           $scope.pristineFlags.sources[index].location_type = false;
           typeName = $scope.policy.sources[index].type.name.replace(/^\s+|\s+$/g, '');
           if (typeName === 'collection') {
+              if (typeof $scope.origPolicy !== "undefined") {
+                  if ($scope.origPolicy.sources.length < $scope.policy.sources.length || 
+                          $scope.origPolicy.sources[index].type.name !== typeName) {
+                      $scope.polChanged.sources[index].collection = true;
+                      $scope.polChanged.sources[index].pid = false;
+                      $scope.polChanged.sources[index].policy = false;
+                      $scope.policy.sources[index].identifier.name = "";
+                      $scope.policy.sources[index].hostname.name = "--- Select ---";
+                   } else {
+                      $scope.policy.sources[index].identifier.name = $scope.origPolicy.sources[index].identifier.name;
+                      $scope.policy.sources[index].hostname.name = $scope.origPolicy.sources[index].hostname.name;
+                   }
+              }
             $scope.invalidFlags.sources[index].coll = false;
             $scope.pristineFlags.sources[index].coll = false;
             $scope.policy.policy_action_id.name = "";
@@ -147,6 +183,19 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
             $scope.showSrcPolicy[index] = false;
             $scope.showSrcPID[index] = false;
           } else if (typeName === 'pid') {
+              if (typeof $scope.origPolicy !== "undefined") {
+                  if ($scope.origPolicy.sources.length < $scope.policy.sources.length ||
+                          $scope.origPolicy.sources[index].type.name !== typeName) {
+                      $scope.polChanged.sources[index].collection = false;
+                      $scope.polChanged.sources[index].pid = true;
+                      $scope.polChanged.sources[index].policy = false;
+                      $scope.policy.sources[index].identifier.name = "";
+                      $scope.policy.sources[index].hostname.name = "--- Select ---";
+                   } else {
+                      $scope.policy.sources[index].identifier.name = $scope.origPolicy.sources[index].identifier.name;
+                      $scope.policy.sources[index].hostname.name = $scope.origPolicy.sources[index].hostname.name;
+                   }
+              }
             $scope.invalidFlags.sources[index].pid = false;
             $scope.pristineFlags.sources[index].pid = false;
             $scope.policy.policy_action_id.name = "";
@@ -155,6 +204,19 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
             $scope.showSrcPolicy[index] = false;
             $scope.showSrcColl[index] = false;
           } else if (typeName === 'policy') {
+               if (typeof $scope.origPolicy !== "undefined") {
+                  if ($scope.origPolicy.sources.length < $scope.policy.sources.length ||
+                          $scope.origPolicy.sources[index].type.name !== typeName) {
+                      $scope.polChanged.sources[index].collection = false;
+                      $scope.polChanged.sources[index].pid = false;
+                      $scope.polChanged.sources[index].policy = true;
+                      $scope.policy.sources[index].identifier.name = "";
+                      $scope.policy.sources[index].hostname.name = "--- Select ---";
+                   } else {
+                      $scope.policy.sources[index].identifier.name = $scope.origPolicy.sources[index].identifier.name;
+                      $scope.policy.sources[index].hostname.name = $scope.origPolicy.sources[index].hostname.name;
+                   }
+              }
             $scope.invalidFlags.sources[index].identifier = false;
             $scope.pristineFlags.sources[index].identifier = false;
             $scope.policy.policy_action_id.name = "--- Select ---";
@@ -164,15 +226,42 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
           }
         }
         if (ctype === 'target') {
-          console.log('target pristine flag ' + JSON.stringify($scope.pristineFlags));
+          if ($scope.pristineFlags.targets.length - 1 < index) {
+              $scope.pristineFlags.targets.push({});
+              $scope.invalidFlags.targets.push({});
+          }
           $scope.pristineFlags.targets[index].location_type = false;
           typeName = $scope.policy.targets[index].type.name.replace(/^\s+|\s+$/g, '');
           if (typeName === 'collection') {
+              if (typeof $scope.origPolicy !== "undefined") {
+                  if ($scope.origPolicy.targets.length < $scope.policy.targets.length ||
+                          $scope.origPolicy.targets[index].type.name !== typeName) {
+                      $scope.polChanged.targets[index].collection = true;
+                      $scope.polChanged.targets[index].pid = false;
+                      $scope.policy.targets[index].identifier.name = "";
+                      $scope.policy.targets[index].hostname.name = "--- Select ---";
+                   } else {
+                      $scope.policy.targets[index].identifier.name = $scope.origPolicy.targets[index].identifier.name;
+                      $scope.policy.targets[index].hostname.name = $scope.origPolicy.targets[index].hostname.name;
+                   }
+              }
             $scope.pristineFlags.targets[index].coll = false;
             $scope.invalidFlags.targets[index].coll = false;
             $scope.showTgtColl[index] = true;
             $scope.showTgtPID[index] = false;
           } else if (typeName === 'pid') {
+              if (typeof $scope.origPolicy !== "undefined") {
+                  if ($scope.origPolicy.targets.length < $scope.policy.targets.length ||
+                          $scope.origPolicy.targets[index].type.name !== typeName) {
+                      $scope.polChanged.targets[index].pid = true;
+                      $scope.polChanged.targets[index].collection = false;
+                      $scope.policy.targets[index].identifier.name = "";
+                      $scope.policy.targets[index].hostname.name = "--- Select ---";
+                   } else {
+                      $scope.policy.targets[index].identifier.name = $scope.origPolicy.targets[index].identifier.name;
+                      $scope.policy.targets[index].hostname.name = $scope.origPolicy.targets[index].hostname.name;
+                   }
+              }
             $scope.invalidFlags.targets[index].pid = false;
             $scope.pristineFlags.targets[index].pid = false;
             $scope.showTgtPID[index] = true;
@@ -197,6 +286,9 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
     $scope.updateCollection = function(index, type) {
       var collIndex = -1;
       if (type === 'source') {
+        if (typeof $scope.origPolicy !== "undefined") {
+           $scope.polChanged.sources[index].hostname = true;
+        }
         $scope.pristineFlags.sources[index].pid = false;
         $scope.pristineFlags.sources[index].col = false;
         $scope.pristineFlags.sources[index].site = false;
@@ -210,7 +302,9 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
         }
         $scope.policy.sources[index].identifier = sourceCopy[collIndex];
       } else if (type === 'target') {
-        console.log('target pristine flag2 ' + JSON.stringify($scope.pristineFlags));
+        if (typeof $scope.origPolicy !== "undefined") {
+           $scope.polChanged.targets[index].hostname = true;
+        }
         $scope.pristineFlags.targets[index].col = false;
         $scope.pristineFlags.targets[index].pid = false;
         $scope.pristineFlags.targets[index].site = false;
@@ -229,7 +323,8 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
     // Get the policies from the database
     var policy_data = [];
     function getPolicies(index) {
-      var policies = $http({method: 'GET', url: '${CGI_URL}/fetch_policies.py'});
+      var policies = $http({method: 'GET', url: '${CGI_URL}/fetch_policies.py',
+                            params: {community: $scope.policy.community}});
       policies.then(function(results) {
         policy_data = results.data;
         // We want to now pre-fill the policies with values
@@ -245,8 +340,10 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
     }
 
     $scope.updateSrcPolicy = function(index, ptype) {
-      console.log("identifier is " + JSON.stringify($scope.policy.policy_action_id.name));
       $scope.pristineFlags.identifiers[index].name = false;
+      if (typeof $scope.origPolicy !== "undefined") {
+         $scope.polChanged.sources[index].type = true;
+      }
       for (var i = 0; i < policy_data.length; i++) {
         if ($scope.policy.policy_action_id.name === policy_data[i].uniqueid) {
           $scope.policy.sources[index].type.name = policy_data[i].type;
@@ -275,8 +372,19 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
 
     // If the dataset coll is changed update the flags
     $scope.changeColl = function(index, location, type) {
-      console.log('changeColl called ' + index + ' ' + location + ' ' + type);
       if (location === 'source') {
+          if (typeof $scope.origPolicy !== "undefined") {
+             $scope.polChanged.sources[index].identifier = true;
+             if (type === 'collection') {
+                 $scope.polChanged.sources[index].collection = true;
+             }
+             if (type === 'pid') {
+                 $scope.polChanged.sources[index].pid = true;
+             }
+             if (type === 'policy') {
+                 $scope.polChanged.sources[index].policy = true;
+             }
+          }
         if (type === 'collection') {
           $scope.pristineFlags.sources[index].coll = false;
           $scope.invalidFlags.sources[index].coll =
@@ -287,6 +395,15 @@ function datasetCtrl($scope, $http, $controller, $injector, data_identifier,
             checkFieldsValid('sources', index);
         }
       } else if (location === 'target') {
+          if (typeof $scope.origPolicy !== "undefined") {
+             $scope.polChanged.targets[index].identifier = true;
+             if (type === 'collection') {
+                 $scope.polChanged.targets[index].collection = true;
+             }
+             if (type === 'pid') {
+                 $scope.polChanged.targets[index].pid = true;
+             }
+          }
         if (type === 'collection') {
           $scope.pristineFlags.targets[index].coll = false;
           $scope.invalidFlags.targets[index].coll =

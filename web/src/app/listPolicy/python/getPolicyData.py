@@ -44,7 +44,7 @@ def get_user(config):
     '''Get the user from the environment'''
     username = ''
     if config.get("AUTHENTICATION", "type") == "AAI":
-        username = os.environ["REMOTE_USER"]
+        username = os.environ["persistentid"]
     elif config.get("AUTHENTICATION", "type") == "STANDALONE":
         if config.has_option("HTMLENV", "user"):
             username = config.get("HTMLENV", "user")
@@ -177,6 +177,12 @@ def get_databases(base_url, config):
     return xml_databases
 
 
+def compare_pol(x, y):
+    '''Order policies on time'''
+    diff = int(y[-1][0]) - int(x[-1][0])
+    return diff
+
+
 def get_data(config):
     '''Function to return the policies from the database
     '''
@@ -218,7 +224,8 @@ def get_data(config):
                 sys.exit(response.status_code)
 
     # Loop over the policies and get the atributes for the policies
-    attributes = {"name": "", "uniqueid": "", "author": "", "version": ""}
+    attributes = {"name": "", "uniqueid": "", "author": "",
+                  "version": "", "created": ""}
     for policy_url, policy in xml_files:
         attributes["url"] = policy_url
         for attribute in attributes.keys():
@@ -236,12 +243,14 @@ def get_data(config):
                 print "Problem querying the database: ", response.status_code
                 print response.text
                 sys.exit(response.status_code)
-
         data.append([[attributes["name"], "true"],
                     [attributes["version"], "true"],
                     [attributes["author"], "true"],
                     [attributes["uniqueid"], "true"],
-                    [attributes["url"], "false"]])
+                    [attributes["url"], "false"],
+                    [attributes["created"], "false"]])
+
+    data.sort(cmp=compare_pol)
 
     for idx in range(0, last_index+1):
         col_names = []

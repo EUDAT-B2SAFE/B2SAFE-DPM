@@ -75,8 +75,11 @@ ExternalEncoding = 'ascii'
 
 
 class policySub(supermod.policy):
-    def __init__(self, name=None, created=None, author=None, community=None, version=None, uniqueid=None, dataset=None, actions=None, anytypeobjs_=None):
-        super(policySub, self).__init__(name, created, author, community, version, uniqueid, dataset, actions, anytypeobjs_, )
+    def __init__(self, name=None, created=None, author=None, community=None, version=None,
+                 family=None,
+                 uniqueid=None, dataset=None, actions=None, anytypeobjs_=None):
+        super(policySub, self).__init__(name, created, author, community, version, uniqueid, family, 
+                                        dataset, actions, anytypeobjs_, )
 supermod.policy.subclass = policySub
 # end class policySub
 
