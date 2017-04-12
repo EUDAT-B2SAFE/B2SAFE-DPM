@@ -1781,22 +1781,27 @@ function listCtrl($scope, $sce, $http, $route,
                 var i;
                 var j;
                 var data = results.data;
-                console.log("the data is " + JSON.stringify(results.data));
+                console.log("the data is " + JSON.stringify(data));
                 uuids = clearArray(uuids);
                 for (i = 0; i < data.length; i++) {
                     var ddvals = [];
                     var is_visible = false;
+                    var polrm = false;
                     for (j = 0; j < data[i].length; j++) {
-                      if (j === 6) {
+                      if (j === 5) {
                         dat = new Date(parseInt(data[i][j][0])*1000);
                         data[i][j][0] = displayDate(dat);
                       }
                       is_visible = (data[i][j][1] === 'true');
                       ddvals.push({name: data[i][j][0], visible: is_visible});
                     }
+                    var stx = data[i].length - 1;
                     // Set flag indicating whether to show removed
                     // policy to false by default.
-                    var polrm = false;
+                    if (data[i][data[i].length-1][0] === "REJECTED" || 
+                            data[i][data[i].length-1][0] === "SUSPENDED") {
+                        polrm = true;
+                    }
 
                     dvals.push({pol_vals: ddvals, visible: true,
                         removed: polrm, listaction: listaction});
@@ -1861,29 +1866,33 @@ function listCtrl($scope, $sce, $http, $route,
         $scope.data = [];
         userProfile.promise.then(
             $http({method: "GET",
-                url: "${CGI_URL}/getPolicyData.py",
-                params: {username: policy.author} }).success(function(data,
+                url: "${CGI_URL}/getPolicyData.py"}).success(function(data,
                     status, headers, config) {
                         var i;
                         var j;
                         uuids = clearArray(uuids);
                         for (i = 0; i < data.length; i++) {
                             var ddvals = [];
+                            var is_visible = false;
                             for (j = 0; j < data[i].length; j++) {
                                 if (j === 6) {
                                   var dat = new Date(parseInt(data[i][j][0])*1000);
-                                  console.log('date is ' + displayDate(dat));
                                   data[i][j][0] = displayDate(dat);
                                 }
+                                is_visible = (data[i][j][1] === 'true');
                                 ddvals.push({name: data[i][j][0],
-                                    visible: $scope.policy_columns[j].visible});
+                                    visible: is_visible});
                             }
                             // Set flag indicating whether to show removed
                             // policy to false by default.
                             var polrm = false;
+                            if (data[i][data[i].length-1][0] === "REJECTED" ||
+                                    data[i][data[i].length-1][0 === "SUSPENDED"]) {
+                                polrm = true;
+                            }
 
                             dvals.push({pol_vals: ddvals, visible: true,
-                            removed: polrm});
+                            removed: polrm, listaction: listaction});
                             uuids.push(data[i][dkeys.policy_uniqueid][0]);
                         }
                         dataSave = dvals;
@@ -1963,12 +1972,10 @@ function listCtrl($scope, $sce, $http, $route,
     $scope.display_pol = function(pol_data) {
         // The 4th element is the id. Query the database to get the policy
         // corresponding to the uuid
-        console.log("uuid " + pol_data.pol_vals[dkeys.policy_uniqueid].name);
-        console.log("poldata " + JSON.stringify(pol_data));
         $http({method: "GET",
             url: "${CGI_URL}/getPolicy.py",
             params: {uuid: pol_data.pol_vals[dkeys.policy_uniqueid].name,
-                     policyURL:  pol_data.pol_vals[pol_data.pol_vals.length-2].name}}).then(function(results) {
+                     policyURL:  pol_data.pol_vals[pol_data.pol_vals.length-3].name}}).then(function(results) {
                 var data = results.data;
                 uuids = clearArray(uuids);
                 uuids.push(pol_data.pol_vals[dkeys.policy_uniqueid].name);

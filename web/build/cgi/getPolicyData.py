@@ -152,11 +152,11 @@ def get_mcolls(cursor, in_array):
 
 def get_databases(base_url, config):
     '''Return a dictionary of available databases'''
-
     response = requests.get(base_url,
                             auth=(config.get("XMLDATABASE", "user"),
                                   config.get("XMLDATABASE", "pass")))
     xml_databases = {}
+    xml_status = {}
     if response.status_code == 200:
         xml_response =\
             xml.etree.ElementTree.ElementTree(
@@ -164,22 +164,26 @@ def get_databases(base_url, config):
 
         for xml_node in xml_response.getiterator():
             if "database" in xml_node.tag:
-                if (len(xml_node.text.strip()) > 0 and xml_node.text.strip()
-                        not in xml_databases.values()
-                        and "policy_" in xml_node.text):
-                    community = xml_node.text.strip().split("_")[-1]
-                    xml_databases[community] = xml_node.text.strip()
+                if (len(xml_node.text.strip()) > 0 and xml_node.text.strip()):
+                    if "policy_" in xml_node.text:
+                        community = xml_node.text.strip().split("_")[-1]
+                        if xml_node.text not in xml_databases.values():
+                            xml_databases[community] = xml_node.text
+                    if "status_" in xml_node.text:
+                        status = xml_node.text.strip().split("_")[-1]
+                        if xml_node.text not in xml_status.values():
+                            xml_status[status] = xml_node.text
     else:
         print "Problem querying the database: ", response.status_code
         print response.text
         sys.exit(response.status_code)
 
-    return xml_databases
+    return xml_databases, xml_status
 
 
 def compare_pol(x, y):
     '''Order policies on time'''
-    diff = int(y[-1][0]) - int(x[-1][0])
+    diff = int(y[-2][0]) - int(x[-2][0])
     return diff
 
 
@@ -201,7 +205,7 @@ def get_data(config):
 
     # Get the list of policies from the database
     basex_url = config.get("XMLDATABASE", "root_name")
-    databases = get_databases(basex_url, config)
+    databases, statuses = get_databases(basex_url, config)
     xml_files = []
     for community in communities:
         if community in databases:
@@ -223,10 +227,11 @@ def get_data(config):
                 print response.text
                 sys.exit(response.status_code)
 
-    # Loop over the policies and get the atributes for the policies
+    # Loop over the policies and get the attributes for the policies
     attributes = {"name": "", "uniqueid": "", "author": "",
                   "version": "", "created": ""}
     for policy_url, policy in xml_files:
+        status = "NEW"
         attributes["url"] = policy_url
         for attribute in attributes.keys():
             if attribute == "url":
@@ -243,12 +248,36 @@ def get_data(config):
                 print "Problem querying the database: ", response.status_code
                 print response.text
                 sys.exit(response.status_code)
+
+        community = os.path.basename(policy_url).split("_")[-1].strip()
+        if community in statuses.keys():
+            status_url = config.get("XMLDATABASE", "status_name") + "_%s" %\
+                community
+            query1 = status_url +\
+                "?query=//*[@uniqueid='%s']/*[local-name()='status']" %\
+                (attributes["uniqueid"])
+            response1 = requests.get(query1,
+                                     auth=(config.get("XMLDATABASE", "user"),
+                                           config.get("XMLDATABASE", "pass")))
+            if response1.status_code == 200:
+                if len(response1.text) > 0:
+                    status_xml =\
+                            xml.etree.ElementTree.fromstring(response1.text)
+                    for child in status_xml:
+                        if "overall" in child.tag:
+                            status = "%s" % child.text
+            else:
+                print "Problem querying the database ", response1.status_code
+                print response1.text
+                sys.exit(response1.status_code)
+
         data.append([[attributes["name"], "true"],
                     [attributes["version"], "true"],
                     [attributes["author"], "true"],
                     [attributes["uniqueid"], "true"],
                     [attributes["url"], "false"],
-                    [attributes["created"], "false"]])
+                    [attributes["created"], "false"],
+                    [status, "false"]])
 
     data.sort(cmp=compare_pol)
 
@@ -256,7 +285,6 @@ def get_data(config):
         col_names = []
         src_multi = []
         tgt_multi = []
-        dvals = []
         community_key = ''
 
         # Setup the column names
