@@ -11,7 +11,10 @@ function removeCtrl($scope, $http, $window, policy) {
         if (resp === true) {
             var rmpolicy = $http({method: 'POST',
                 url: '${CGI_URL}/removePolicy.py',
-                data: angular.toJson({uuid: $scope.policy.saved_uuid})});
+                data: angular.toJson({uuid: $scope.policy.saved_uuid,
+                    policy: JSON.stringify($scope.policy),
+                    name: $scope.policy.name, version: $scope.policy.version,
+                    community: $scope.policy.community})});
             rmpolicy.then(function(response) {
                 alert('Policy has been removed');
                 $window.location.reload();
@@ -19,28 +22,20 @@ function removeCtrl($scope, $http, $window, policy) {
         }
     };
 
-    // console.log("policy is " + JSON.stringify(policy));
+    console.log("policy to be removed is " + JSON.stringify(policy));
 
-    $scope.collDefined = function() {
+    $scope.collDefined = function(coll) {
       var collFlag = false;
-      var i = 0;
-      for (i = 0; i < $scope.policy.collections.length; i++) {
-        if ($scope.policy.collections[i].type === 'collection') {
+      if (coll.type.name === 'collection') {
           collFlag = true;
-          break;
-        }
       }
       return collFlag;
     };
 
-    $scope.pidDefined = function() {
+    $scope.pidDefined = function(coll) {
       var pidFlag = false;
-      var i = 0;
-      for (i = 0; i < $scope.policy.collections.length; i++) {
-        if ($scope.policy.collections[i].type === 'pid') {
+      if (coll.type.name === 'pid') {
           pidFlag = true;
-          break;
-        }
       }
       return pidFlag;
     };

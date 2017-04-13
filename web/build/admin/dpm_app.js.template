@@ -1691,7 +1691,7 @@ function listCtrl($scope, $sce, $http, $route,
         var polSelected = this.polselected.name; 
         $http({method: "GET", url: "${CGI_URL}/load_policy.py",
                params: {uuid: this.pol_data.pol_vals[dkeys.policy_uniqueid].name,
-                        policyURL: this.pol_data.pol_vals[this.pol_data.pol_vals.length-1].name}}).then(function(results) {
+                        policyURL: this.pol_data.pol_vals[this.pol_data.pol_vals.length-3].name}}).then(function(results) {
             var data = results.data;
             console.log('data is ' + JSON.stringify(data));
             $scope.policy.name = data.name;
@@ -1715,7 +1715,7 @@ function listCtrl($scope, $sce, $http, $route,
             var url = "";
             if (polSelected === "Modify") {
                 url = "template/modify.html";
-            } else if (polSelected === "Deactivate") {
+            } else if (polSelected === "Reject") {
                 url = "template/remove.html";
                 $scope.policy.saved_uuid = $scope.policy.uuid;
             } else if (polSelected === "Reactivate") {
@@ -2498,7 +2498,10 @@ function removeCtrl($scope, $http, $window, policy) {
         if (resp === true) {
             var rmpolicy = $http({method: 'POST',
                 url: '${CGI_URL}/removePolicy.py',
-                data: angular.toJson({uuid: $scope.policy.saved_uuid})});
+                data: angular.toJson({uuid: $scope.policy.saved_uuid,
+                    policy: JSON.stringify($scope.policy),
+                    name: $scope.policy.name, version: $scope.policy.version,
+                    community: $scope.policy.community})});
             rmpolicy.then(function(response) {
                 alert('Policy has been removed');
                 $window.location.reload();
@@ -2506,28 +2509,20 @@ function removeCtrl($scope, $http, $window, policy) {
         }
     };
 
-    // console.log("policy is " + JSON.stringify(policy));
+    console.log("policy to be removed is " + JSON.stringify(policy));
 
-    $scope.collDefined = function() {
+    $scope.collDefined = function(coll) {
       var collFlag = false;
-      var i = 0;
-      for (i = 0; i < $scope.policy.collections.length; i++) {
-        if ($scope.policy.collections[i].type === 'collection') {
+      if (coll.type.name === 'collection') {
           collFlag = true;
-          break;
-        }
       }
       return collFlag;
     };
 
-    $scope.pidDefined = function() {
+    $scope.pidDefined = function(coll) {
       var pidFlag = false;
-      var i = 0;
-      for (i = 0; i < $scope.policy.collections.length; i++) {
-        if ($scope.policy.collections[i].type === 'pid') {
+      if (coll.type.name === 'pid') {
           pidFlag = true;
-          break;
-        }
       }
       return pidFlag;
     };
@@ -2688,8 +2683,9 @@ function getSystem($http) {
 }
 
 dpmApp.factory('listaction', function() {
-  var alist = [{"name": "Modify"}, {"name": "Remove"}];
-  // var alist = [{"name": "Deactivate"}];
+  var alist = [{"name": "Modify"}, 
+               {"name": "Reject"},
+               {"name": "Reactivate"}];
     return alist;
 });
 

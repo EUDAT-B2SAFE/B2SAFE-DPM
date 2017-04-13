@@ -27,7 +27,7 @@ function listCtrl($scope, $sce, $http, $route,
         var polSelected = this.polselected.name; 
         $http({method: "GET", url: "${CGI_URL}/load_policy.py",
                params: {uuid: this.pol_data.pol_vals[dkeys.policy_uniqueid].name,
-                        policyURL: this.pol_data.pol_vals[this.pol_data.pol_vals.length-1].name}}).then(function(results) {
+                        policyURL: this.pol_data.pol_vals[this.pol_data.pol_vals.length-3].name}}).then(function(results) {
             var data = results.data;
             console.log('data is ' + JSON.stringify(data));
             $scope.policy.name = data.name;
@@ -51,7 +51,7 @@ function listCtrl($scope, $sce, $http, $route,
             var url = "";
             if (polSelected === "Modify") {
                 url = "template/modify.html";
-            } else if (polSelected === "Deactivate") {
+            } else if (polSelected === "Reject") {
                 url = "template/remove.html";
                 $scope.policy.saved_uuid = $scope.policy.uuid;
             } else if (polSelected === "Reactivate") {
