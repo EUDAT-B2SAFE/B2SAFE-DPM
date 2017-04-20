@@ -123,7 +123,7 @@ if __name__ == '__main__':
     config.read(cfgfile)
     
     if (config.get("AUTHENTICATION", "type") == "AAI"):
-        if (os.environ.has_key("presistentid")):
+        if (os.environ.has_key("persistentid")):
             username = os.environ["persistentid"]
         elif (os.environ.has_key("persistent_id")):
             username = os.environ["persistent_id"]
