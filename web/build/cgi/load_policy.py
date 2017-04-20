@@ -16,13 +16,13 @@ def fill_targets(node):
     '''Return the parameters for the targets'''
     targets = {}
     target_list = []
-    for child in node.iter():
+    for child in node:
         if "target" in child.tag and "targets" not in child.tag:
             target = {"organisation": {"name": "EUDAT"},
                       "system": {"name": "iRODS"}, "resource": {"name": ""},
                       "hostname": {"name": ""}}
             key_id = child.attrib["id"]
-            for cchild in child.iter():
+            for cchild in child:
                 if "site" in cchild.tag:
                     target["hostname"] = {"name": cchild.text}
                 if "path" in cchild.tag:
@@ -42,13 +42,13 @@ def fill_targets(node):
 
 def fill_action(node, policy):
     '''Return the parameters for the action'''
-    for child in node.iter():
+    for child in node:
         if "action" in child.tag:
-            for cchild in child.iter():
+            for cchild in child:
                 if "type" in cchild.tag:
                     policy["type"] = {"name": cchild.text}
                 if "trigger" in cchild.tag:
-                    for ccchild in cchild.iter():
+                    for ccchild in cchild:
                         if "runonce" in ccchild.tag:
                             policy["trigger"] = {"name": "immediately"}
                             policy["trigger_period"] = {"name": ""}
@@ -90,13 +90,13 @@ def fill_sources(node):
     '''Return the parameters for the sources'''
     sources = {}
     source_list = []
-    for child in node.iter():
+    for child in node:
         if "collection" in child.tag:
             source = {"organisation": {"name": "EUDAT"},
                       "system": {"name": "iRODS"}, "resource": {"name": ""},
                       "hostname": {"name": ""}}
             key_id = child.attrib["id"]
-            for cchild in child.iter():
+            for cchild in child:
                 if "site" in cchild.tag:
                     source["hostname"] = {"name": cchild.text}
                 if "path" in cchild.tag:
