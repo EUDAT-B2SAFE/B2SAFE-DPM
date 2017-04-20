@@ -4,7 +4,7 @@ import sys
 import ConfigParser
 import xml.etree.ElementTree
 import time
-import md5
+import hashlib
 import requests
 
 
@@ -16,7 +16,7 @@ def removePol(config):
     data = {}
     data = json.load(sys.stdin)
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    ckval = md5.md5(data["policy"])
+    ckval = hashlib.md5(data["policy"])
 
     # Create the XML document
     nsurl = "http://eudat.eu/2016/policy-status"

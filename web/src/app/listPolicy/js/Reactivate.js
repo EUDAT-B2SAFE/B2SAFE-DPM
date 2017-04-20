@@ -12,7 +12,11 @@ function reactivateCtrl($scope, $http, $window, policy) {
         if (resp === true) {
             var reactivatepolicy = $http({method: "POST",
                 url: "${CGI_URL}/reactivatePolicy.py",
-                data: angular.toJson({uuid: $scope.policy.saved_uuid})});
+                data: angular.toJson({uuid: $scope.policy.saved_uuid,
+                policy: JSON.stringify($scope.policy),
+                name: $scope.policy.name,
+                version: $scope.policy.version,
+                community: $scope.policy.community})});
             reactivatepolicy.then(function(response) {
                 alert("The policy has been reactivated");
                 $window.location.reload();
@@ -20,26 +24,18 @@ function reactivateCtrl($scope, $http, $window, policy) {
         }
     };
 
-    $scope.collDefined = function() {
+    $scope.collDefined = function(coll) {
       var collFlag = false;
-      var i = 0;
-      for (i = 0; i < $scope.policy.collections.length; i++) {
-        if ($scope.policy.collections[i].type === 'collection') {
-          collFlag = true;
-          break;
-        }
+      if (coll.type.name === 'collection') {
+        collFlag = true;
       }
       return collFlag;
     };
 
-    $scope.pidDefined = function() {
+    $scope.pidDefined = function(coll) {
       var pidFlag = false;
-      var i = 0;
-      for (i = 0; i < $scope.policy.collections.length; i++) {
-        if ($scope.policy.collections[i].type === 'pid') {
-          pidFlag = true;
-          break;
-        }
+      if (coll.type.name === 'pid') {
+        pidFlag = true;
       }
       return pidFlag;
     };

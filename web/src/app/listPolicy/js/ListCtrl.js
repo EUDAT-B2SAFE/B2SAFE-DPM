@@ -7,6 +7,8 @@ function listCtrl($scope, $sce, $http, $route,
     var keys = [];
     var dkeys = {};
     $scope.displayKeys = false;
+    $scope.showingActive = true;
+    $scope.showingRemoved = false;
 
     // Display the checkbox for the columns
     $scope.showCheckbox = function() {
@@ -18,7 +20,7 @@ function listCtrl($scope, $sce, $http, $route,
     };
 
     // Set the type of list action
-    $scope.listaction = listaction;
+    $scope.listaction = listaction.active;
 
     $scope.actionPolicy = function() {
         for (i = 0; i < keys.length; i++) {
@@ -117,7 +119,8 @@ function listCtrl($scope, $sce, $http, $route,
                 var i;
                 var j;
                 var data = results.data;
-                console.log("the data is " + JSON.stringify(data));
+                $scope.showingRemoved = false;
+                $scope.showingActive = true;
                 uuids = clearArray(uuids);
                 for (i = 0; i < data.length; i++) {
                     var ddvals = [];
@@ -131,7 +134,6 @@ function listCtrl($scope, $sce, $http, $route,
                       is_visible = (data[i][j][1] === 'true');
                       ddvals.push({name: data[i][j][0], visible: is_visible});
                     }
-                    var stx = data[i].length - 1;
                     // Set flag indicating whether to show removed
                     // policy to false by default.
                     if (data[i][data[i].length-1][0] === "REJECTED" || 
@@ -139,8 +141,14 @@ function listCtrl($scope, $sce, $http, $route,
                         polrm = true;
                     }
 
-                    dvals.push({pol_vals: ddvals, visible: true,
-                        removed: polrm, listaction: listaction});
+                    if (polrm === true) {
+                        dvals.push({pol_vals: ddvals, visible: false,
+                            removed: polrm, listaction: listaction.removed});
+                    } else {
+                        dvals.push({pol_vals: ddvals, visible: true,
+                            removed: polrm, listaction: listaction.active});
+                    }
+
                     // Keep the uid for matching with the log files
                     uuids.push(data[i][dkeys.policy_uniqueid][0]);
                 }
@@ -177,9 +185,19 @@ function listCtrl($scope, $sce, $http, $route,
         for (i = 0; i < dataSave.length; i++) {
             for (j = 0; j < dataSave[i].pol_vals.length; j++) {
                 if (null == $scope.searchparam || $scope.searchparam.length === 0 || dataSave[i].pol_vals[j].name.indexOf($scope.searchparam) >= 0) {
-                    $scope.data[count] = dataSave[i];
-                    uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
-                    count += 1;
+                    if ($scope.showingActive === true) {
+                        if (dataSave[i].removed === false) {
+                            $scope.data[count] = dataSave[i];
+                            uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
+                            count += 1;
+                        }
+                    } else if ($scope.showingRemoved === true) {
+                        if (dataSave[i].removed === true) {
+                            $scope.data[count] = dataSave[i];
+                            uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
+                            count += 1;
+                        }
+                    }
                     break;
                 }
             }
@@ -200,6 +218,8 @@ function listCtrl($scope, $sce, $http, $route,
         // Get the policies from the database
         var dvals = [];
         $scope.data = [];
+        $scope.showingActive = true;
+        $scope.showingRemoved = false;
         userProfile.promise.then(
             $http({method: "GET",
                 url: "${CGI_URL}/getPolicyData.py"}).success(function(data,
@@ -210,8 +230,9 @@ function listCtrl($scope, $sce, $http, $route,
                         for (i = 0; i < data.length; i++) {
                             var ddvals = [];
                             var is_visible = false;
+                            var polrm = false;
                             for (j = 0; j < data[i].length; j++) {
-                                if (j === 6) {
+                                if (j === 5) {
                                   var dat = new Date(parseInt(data[i][j][0])*1000);
                                   data[i][j][0] = displayDate(dat);
                                 }
@@ -221,14 +242,19 @@ function listCtrl($scope, $sce, $http, $route,
                             }
                             // Set flag indicating whether to show removed
                             // policy to false by default.
-                            var polrm = false;
                             if (data[i][data[i].length-1][0] === "REJECTED" ||
                                     data[i][data[i].length-1][0 === "SUSPENDED"]) {
                                 polrm = true;
                             }
 
-                            dvals.push({pol_vals: ddvals, visible: true,
-                            removed: polrm, listaction: listaction});
+                            if (polrm === true) {
+                                dvals.push({pol_vals: ddvals, visible: false,
+                                    removed: polrm, listaction: listaction.removed});
+                            
+                            } else {
+                                dvals.push({pol_vals: ddvals, visible: true,
+                                    removed: polrm, listaction: listaction.active});
+                            }
                             uuids.push(data[i][dkeys.policy_uniqueid][0]);
                         }
                         dataSave = dvals;
@@ -252,17 +278,16 @@ function listCtrl($scope, $sce, $http, $route,
         $scope.data = [];
         uuids = clearArray(uuids);
         for (i = 0; i < dataSave.length; i++) {
-            for (j = 0; j < dataSave[i].pol_vals.length; j++) {
-                if (dataSave[i].pol_vals[dkeys.policy_removed].name === "false") {
-                    $scope.data[count] = dataSave[i];
-                    uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
-                    count += 1;
-                    break;
-                }
+            if (dataSave[i].removed === false) {
+                $scope.data[count] = dataSave[i];
+                uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
+                count += 1;
             }
         }
 
         // We need to reset the page counter after filtering
+        $scope.showingActive = true;
+        $scope.showingRemoved = false;
         $scope.tabs.total($scope.data.length);
         $scope.tabs.reload();
 
@@ -272,22 +297,20 @@ function listCtrl($scope, $sce, $http, $route,
     $scope.showRemoved = function() {
         var i;
         var j;
-        var count = 0;
         // We need to reset the array and repopulate from the saved list
         $scope.data = [];
         uuids = clearArray(uuids);
         for (i = 0; i < dataSave.length; i++) {
-            for (j = 0; j < dataSave[i].pol_vals.length; j++) {
-                if (dataSave[i].pol_vals[dkeys.policy_removed].name === "true") {
-                    $scope.data[count] = dataSave[i];
-                    uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
-                    count += 1;
-                    break;
-                }
+            if (dataSave[i].removed === true) {
+                $scope.data.push(dataSave[i]);
+                $scope.data[i].visible = true;
+                uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
             }
         }
 
         // We need to reset the page counter after filtering
+        $scope.showingActive = false;
+        $scope.showingRemoved = true;
         $scope.tabs.total($scope.data.length);
         $scope.tabs.reload();
     };

@@ -41,7 +41,7 @@
         </thead>
         <tbody>
             <tr data-ng-repeat="pol_data in $data"
-                data-ng-show="pol_data.visible && !pol_data.removed"
+                data-ng-show="pol_data.visible" 
                 data-ng-click="resetFlag(); pol_data.$selected = !pol_data.$selected; display_pol(pol_data)"
                 data-ng-class="{'rowhighlight': pol_data.$selected, '': !pol_data.$selected}">
                 <td data-ng-repeat="pol_val in pol_data.pol_vals"

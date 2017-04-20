@@ -1,6 +1,7 @@
 dpmApp.factory('listaction', function() {
   var alist = [{"name": "Modify"}, 
-               {"name": "Reject"},
+               {"name": "Reject"}];
+  var rlist = [{"name": "Modify"},
                {"name": "Reactivate"}];
-    return alist;
+    return {"active": alist, "removed": rlist};
 });
