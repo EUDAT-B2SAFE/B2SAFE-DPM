@@ -17,21 +17,30 @@ def fill_targets(node):
     targets = {}
     target_list = []
     for child in node:
-        if "target" in child.tag and "targets" not in child.tag:
-            target = {"organisation": {"name": "EUDAT"},
-                      "system": {"name": "iRODS"}, "resource": {"name": ""},
-                      "hostname": {"name": ""}}
-            key_id = child.attrib["id"]
+        if "actions" in child.tag:
             for cchild in child:
-                if "site" in cchild.tag:
-                    target["hostname"] = {"name": cchild.text}
-                if "path" in cchild.tag:
-                    target["identifier"] = {"name": cchild.text}
-                    target["type"] = {"name": "collection"}
-                if "persistentIdentifier" in cchild.tag:
-                    target["identifier"] = {"name": cchild.text}
-                    target["type"] = {"name": "pid"}
-            targets[key_id] = target
+                if "action" in child.tag:
+                    for ccchild in cchild:
+                        if "targets" in ccchild.tag:
+                            for cccchild in ccchild:
+                                if "target" in cccchild.tag:
+                                    target = {"organisation": {"name": "EUDAT"},
+                                              "system": {"name": "iRODS"},
+                                              "resource": {"name": ""},
+                                              "hostname": {"name": ""}}
+                                    key_id = cccchild.attrib["id"]
+                                    for ccccchild in cccchild:
+                                        if "location" in ccccchild.tag:
+                                            for cccccchild in ccccchild:
+                                                if "site" in cccccchild.tag:
+                                                    target["hostname"] = {"name": cccccchild.text}
+                                                if "path" in cccccchild.tag:
+                                                    target["identifier"] = {"name": cccccchild.text}
+                                                    target["type"] = {"name": "collection"}
+                                                if "persistentIdentifier" in cccccchild.tag:
+                                                    target["identifier"] = {"name": cccccchild.text}
+                                                    target["type"] = {"name": "pid"}
+                                    targets[key_id] = target
 
     keys = [int(x) for x in targets.keys()]
     keys.sort()
@@ -43,46 +52,48 @@ def fill_targets(node):
 def fill_action(node, policy):
     '''Return the parameters for the action'''
     for child in node:
-        if "action" in child.tag:
+        if "actions" in child.tag:
             for cchild in child:
-                if "type" in cchild.tag:
-                    policy["type"] = {"name": cchild.text}
-                if "trigger" in cchild.tag:
+                if "action" in cchild.tag:
                     for ccchild in cchild:
-                        if "runonce" in ccchild.tag:
-                            policy["trigger"] = {"name": "immediately"}
-                            policy["trigger_period"] = {"name": ""}
-                            policy["trigger_date"] = {"name": ""}
-                            policy["dateString"] = ""
-                        elif "time" in ccchild.tag:
-                            try:
-                                ttime = time.strptime(ccchild.text,
-                                                      "%M %H %d %m * %Y")
-                                date_string = time.strftime("%Y-%M-%dT%H:%MZ",
-                                                            ttime)
-                                policy["trigger"] = {"name": "date/time"}
-                                policy["trigger_period"] = {"name": ""}
-                                policy["trigger_date"] = {"name": "date"}
-                                policy["dateString"] = date_string
-                            except ValueError:
-                                policy["trigger"] = {"name": "date/time"}
-                                policy["trigger_period"] = {"name":
-                                                            ccchild.text}
-                                trigger_date = ""
-                                if ccchild.text == "* * * * * *":
-                                    trigger_date = "minute"
-                                if ccchild.text == "0 * * * * *":
-                                    trigger_date = "hourly"
-                                if ccchild.text == "0 0 * * * *":
-                                    trigger_date = "daily"
-                                if ccchild.text == "0 0 * * 0 *":
-                                    trigger_date = "weekly"
-                                if ccchild.text == "0 0 1 * * *":
-                                    trigger_date = "monthly"
-                                if ccchild.text == "0 0 1 1 * *":
-                                    trigger_date = "yearly"
-                                policy["trigger_date"] = {"name": trigger_date}
-                                policy["dateString"] = ""
+                        if "type" in ccchild.tag:
+                            policy["type"] = {"name": ccchild.text}
+                        if "trigger" in ccchild.tag:
+                            for cccchild in ccchild:
+                                if "runonce" in cccchild.tag:
+                                    policy["trigger"] = {"name": "immediately"}
+                                    policy["trigger_period"] = {"name": ""}
+                                    policy["trigger_date"] = {"name": ""}
+                                    policy["dateString"] = ""
+                                elif "time" in cccchild.tag:
+                                    try:
+                                        ttime = time.strptime(cccchild.text,
+                                                              "%M %H %d %m * %Y")
+                                        date_string = time.strftime("%Y-%M-%dT%H:%MZ",
+                                                                    ttime)
+                                        policy["trigger"] = {"name": "date/time"}
+                                        policy["trigger_period"] = {"name": ""}
+                                        policy["trigger_date"] = {"name": "date"}
+                                        policy["dateString"] = date_string
+                                    except ValueError:
+                                        policy["trigger"] = {"name": "date/time"}
+                                        policy["trigger_period"] = {"name":
+                                                                    cccchild.text}
+                                        trigger_date = ""
+                                        if cccchild.text == "* * * * * *":
+                                            trigger_date = "minute"
+                                        if cccchild.text == "0 * * * * *":
+                                            trigger_date = "hourly"
+                                        if cccchild.text == "0 0 * * * *":
+                                            trigger_date = "daily"
+                                        if cccchild.text == "0 0 * * 0 *":
+                                            trigger_date = "weekly"
+                                        if cccchild.text == "0 0 1 * * *":
+                                            trigger_date = "monthly"
+                                        if cccchild.text == "0 0 1 1 * *":
+                                            trigger_date = "yearly"
+                                        policy["trigger_date"] = {"name": trigger_date}
+                                        policy["dateString"] = ""
     return policy
 
 
@@ -91,21 +102,26 @@ def fill_sources(node):
     sources = {}
     source_list = []
     for child in node:
-        if "collection" in child.tag:
-            source = {"organisation": {"name": "EUDAT"},
-                      "system": {"name": "iRODS"}, "resource": {"name": ""},
-                      "hostname": {"name": ""}}
-            key_id = child.attrib["id"]
+        if "dataset" in child.tag:
             for cchild in child:
-                if "site" in cchild.tag:
-                    source["hostname"] = {"name": cchild.text}
-                if "path" in cchild.tag:
-                    source["identifier"] = {"name": cchild.text}
-                    source["type"] = {"name": "collection"}
-                if "persistentIdentifier" in cchild.tag:
-                    source["identifier"] = {"name": cchild.text}
-                    source["type"] = {"name": "pid"}
-            sources[key_id] = source
+                if "collection" in cchild.tag:
+                    source = {"organisation": {"name": "EUDAT"},
+                              "system": {"name": "iRODS"},
+                              "resource": {"name": ""},
+                              "hostname": {"name": ""}}
+                    key_id = cchild.attrib["id"]
+                    for ccchild in cchild:
+                        if "location" in ccchild.tag:
+                            for cccchild in ccchild:
+                                if "site" in cccchild.tag:
+                                    source["hostname"] = {"name": cccchild.text}
+                                if "path" in cccchild.tag:
+                                    source["identifier"] = {"name": cccchild.text}
+                                    source["type"] = {"name": "collection"}
+                                if "persistentIdentifier" in cccchild.tag:
+                                    source["identifier"] = {"name": cccchild.text}
+                                    source["type"] = {"name": "pid"}
+                    sources[key_id] = source
 
     keys = [int(x) for x in sources.keys()]
     keys.sort()
@@ -165,6 +181,9 @@ if __name__ == '__main__':
 
     uuid = fields["uuid"].value
     url = fields["policyURL"].value
+    # uuid = "26b4e27c-7237-4380-a398-22c4ecf6dba3"
+    # url = "http://localhost:8984/rest/policy_community_clarin"
+    # Read the configs
 
     # Read the configs
     config = ConfigParser.ConfigParser()
