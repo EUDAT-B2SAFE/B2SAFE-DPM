@@ -7,8 +7,8 @@
     "test": "test"
   },
   "repository": {
-      "type": "git",
-      "url": "https://github.com/EUDAT-B2SAFE/B2SAFE-DPM.git"
+    "type": "git",
+    "url": "https://github.com/EUDAT-B2SAFE/B2SAFE-DPM.git"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
