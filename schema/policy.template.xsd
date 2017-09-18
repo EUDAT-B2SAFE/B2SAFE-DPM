@@ -163,6 +163,7 @@ elementFormDefault="qualified" targetNamespace="http://eudat.eu/2013/policy">
       <xs:enumeration value="remove object"/>
       <xs:enumeration value="copy object"/>
       <xs:enumeration value="compare objects by checksum"/>
+      <xs:enumeration value="create version"/>
       <xs:enumeration value=""/>
     </xs:restriction>
   </xs:simpleType>
