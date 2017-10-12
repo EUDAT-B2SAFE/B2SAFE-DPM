@@ -1,5 +1,5 @@
-function tabsCtrl($scope, $http, logPageList, $route, polList, userProfile,
-        policy, showLog, uuids) {
+function tabsCtrl($scope, $http, $interval, logPageList, $route, 
+        polList, userProfile, policy, showLog, uuids) {
     $scope.list_url = "template/listtable.html";
     $scope.hideLog = logPageList.hide;
     $scope.displayLog = logPageList.active;
@@ -31,4 +31,10 @@ function tabsCtrl($scope, $http, logPageList, $route, polList, userProfile,
         $scope.list_url = turl;
         $route.reload();
     };
+
+    // Regularly check if access has timed-out, if so show  timeout page
+    var repeatCheck = $interval(function(){checkAccess($http);}, 9000, 0);
+    $scope.$on('$destroy', function(){
+        $interval.cancel(repeatCheck);
+    });
 }

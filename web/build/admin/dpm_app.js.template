@@ -70,6 +70,19 @@ function getUserEnv($http) {
     return $http({method: "GET", url: "${CGI_URL}/getUserEnv.py"});
 }
 
+function checkAccess($http) {
+    $http({method: "GET", url: "${CGI_URL}/checkAccess.py"}).success(
+                function(data, status){
+                    if (status === 200){
+                        if (data.connection === "successful") {
+                            return true;
+                        }
+                    }
+                }).error(function(data, status){
+                    console.log("error is " + status);
+                });
+}
+
 function createGuid() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,
                 function(c) {
@@ -1090,8 +1103,8 @@ function submitCtrl($scope, $location, $window, $route, submitFlag, policy,
     };
 }
 
-function tabsCtrl($scope, $http, logPageList, $route, polList, userProfile,
-        policy, showLog, uuids) {
+function tabsCtrl($scope, $http, $interval, logPageList, $route, 
+        polList, userProfile, policy, showLog, uuids) {
     $scope.list_url = "template/listtable.html";
     $scope.hideLog = logPageList.hide;
     $scope.displayLog = logPageList.active;
@@ -1123,6 +1136,12 @@ function tabsCtrl($scope, $http, logPageList, $route, polList, userProfile,
         $scope.list_url = turl;
         $route.reload();
     };
+
+    // Regularly check if access has timed-out, if so show  timeout page
+    var repeatCheck = $interval(function(){checkAccess($http);}, 9000, 0);
+    $scope.$on('$destroy', function(){
+        $interval.cancel(repeatCheck);
+    });
 }
 
 function checkFields(validObj, pristineFlagsObj, invalidFlagsObj, flago,
