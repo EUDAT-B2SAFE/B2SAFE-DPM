@@ -67,6 +67,7 @@ pass=${XML_PASS}
 
 [HTML]
 not_registered=./errors/not_reg.html
+timeout_page=../html-open/timeout.html
 
 [AUTHENTICATION]
 type=${AUTHTYPE}

@@ -156,7 +156,17 @@ function checkAccess($http) {
                         }
                     }
                 }).error(function(data, status){
+                    var width = 600;
+                    var height = 300;
+                    var leftPosition = (screen.width) ? (screen.width-w)/2 : 0;
+                    var topPosition = (screen.height) ? (screen.height-h)/2 : 0;
+                    var settings = "height="+height+",width="+width+
+                        ",top="+topPosition+",left="+leftPosition+
+                        ",scrollbars=yes,resizable";
+                    window.open("${HTML_OPEN}", "Session Timedout",
+                                settings);
                     console.log("error is " + status);
+                    return false;
                 });
 }
 

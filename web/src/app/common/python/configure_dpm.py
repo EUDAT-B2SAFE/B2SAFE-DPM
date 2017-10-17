@@ -782,6 +782,13 @@ def configure_files(cfgfile_tmpl, cfgfile, clifile_tmpl, clifile, adminfile,
                 os.mkdir(os.path.dirname(jsout))
             with file(jsout, "w") as fout:
                 for line in lines:
+                    if "HTML_OPEN" in line:
+                        cfg_parser = ConfigParser.ConfigParser()
+                        cfg_parser.read(cfgfile)
+                        timeout_page = cfg_parser.get('HTML', 'timeout_page').split('../')[-1]
+                        html_open = os.path.join(in_args['root_url'], timeout_page)
+                        can = string.Template(line)
+                        line = can.safe_substitute(HTML_OPEN=html_open)
                     if "CGI_URL" in line:
                         can = string.Template(line)
                         line = can.safe_substitute(CGI_URL=in_args['cgi_url'])
@@ -789,6 +796,27 @@ def configure_files(cfgfile_tmpl, cfgfile, clifile_tmpl, clifile, adminfile,
                 fout.close()
     return (in_args['cgi_url'], in_args['cgi_path'], in_args['cli_url'],
             in_args['root_url'])
+
+
+def configure_timeout_page(config, root_url):
+    '''Configure the timeout page'''
+    with file('timeout.html.template', 'r') as fin:
+        lines = fin.readlines()
+        fin.close()
+
+    timeout_file = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                               config.get("HTML", "timeout_page")))
+    timeout_dir = os.path.dirname(timeout_file)
+    if not os.path.isdir(timeout_dir):
+        os.makedirs(timeout_dir)
+
+    with file(timeout_file, "w") as fout:
+        for line in lines:
+            if "ROOT_URL" in line:
+                can = string.Template(line)
+                line = can.substitute(ROOT_URL=root_url)
+            fout.write(line)
+        fout.close()
 
 
 def configure_dbase(config, root_url):
@@ -927,7 +955,8 @@ if __name__ == '__main__':
     local_cfg = ".dpm.cfg"
     deploy_dir = '../../deploy'
     data_dir = 'config/data'
-    build_dirs = {'cgi': '../cgi', 'html': '../html', 'wsgi': '../wsgi',
+    build_dirs = {'cgi': '../cgi', 'html': '../html', 'html-open': '../html-open',
+                  'wsgi': '../wsgi',
                   'wsgi-test': '../wsgi-test'}
 
     opts, args = getopt.getopt(sys.argv[1:], 'hfc:', ['help', 'force',
@@ -979,6 +1008,7 @@ if __name__ == '__main__':
     config.read(cfgfile)
 
     html_path = configure_dbase(config, root_url)
+    configure_timeout_page(config, root_url)
 
     # Loop over the database types and fill the databases
     # and configure the files
