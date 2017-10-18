@@ -70,6 +70,17 @@ function getUserEnv($http) {
     return $http({method: "GET", url: "${CGI_URL}/getUserEnv.py"});
 }
 
+function checkLocalStorage() {
+    var test = 'test';
+    try {
+        localStorage.setItem(test, "test");
+        localStorage.removeItem(test);
+        return true;
+    } catch(e) {
+        return false;
+    } 
+}
+
 function checkAccess($http) {
     $http({method: "GET", url: "${CGI_URL}/checkAccess.py"}).success(
                 function(data, status){
@@ -88,6 +99,9 @@ function checkAccess($http) {
                         ",scrollbars=yes,resizable";
                     window.open("${HTML_OPEN}", "Session Timedout",
                                 settings);
+                    if (checkLocalStorage()) {
+                        localStorage.setItem("session_renew", "displayed");
+                    }
                     console.log("error is " + status);
                     return false;
                 });
@@ -1148,7 +1162,17 @@ function tabsCtrl($scope, $http, $interval, logPageList, $route,
     };
 
     // Regularly check if access has timed-out, if so show  timeout page
+    // Only show timeout page once
     var repeatCheck = $interval(function(){checkAccess($http);}, 9000, 0);
+    if (checkLocalStorage()) {
+        if (localStorage.getItem("session_renew")) {
+            if (localStorage.getItem("session_renew") === "displayed") {
+                $interval.cancel(repeatCheck);
+            }
+        } else {
+            repeatCheck = $interval(function(){checkAccess($http);}, 9000, 0);
+        }
+    }
     $scope.$on('$destroy', function(){
         $interval.cancel(repeatCheck);
     });
