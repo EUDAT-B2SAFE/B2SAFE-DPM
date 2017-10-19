@@ -25,12 +25,12 @@
             </div>
         </div>
         <script type="text/javascript">
-            window.onbeforeunload(function(event){
+            window.onbeforeunload = function(event){
                 if (localStorage.getItem("sessin_renew")) {
                     localStorage.removeItem("session_renew");
                 }
                 console.log("closing renew window");
-            });
+            };
         </script>
 	</body>
 </html>
