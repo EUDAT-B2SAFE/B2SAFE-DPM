@@ -30,8 +30,8 @@ function checkAccess($http) {
                 }).error(function(data, status){
                     var width = 600;
                     var height = 300;
-                    var leftPosition = (screen.width) ? (screen.width-w)/2 : 0;
-                    var topPosition = (screen.height) ? (screen.height-h)/2 : 0;
+                    var leftPosition = (screen.width) ? (screen.width-width)/2 : 0;
+                    var topPosition = (screen.height) ? (screen.height-height)/2 : 0;
                     var settings = "height="+height+",width="+width+
                         ",top="+topPosition+",left="+leftPosition+
                         ",scrollbars=yes,resizable";
