@@ -39,6 +39,8 @@ function checkAccess($http) {
                                 settings);
                     if (checkLocalStorage()) {
                         localStorage.setItem("session_renew", "displayed");
+                    } else {
+                        console.log("Cannot write to the localstorage.");
                     }
                     console.log("error is " + status);
                     return false;
