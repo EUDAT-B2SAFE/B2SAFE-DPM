@@ -11,7 +11,7 @@ function getUserEnv($http) {
 function checkLocalStorage() {
     var test = 'test';
     try {
-        localStorage.setItem(test, "test");
+        localStorage.setItem("test", "test");
         localStorage.removeItem(test);
         return true;
     } catch(e) {
@@ -35,9 +35,12 @@ function checkAccess($http) {
                     var settings = "height="+height+",width="+width+
                         ",top="+topPosition+",left="+leftPosition+
                         ",scrollbars=yes,resizable";
-                    window.open("${HTML_OPEN}", "Session Timedout",
-                                settings);
                     if (checkLocalStorage()) {
+                        if (localStorage.getItem("session_renew") === null) {
+                            window.open("${HTML_OPEN}", "Session Timedout",
+                                        settings);
+                        
+                        }
                         localStorage.setItem("session_renew", "displayed");
                     } else {
                         console.log("Cannot write to the localstorage.");
