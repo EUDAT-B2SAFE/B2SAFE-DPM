@@ -850,6 +850,33 @@ def copy_files(target_dir, source_dirs):
     '''Copy all the files from the source directory to the target directory'''
 
     skipfiles = ['policy.cfg.template', 'policy_cli.cfg.template']
+
+    # Copy css and img files to html-open as we can't access assets behind shibboleth pages
+    for odir, odirs, ofiles in os.walk(source_dirs['html']):
+        if "html/css" not in odir and "html/img" not in odir:
+            continue
+        oadir = os.path.split(odir)[-1]
+        otdir = os.path.abspath(os.path.join(source_dirs['html-open'], oadir))
+        if not os.path.isdir(otdir):
+            try:
+                os.makedirs(otdir)
+            except Exception as err:
+                print "problem creating directory %s" % otdir
+                print err
+                sys.exit(-5)
+        for ofile in ofiles:
+            if ofile in skipfiles:
+                continue
+            osfile = os.path.abspath(os.path.join(odir, ofile))
+            otfile = os.path.abspath(os.path.join(otdir, ofile))
+            try:
+                shutil.copyfile(osfile, otfile)
+                shutil.copymode(osfile, otfile)
+            except Exception as err:
+                print "problem copying file %s to %s" % (osfile, otfile)
+                print err
+                sys.exit(-10)
+
     for key in source_dirs.keys():
         sdir = source_dirs[key]
         for adir, dirs, files in os.walk(sdir):
