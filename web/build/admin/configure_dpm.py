@@ -64,22 +64,22 @@ def get_next_profile_indexes(conn, cfg):
 
     cur.execute(cfg.get("QUERY", "max_dpm_page"))
     max_dpm_page = cur.fetchall()
-    if len(max_dpm_page) > 0:
+    if max_dpm_page:
         next_indexes["dpm_page"] = max_dpm_page[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_community"))
     max_community = cur.fetchall()
-    if len(max_community) > 0:
+    if max_community:
         next_indexes["community"] = max_community[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_roles"))
     max_role = cur.fetchall()
-    if len(max_role) > 0:
+    if max_role:
         next_indexes["roles"] = max_role[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_status"))
     max_status = cur.fetchall()
-    if len(max_status) > 0:
+    if max_status:
         next_indexes["status"] = max_status[0][0] + 1
 
     return next_indexes
@@ -98,27 +98,27 @@ def get_next_actions_indexes(conn, cfg):
 
     cur.execute(cfg.get("QUERY", "max_trigger_date"))
     max_trigger_date = cur.fetchall()
-    if len(max_trigger_date) > 0:
+    if max_trigger_date:
         next_indexes['trigger_date'] = max_trigger_date[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_trigger"))
     max_triggers = cur.fetchall()
-    if len(max_triggers) > 0:
+    if max_triggers:
         next_indexes['triggers'] = max_triggers[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_type"))
     max_type = cur.fetchall()
-    if len(max_type) > 0:
+    if max_type:
         next_indexes['type'] = max_type[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_persistentid"))
     max_persistent_id = cur.fetchall()
-    if len(max_persistent_id) > 0:
+    if max_persistent_id:
         next_indexes['persistentid'] = max_persistent_id[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_organisation"))
     max_organisation = cur.fetchall()
-    if len(max_organisation) > 0:
+    if max_organisation:
         next_indexes['organisation'] = max_organisation[0][0] + 1
 
     return next_indexes
@@ -136,22 +136,22 @@ def get_next_resources_indexes(conn, cfg):
 
     cur.execute(cfg.get("QUERY", "max_systems"))
     max_systems = cur.fetchall()
-    if len(max_systems) > 0:
+    if max_systems:
         next_indexes['system'] = max_systems[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_sites"))
     max_sites = cur.fetchall()
-    if len(max_sites) > 0:
+    if max_sites:
         next_indexes['site'] = max_sites[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_resources"))
     max_resources = cur.fetchall()
-    if len(max_resources) > 0:
+    if max_resources:
         next_indexes['resource'] = max_resources[0][0] + 1
 
     cur.execute(cfg.get("QUERY", "max_storage"))
     max_storage = cur.fetchall()
-    if len(max_storage) > 0:
+    if max_storage:
         next_indexes['storage'] = max_storage[0][0] + 1
 
     return next_indexes
@@ -172,10 +172,10 @@ def get_goc_info(data):
         print "Error: Unable to wget information from the gocdb %s" %\
             (data["resource_data"])
         print "return code: ", return_code
-        if len(output) > 0:
+        if output:
             print "Message: \n"
             print output
-        if len(error) > 0:
+        if error:
             print "Error: \n"
             print error
     else:
@@ -191,25 +191,25 @@ def get_goc_info(data):
                     host = elem.text
                 if elem.tag == "EXTENSIONS":
                     irods_details = elem.getchildren()
-                    if len(irods_details) > 0:
+                    if irods_details:
                         for irods_elem in irods_details:
                             t_irods_path = get_irods_elem(irods_elem,
                                                           "irods_path")
-                            if len(t_irods_path) > 0:
+                            if t_irods_path:
                                 irods_path = t_irods_path
 
                             t_irods_zone = get_irods_elem(irods_elem,
                                                           "irods_zone")
 
-                            if len(t_irods_zone) > 0:
+                            if t_irods_zone:
                                 irods_zone = t_irods_zone
 
                             t_irods_resc = get_irods_elem(irods_elem,
                                                           "irods_resource")
-                            if len(t_irods_resc) > 0:
+                            if t_irods_resc:
                                 irods_resc = t_irods_resc
 
-                        if len(irods_resc) > 0 and len(irods_zone) > 0:
+                        if irods_resc and irods_zone:
                             data_str = "iRODS|%s|%s|%s|%s" % \
                                 (host, irods_resc, irods_zone, irods_path)
                         out_data.append(data_str)
@@ -269,7 +269,7 @@ def fill_resource(conn, config, next_indexes, data):
                     (system_count-1, site_count-1, storage_count-1))
         resources = cur.fetchall()
         res_id = 'resource'
-        if len(resources) == 0:
+        if not resources:
             cur.execute(config.get("INSERT", "resources"),
                         (next_indexes[res_id], site_count-1, storage_count-1,
                          system_count-1))
@@ -288,8 +288,8 @@ def fill_table(cur, config, table, idx, val, *values):
     insert_ok = False
     cur.execute(config.get("QUERY", table), (val,))
     vals = cur.fetchall()
-    if len(vals) == 0:
-        if len(values) == 0:
+    if not vals:
+        if not values:
             cur.execute(config.get("INSERT", table),
                         (idx, val))
         else:
@@ -327,7 +327,7 @@ def fill_profile(conn, config, next_indexes, data):
         cur.execute(config.get("QUERY", "dpm_page"),
                     (next_indexes["dpm_page"],))
         vals = cur.fetchall()
-        if len(vals) == 0:
+        if not vals:
             cur.execute(config.get("INSERT", "dpm_page"),
                         (next_indexes["dpm_page"], dpm_page.strip(),
                          name.strip()))
@@ -424,6 +424,7 @@ def fill_action(conn, config, next_indexes, data):
 def populate(dbfile, dbschema, dbdata, dbtype, force_flag):
     '''Populate the databases
     '''
+    print "the dbfile is ", dbfile
     if os.path.isfile(dbfile):
         if force_flag is True:
             print 'Repopulating database %s.' % dbfile
@@ -481,6 +482,7 @@ def read_local_config(local_cfg):
     cfg['root_url'] = local_conf.get("DEFAULT", "ROOT_URL")
     cfg['xml_user'] = local_conf.get("DEFAULT", "XML_USER")
     cfg['xml_pass'] = local_conf.get("DEFAULT", "XML_PASS")
+    cfg['open_root_url'] = local_conf.get("DEFAULT", "OPEN_ROOT_URL")
     return cfg
 
 
@@ -497,7 +499,9 @@ def read_input(local_cfg):
     admin_email = ''
     auth = '1'
     root_url = ''
+    open_root_url = ''
     old_cfg = {'cgi_url': '', 'cli_url': '', 'root_url': '', 'cgi_path': '',
+               'open_root_url': '',
                'xml_url': '', 'xml_user': '', 'xml_pass': '', 'auth': '1',
                'admin_user': 'dpmadmin', 'admin_name': '', 'admin_email': ''}
 
@@ -511,8 +515,8 @@ def read_input(local_cfg):
         cgi_url = raw_input()
         if cgi_url == 'q':
             sys.exit()
-        elif len(cgi_url) == 0:
-            if len(old_cfg['cgi_url']) == 0:
+        elif cgi_url == '':
+            if not old_cfg['cgi_url']:
                 print "You must supply a URI or 'q' to quit."
             else:
                 cgi_url = old_cfg['cgi_url']
@@ -525,8 +529,8 @@ def read_input(local_cfg):
         cgi_path = raw_input()
         if cgi_path == 'q':
             sys.exit()
-        elif len(cgi_path) == 0:
-            if len(old_cfg['cgi_path']) == 0:
+        elif cgi_path == '':
+            if not old_cfg['cgi_path']:
                 print "You must supply a path or 'q' to quit."
             else:
                 cgi_path = old_cfg['cgi_path']
@@ -539,7 +543,7 @@ def read_input(local_cfg):
         cli_url = raw_input()
         if cli_url == 'q':
             sys.exit()
-        elif len(cli_url) == 0:
+        elif cli_url == '':
             cli_url = old_cfg['cli_url']
             break
         else:
@@ -550,7 +554,7 @@ def read_input(local_cfg):
         xml_url = raw_input()
         if xml_url == 'q':
             sys.exit()
-        elif len(xml_url) == 0:
+        elif xml_url == '':
             xml_url = old_cfg['xml_url']
             break
         else:
@@ -561,7 +565,7 @@ def read_input(local_cfg):
         xml_user = raw_input()
         if xml_user == 'q':
             sys.exit()
-        elif len(xml_user) == 0:
+        elif xml_user == '':
             xml_user = old_cfg['xml_user']
             break
         else:
@@ -572,7 +576,7 @@ def read_input(local_cfg):
         xml_pass = raw_input()
         if xml_pass == 'q':
             sys.exit()
-        elif len(xml_pass) == 0:
+        elif xml_pass == '':
             xml_pass = old_cfg['xml_pass']
             break
         else:
@@ -591,12 +595,12 @@ def read_input(local_cfg):
         elif auth == "q":
             sys.exit()
         else:
-            if len(auth) == 0:
-                if len(old_cfg['auth']) == 0 or old_cfg['auth'] == "1":
+            if not auth:
+                if old_cfg['auth'] and old_cfg['auth'] == "1":
                     auth_type = "AAI"
                     auth = "1"
                     break
-                elif old_cfg['auth'] == "2":
+                elif old_cfg['auth'] and old_cfg['auth'] == "2":
                     auth_type = "STANDALONE"
                     auth = "2"
                     break
@@ -604,8 +608,10 @@ def read_input(local_cfg):
     while 1:
         print "Admin name (firstname lastname) [%s]:" % old_cfg['admin_name']
         admin_name = raw_input()
-        if len(admin_name) == 0:
-            if len(old_cfg['admin_name']) == 0:
+        if admin_name == 'q':
+            sys.exit()
+        if admin_name == '':
+            if not old_cfg['admin_name']:
                 print "You must supply a name or 'q' to quit."
             else:
                 admin_name = old_cfg['admin_name']
@@ -622,18 +628,20 @@ def read_input(local_cfg):
             print "Note: this username should be the AAI identifier for the" +\
                 " admin user."
         admin_user = raw_input()
-        if len(admin_user) == 0:
+        if admin_user == 'q':
+            sys.exit()
+        if not admin_user:
             if auth_type == 'STANDALONE':
-                if len(old_cfg['admin_user']) == 0:
+                if old_cfg['admin_user']:
                     admin_user = "dpmadmin"
                 else:
                     admin_user = old_cfg['admin_user']
                 break
             elif auth_type == 'AAI':
-                if len(old_cfg['admin_user']) == 0 and len(admin_user) == 0:
+                if old_cfg['admin_user'] and admin_user:
                     print "You must supply the AAI identifier or 'q' to quit"
                 else:
-                    if len(admin_user) == 0:
+                    if admin_user:
                         admin_user = old_cfg['admin_user']
                     break
         elif admin_user == "q":
@@ -644,9 +652,11 @@ def read_input(local_cfg):
     while 1:
         print "Admin email address [%s]:" % old_cfg['admin_email']
         admin_email = raw_input()
-        if len(admin_email) == 0:
-            if len(old_cfg['admin_email']) == 0:
-                print "You must supply an email address"
+        if admin_email == 'q':
+            sys.exit()
+        if admin_email == '':
+            if not old_cfg['admin_email']:
+                print "You must supply an email address or q to quit."
             else:
                 admin_email = old_cfg['admin_email']
                 break
@@ -656,11 +666,28 @@ def read_input(local_cfg):
     while 1:
         print "Root url for DPM web pages [%s]:" % old_cfg['root_url']
         root_url = raw_input()
-        if len(root_url) == 0:
-            if len(old_cfg['root_url']) == 0:
+        if root_url == 'q':
+            sys.exit()
+        if root_url == '':
+            if not old_cfg['root_url']:
                 print "You must supply a path or 'q' to quit."
             else:
                 root_url = old_cfg['root_url']
+                break
+        else:
+            break
+
+    while 1:
+        print "Root url for non-shibbileth protected DPM web pages [%s]:" %\
+                old_cfg['open_root_url']
+        open_root_url = raw_input()
+        if open_root_url == 'q':
+            sys.exit()
+        if open_root_url == '':
+            if not old_cfg['open_root_url']:
+                print "You must supply a path or 'q' to quit."
+            else:
+                open_root_url = old_cfg['open_root_url']
                 break
         else:
             break
@@ -679,12 +706,13 @@ def read_input(local_cfg):
         fout.write("ADMIN_EMAIL=%s\n" % admin_email)
         fout.write("AUTH_TYPE=%s\n" % auth)
         fout.write("ROOT_URL=%s\n" % root_url)
+        fout.write("OPEN_ROOT_URL=%s\n" % open_root_url)
         fout.close()
     out_args = {'cgi_url': cgi_url, 'cli_url': cli_url, 'root_url': root_url,
                 'xml_url': xml_url, 'xml_user': xml_user, 'xml_pass': xml_pass,
                 'cgi_path': cgi_path, 'admin_user': admin_user,
                 'admin_name': admin_name, 'admin_email': admin_email,
-                'auth_type': auth_type}
+                'auth_type': auth_type, 'open_root_url': open_root_url}
     return out_args
 
 
@@ -786,7 +814,7 @@ def configure_files(cfgfile_tmpl, cfgfile, clifile_tmpl, clifile, adminfile,
                         cfg_parser = ConfigParser.ConfigParser()
                         cfg_parser.read(cfgfile)
                         timeout_page = cfg_parser.get('HTML', 'timeout_page').split('../')[-1]
-                        html_open = os.path.join(in_args['root_url'], timeout_page)
+                        html_open = os.path.join(in_args['open_root_url'], timeout_page)
                         can = string.Template(line)
                         line = can.safe_substitute(HTML_OPEN=html_open)
                     if "CGI_URL" in line:
@@ -1056,7 +1084,6 @@ if __name__ == '__main__':
         elif dbase == 'resource':
             data_tag.append("%s_data" % dbase.strip())
 
-        print "db_name ", config.get('DATABASE', db_name_tag)
         dbfile_t = config.get('DATABASE', db_name_tag).split('%s/' %
                                                              cgi_path)[1]
 
