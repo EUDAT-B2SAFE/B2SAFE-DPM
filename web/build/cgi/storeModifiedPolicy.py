@@ -67,6 +67,8 @@ class Policy(object):
         self.policy[self.config.get('ACTIONS_SCHEMA',
                                     'type').strip()] = \
             self.form_data['type']['name']
+        self.policy['family'] = self.form_data['family']
+
         if self.form_data['trigger']['name'] == periodic_type:
             trigger_val = self.form_data['trigger_period']['name']
             self.trigger_time = True

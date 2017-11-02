@@ -34,7 +34,7 @@ function tabsCtrl($scope, $http, $interval, logPageList, $route,
 
     // Regularly check if access has timed-out, if so show  timeout page
     // Only show timeout page once
-    var repeatCheck = $interval(function(){checkAccess($http);}, 9000, 0);
+    var repeatCheck = $interval(function(){checkAccess($http);}, 900000, 0);
     if (checkLocalStorage()) {
         if (localStorage.getItem("session_renew")) {
             if (localStorage.getItem("session_renew") === "displayed") {

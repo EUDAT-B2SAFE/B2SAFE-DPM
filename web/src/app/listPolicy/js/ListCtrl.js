@@ -37,6 +37,7 @@ function listCtrl($scope, $sce, $http, $route,
             $scope.policy.author = data.author;
             $scope.policy.uuid = data.uuid;
             $scope.policy.id = data.uuid;
+            $scope.policy.family = data.family;
             $scope.policy.community = data.community.toLowerCase();
             $scope.policy.sources = data.sources;
             $scope.policy.targets = data.targets;

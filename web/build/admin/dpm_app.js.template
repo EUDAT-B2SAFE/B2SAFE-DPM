@@ -1167,7 +1167,7 @@ function tabsCtrl($scope, $http, $interval, logPageList, $route,
 
     // Regularly check if access has timed-out, if so show  timeout page
     // Only show timeout page once
-    var repeatCheck = $interval(function(){checkAccess($http);}, 9000, 0);
+    var repeatCheck = $interval(function(){checkAccess($http);}, 900000, 0);
     if (checkLocalStorage()) {
         if (localStorage.getItem("session_renew")) {
             if (localStorage.getItem("session_renew") === "displayed") {
@@ -1758,6 +1758,7 @@ function listCtrl($scope, $sce, $http, $route,
             $scope.policy.author = data.author;
             $scope.policy.uuid = data.uuid;
             $scope.policy.id = data.uuid;
+            $scope.policy.family = data.family;
             $scope.policy.community = data.community.toLowerCase();
             $scope.policy.sources = data.sources;
             $scope.policy.targets = data.targets;
@@ -2666,6 +2667,7 @@ function copyPol(pol1) {
     pol2.version = pol1.version;
     pol2.author = pol1.author;
     pol2.uuid = pol1.uuid;
+    pol2.family = pol1.family;
     pol2.community = pol1.community;
     pol2.action = {name: pol1.action};
     pol2.type = {name: pol1.type.name};

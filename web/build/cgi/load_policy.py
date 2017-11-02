@@ -138,6 +138,7 @@ def fill_policy_params(node):
     params["uuid"] = node.attrib["uniqueid"]
     params["version"] = node.attrib["version"]
     params["community"] = node.attrib["community"]
+    params["family"] = node.attrib["family"]
     return params
 
 

@@ -5,6 +5,7 @@ function copyPol(pol1) {
     pol2.version = pol1.version;
     pol2.author = pol1.author;
     pol2.uuid = pol1.uuid;
+    pol2.family = pol1.family;
     pol2.community = pol1.community;
     pol2.action = {name: pol1.action};
     pol2.type = {name: pol1.type.name};
