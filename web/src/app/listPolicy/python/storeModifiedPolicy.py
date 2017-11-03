@@ -150,6 +150,7 @@ class Policy(object):
         xml_pol.name = formdata['name']
         xml_pol.author = formdata['author']
         xml_pol.community = formdata['community']
+        xml_pol.family = self.policy['family']
         xml_pol.created = self.policy[self.config.get('POLICY_SCHEMA',
                                                       'ctime').strip()]
         xml_pol.dataset = xml_dataset

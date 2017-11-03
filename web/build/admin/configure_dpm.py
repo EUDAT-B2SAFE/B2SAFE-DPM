@@ -632,16 +632,16 @@ def read_input(local_cfg):
             sys.exit()
         if not admin_user:
             if auth_type == 'STANDALONE':
-                if old_cfg['admin_user']:
+                if not old_cfg['admin_user']:
                     admin_user = "dpmadmin"
                 else:
                     admin_user = old_cfg['admin_user']
                 break
             elif auth_type == 'AAI':
-                if old_cfg['admin_user'] and admin_user:
+                if not old_cfg['admin_user'] and admin_user:
                     print "You must supply the AAI identifier or 'q' to quit"
                 else:
-                    if admin_user:
+                    if not admin_user:
                         admin_user = old_cfg['admin_user']
                     break
         elif admin_user == "q":
