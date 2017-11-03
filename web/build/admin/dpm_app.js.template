@@ -2001,11 +2001,15 @@ function listCtrl($scope, $sce, $http, $route,
         uuids = clearArray(uuids);
         for (i = 0; i < dataSave.length; i++) {
             if (dataSave[i].removed === false) {
+                if (dataSave[i].$selected === true) {
+                    delete dataSave[i].$selected;
+                }
                 $scope.data[count] = dataSave[i];
                 uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
                 count += 1;
             }
         }
+        $scope.policy_obj = "";
 
         // We need to reset the page counter after filtering
         $scope.showingActive = true;
@@ -2024,11 +2028,15 @@ function listCtrl($scope, $sce, $http, $route,
         uuids = clearArray(uuids);
         for (i = 0; i < dataSave.length; i++) {
             if (dataSave[i].removed === true) {
+                if (dataSave[i].$selected === true) {
+                    delete dataSave[i].$selected;
+                }
                 $scope.data.push(dataSave[i]);
                 $scope.data[i].visible = true;
                 uuids.push(dataSave[i].pol_vals[dkeys.policy_uniqueid].name);
             }
         }
+        $scope.policy_obj = "";
 
         // We need to reset the page counter after filtering
         $scope.showingActive = false;
