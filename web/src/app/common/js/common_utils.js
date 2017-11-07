@@ -19,6 +19,7 @@ function checkLocalStorage() {
     } 
 }
 
+/*
 function checkAccess($http) {
     $http({method: "GET", url: "${CGI_URL}/checkAccess.py"}).success(
                 function(data, status){
@@ -39,6 +40,32 @@ function checkAccess($http) {
                         if (localStorage.getItem("session_renew") === null) {
                             window.open("${HTML_OPEN}", "Session Timedout",
                                         settings);
+                            localStorage.setItem("session_renew", "displayed");
+                        }
+                    } else {
+                        console.log("Cannot write to the localstorage.");
+                    }
+                    console.log("error is " + status);
+                    return false;
+                });
+}
+*/
+
+function checkAccess($http) {
+    $http({method: "GET", url: "${CGI_URL}/checkAccess.py"}).success(
+                function(data, status){
+                    if (status === 200){
+                        if (data.connection === "successful") {
+                            var timeoutPage = document.getElementById("timeout-page");
+                            timeoutPage.style.display = "none";
+                            return true;
+                        }
+                    }
+                }).error(function(data, status){
+                   if (checkLocalStorage()) {
+                        if (localStorage.getItem("session_renew") === null) {
+                            var timeoutPage = document.getElementById("timeout-page");
+                            timeoutPage.style.display = "block";
                             localStorage.setItem("session_renew", "displayed");
                         }
                     } else {
