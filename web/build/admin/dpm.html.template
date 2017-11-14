@@ -31,11 +31,15 @@
            </div>
            !-->
       </div>
+      <div id="timeout-page" class="timeout">
+           Your session has expired. To renew your session please click on the link below.
+           <a href="${ROOT_URL}/session_renewed.html",
+              onclick="window.open('${ROOT_URL}/session_renewed.html', 'newwindow', 'width=500,height=500');
+                       return false;">
+               Renew Session</a>
+      </div>
+ 
       <div id="page">
-          <div id="timeout-page" class="timeout">
-              Your session has expired.
-              <a href="#">Renew Session</a>
-          </div>
         <div id="dpm-content" data-ng-app="dpmApp">
           <div ng-controller="tabsCtrl">
             <tabset>

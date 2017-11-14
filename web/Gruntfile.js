@@ -166,14 +166,14 @@ module.exports = function (grunt) {
             // Copy the html files
             html: {
                 files: [{expand: true,
-                            src: ['src/app/common/html/dpm.html',
+                            src: ['src/app/common/html/dpm.html.template',
                                 'src/app/common/html/closed.html',
                                 'src/app/common/html/declined.html',
                                 'src/app/common/html/pending.html',
                                 'src/app/common/html/session_renewed.html'],
                             dest: 'build/html', flatten: true},
                         {expand: true,
-                            src: ['src/app/common/html/timeout.html.template'],
+                            src: ['src/app/common/html/dpm.html.template'],
                             dest: 'build/admin', flatten: true},
                         {expand: true,
                             src: ['src/app/common/html/.htaccess'],

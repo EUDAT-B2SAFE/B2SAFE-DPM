@@ -810,13 +810,6 @@ def configure_files(cfgfile_tmpl, cfgfile, clifile_tmpl, clifile, adminfile,
                 os.mkdir(os.path.dirname(jsout))
             with file(jsout, "w") as fout:
                 for line in lines:
-                    if "HTML_OPEN" in line:
-                        cfg_parser = ConfigParser.ConfigParser()
-                        cfg_parser.read(cfgfile)
-                        timeout_page = cfg_parser.get('HTML', 'timeout_page').split('../')[-1]
-                        html_open = os.path.join(in_args['open_root_url'], timeout_page)
-                        can = string.Template(line)
-                        line = can.safe_substitute(HTML_OPEN=html_open)
                     if "CGI_URL" in line:
                         can = string.Template(line)
                         line = can.safe_substitute(CGI_URL=in_args['cgi_url'])
@@ -826,19 +819,19 @@ def configure_files(cfgfile_tmpl, cfgfile, clifile_tmpl, clifile, adminfile,
             in_args['root_url'])
 
 
-def configure_timeout_page(config, root_url):
-    '''Configure the timeout page'''
-    with file('timeout.html.template', 'r') as fin:
+def configure_timeout_section(config, deploy_dir, root_url):
+    '''Configure the timeout section'''
+    with file('dpm.html.template', 'r') as fin:
         lines = fin.readlines()
         fin.close()
 
-    timeout_file = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                               config.get("HTML", "timeout_page")))
-    timeout_dir = os.path.dirname(timeout_file)
-    if not os.path.isdir(timeout_dir):
-        os.makedirs(timeout_dir)
+    dpm_file = os.path.abspath(os.path.join(deploy_dir,
+                                            config.get("HTML", "dpm_page")))
+    dpm_dir = os.path.dirname(dpm_file)
+    if not os.path.isdir(dpm_dir):
+        os.makedirs(dpm_dir)
 
-    with file(timeout_file, "w") as fout:
+    with file(dpm_file, "w") as fout:
         for line in lines:
             if "ROOT_URL" in line:
                 can = string.Template(line)
@@ -877,33 +870,8 @@ def configure_dbase(config, root_url):
 def copy_files(target_dir, source_dirs):
     '''Copy all the files from the source directory to the target directory'''
 
-    skipfiles = ['policy.cfg.template', 'policy_cli.cfg.template']
-
-    # Copy css and img files to html-open as we can't access assets behind shibboleth pages
-    for odir, odirs, ofiles in os.walk(source_dirs['html']):
-        if "html/css" not in odir and "html/img" not in odir:
-            continue
-        oadir = os.path.split(odir)[-1]
-        otdir = os.path.abspath(os.path.join(source_dirs['html-open'], oadir))
-        if not os.path.isdir(otdir):
-            try:
-                os.makedirs(otdir)
-            except Exception as err:
-                print "problem creating directory %s" % otdir
-                print err
-                sys.exit(-5)
-        for ofile in ofiles:
-            if ofile in skipfiles:
-                continue
-            osfile = os.path.abspath(os.path.join(odir, ofile))
-            otfile = os.path.abspath(os.path.join(otdir, ofile))
-            try:
-                shutil.copyfile(osfile, otfile)
-                shutil.copymode(osfile, otfile)
-            except Exception as err:
-                print "problem copying file %s to %s" % (osfile, otfile)
-                print err
-                sys.exit(-10)
+    skipfiles = ['policy.cfg.template', 'policy_cli.cfg.template',
+                 'dpm.html.template']
 
     for key in source_dirs.keys():
         sdir = source_dirs[key]
@@ -1010,7 +978,7 @@ if __name__ == '__main__':
     local_cfg = ".dpm.cfg"
     deploy_dir = '../../deploy'
     data_dir = 'config/data'
-    build_dirs = {'cgi': '../cgi', 'html': '../html', 'html-open': '../html-open',
+    build_dirs = {'cgi': '../cgi', 'html': '../html',
                   'wsgi': '../wsgi',
                   'wsgi-test': '../wsgi-test'}
 
@@ -1025,7 +993,7 @@ if __name__ == '__main__':
         if opt == '-c' or opt == '--config':
             use_config = True
             local_cfg = val.strip()
-
+    
     # Copy all the build scripts to the deploy area
     copy_files(deploy_dir, build_dirs)
 
@@ -1062,8 +1030,8 @@ if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
 
+    configure_timeout_section(config, deploy_dir, root_url)
     html_path = configure_dbase(config, root_url)
-    configure_timeout_page(config, root_url)
 
     # Loop over the database types and fill the databases
     # and configure the files
