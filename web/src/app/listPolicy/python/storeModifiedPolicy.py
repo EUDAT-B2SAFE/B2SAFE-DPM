@@ -121,9 +121,26 @@ class Policy(object):
                 self.policy[key_type] = acoll['type']['name']
                 col_idx += 1
  
-    def new_version(self, old_version):
-        '''Return the new version number based on the old one'''
-        version = int(float(old_version)) + 1
+    def new_version(self, family):
+        '''Return the new version number which is just largest number for the family
+        incremented by one'''
+        baseX_url = config.get("XMLDATABASE", "name").strip()
+        query_url = base_url + "_%s?query=//*:policy[@family='%s']/@version" % \
+                (self.policy[self.config.get("POLICY_SCHEMA",
+                    "community").strip()],
+                 self.policy["family"])
+        resp = request.get(query_url,
+                auth=(config.get("XMLDATABASE", "user"),
+                      config.get("XMLDATABASE", "pass")))
+        if resp.status_code != 200:
+            print "Problem querying the XML database: ",\
+                    resp.status_code
+            print resp.text
+            sys.exit(-101)
+        versions = resp.text.split()
+        version_numbers = [int(ver.split("=")[-1].strip('"')) for ver in versions]
+        version_numbers.sort()
+        version = version_numbers[-1] + 1
         return version
 
     def create_xml(self, formdata):
@@ -141,7 +158,7 @@ class Policy(object):
         xml_actions = policy_lib.actionsType()
         xml_actions.action = self.__create_actions()
 
-        version = self.new_version(formdata['version'])
+        version = self.new_version(formdata['family'])
 
         # Build the policy node
         xml_pol = policy_lib.policy()
