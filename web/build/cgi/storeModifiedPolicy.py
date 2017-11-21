@@ -125,13 +125,13 @@ class Policy(object):
         '''Return the new version number which is just largest number for the family
         incremented by one'''
         baseX_url = self.config.get("XMLDATABASE", "name").strip()
-        query_url = base_url + "_%s?query=//*:policy[@family='%s']/@version" % \
+        query_url = baseX_url + "_%s?query=//*:policy[@family='%s']/@version" % \
                 (self.policy[self.config.get("POLICY_SCHEMA",
                     "community").strip()],
                  self.policy["family"])
-        resp = request.get(query_url,
-                auth=(config.get("XMLDATABASE", "user"),
-                      config.get("XMLDATABASE", "pass")))
+        resp = requests.get(query_url,
+                auth=(self.config.get("XMLDATABASE", "user"),
+                      self.config.get("XMLDATABASE", "pass")))
         if resp.status_code != 200:
             print "Problem querying the XML database: ",\
                     resp.status_code
