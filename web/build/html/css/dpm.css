@@ -25,6 +25,10 @@ textarea#e_body {
     width: auto;
 }
 
+div.timeout {
+display: none;
+}
+
 div#buttons {
     width: 30%;
     height: 5%;
