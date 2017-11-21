@@ -124,7 +124,7 @@ class Policy(object):
     def new_version(self, family):
         '''Return the new version number which is just largest number for the family
         incremented by one'''
-        baseX_url = config.get("XMLDATABASE", "name").strip()
+        baseX_url = self.config.get("XMLDATABASE", "name").strip()
         query_url = base_url + "_%s?query=//*:policy[@family='%s']/@version" % \
                 (self.policy[self.config.get("POLICY_SCHEMA",
                     "community").strip()],
