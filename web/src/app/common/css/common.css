@@ -1,5 +1,10 @@
 div.timeout {
 display: none;
+background: grey;
+height: 100%;
+width: 100%;
+z-index: 1;
+position: absolute;
 }
 
 div#buttons {
