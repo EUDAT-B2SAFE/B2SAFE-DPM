@@ -147,7 +147,7 @@ def get_user(config):
     '''Get the user from the environment'''
     username = ''
     if config.get("AUTHENTICATION", "type") == "AAI":
-        username = os.environ["presistentid"]
+        username = os.environ["persistentid"]
     elif config.get("AUTHENTICATION", "type") == "STANDALONE":
         if config.has_option("HTMLENV", "user"):
             username = config.get("HTMLENV", "user")
