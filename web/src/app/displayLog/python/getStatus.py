@@ -93,10 +93,10 @@ def query_db(config):
                         for an_elem in response_string.getchildren():
                             tag_name = tags.get(an_elem.tag)
                             if tag_name is not None:
-                                if tag_name in tags and tags[tag_name] == "log_state":
+                                if an_elem.tag in tags and tags[an_elem.tag] == "log_state":
                                     children = an_elem.getchildren()
                                     for achild in children:
-                                        if tags[achild.tag_name] == "log_state_overall":
+                                        if achild.tag in tags and tags[achild.tag_name] == "log_state_overall":
                                             status_obj[tag_name] = achild.text.strip()
                                 else:
                                     status_obj[tag_name] = an_elem.text.strip()

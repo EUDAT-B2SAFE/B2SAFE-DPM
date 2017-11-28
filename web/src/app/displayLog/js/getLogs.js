@@ -20,6 +20,7 @@ function getLogs($scope, ngTableParams, $http, showLog,
                     for (var j = 0; j < data.columns.length; j++) {
                         statusList.push(data.data[i][data.columns[j]]);
                     }
+                    console.log("statusList " + JSON.stringify(statusList));
                     logData.push({visible: logVisible, row: statusList});
                 }
                 $scope.logData = logData;
