@@ -45,6 +45,7 @@ def query_db(config):
 
     tags = {"{http://eudat.eu/2016/policy-status}timestamp": "log_timestamp",
             "{http://eudat.eu/2016/policy-status}status": "log_state",
+            "{http://eudat.eu/2016/policy-status}overall": "log_state_overall",
             "{http://eudat.eu/2016/policy-status}name": "policy_name",
             "{http://eudat.eu/2016/policy-status}version": "policy_version",
             "policy": "{http://eudat.eu/2016/policy-status}policy"}
@@ -92,7 +93,13 @@ def query_db(config):
                         for an_elem in response_string.getchildren():
                             tag_name = tags.get(an_elem.tag)
                             if tag_name is not None:
-                                status_obj[tag_name] = an_elem.text.strip()
+                                if tag_name == tags["log_state"]:
+                                    children = an_elem.getchildren)()
+                                    for achild in children:
+                                        if achild.tag_name == tags["log_state_overall"]:
+                                            status_obj[tag_name] = achild.text.strip()
+                                else:
+                                    status_obj[tag_name] = an_elem.text.strip()
                         status_list.append(status_obj)
     return status_list
 
