@@ -473,7 +473,6 @@ def read_local_config(local_cfg):
     local_conf.read(local_cfg)
     cfg['cgi_url'] = local_conf.get("DEFAULT", "CGI_URL")
     cfg['cgi_path'] = local_conf.get("DEFAULT", "CGI_PATH")
-    cfg['cli_url'] = local_conf.get("DEFAULT", "CLI_URL")
     cfg['xml_url'] = local_conf.get("DEFAULT", "XML_URL")
     cfg['auth'] = local_conf.get("DEFAULT", "AUTH_TYPE")
     cfg['admin_name'] = local_conf.get("DEFAULT", "ADMIN_NAME")
@@ -482,14 +481,12 @@ def read_local_config(local_cfg):
     cfg['root_url'] = local_conf.get("DEFAULT", "ROOT_URL")
     cfg['xml_user'] = local_conf.get("DEFAULT", "XML_USER")
     cfg['xml_pass'] = local_conf.get("DEFAULT", "XML_PASS")
-    cfg['open_root_url'] = local_conf.get("DEFAULT", "OPEN_ROOT_URL")
     return cfg
 
 
 def read_input(local_cfg):
     '''Read the input from the command line'''
     cgi_url = ''
-    cli_url = ''
     xml_url = ''
     xml_user = ''
     xml_pass = ''
@@ -499,9 +496,7 @@ def read_input(local_cfg):
     admin_email = ''
     auth = '1'
     root_url = ''
-    open_root_url = ''
-    old_cfg = {'cgi_url': '', 'cli_url': '', 'root_url': '', 'cgi_path': '',
-               'open_root_url': '',
+    old_cfg = {'cgi_url': '', 'root_url': '', 'cgi_path': '',
                'xml_url': '', 'xml_user': '', 'xml_pass': '', 'auth': '1',
                'admin_user': 'dpmadmin', 'admin_name': '', 'admin_email': ''}
 
@@ -535,17 +530,6 @@ def read_input(local_cfg):
             else:
                 cgi_path = old_cfg['cgi_path']
                 break
-        else:
-            break
-
-    while 1:
-        print "Base URI for the REST API: [%s]" % old_cfg['cli_url']
-        cli_url = raw_input()
-        if cli_url == 'q':
-            sys.exit()
-        elif cli_url == '':
-            cli_url = old_cfg['cli_url']
-            break
         else:
             break
 
@@ -677,27 +661,11 @@ def read_input(local_cfg):
         else:
             break
 
-    while 1:
-        print "Root url for non-shibbileth protected DPM web pages [%s]:" %\
-                old_cfg['open_root_url']
-        open_root_url = raw_input()
-        if open_root_url == 'q':
-            sys.exit()
-        if open_root_url == '':
-            if not old_cfg['open_root_url']:
-                print "You must supply a path or 'q' to quit."
-            else:
-                open_root_url = old_cfg['open_root_url']
-                break
-        else:
-            break
-
     # Write out the new default file
     with file(local_cfg, "w") as fout:
         fout.write("[DEFAULT]\n")
         fout.write("CGI_URL=%s\n" % cgi_url)
         fout.write("CGI_PATH=%s\n" % cgi_path)
-        fout.write("CLI_URL=%s\n" % cli_url)
         fout.write("XML_URL=%s\n" % xml_url)
         fout.write("XML_USER=%s\n" % xml_user)
         fout.write("XML_PASS=%s\n" % xml_pass)
@@ -706,13 +674,12 @@ def read_input(local_cfg):
         fout.write("ADMIN_EMAIL=%s\n" % admin_email)
         fout.write("AUTH_TYPE=%s\n" % auth)
         fout.write("ROOT_URL=%s\n" % root_url)
-        fout.write("OPEN_ROOT_URL=%s\n" % open_root_url)
         fout.close()
-    out_args = {'cgi_url': cgi_url, 'cli_url': cli_url, 'root_url': root_url,
+    out_args = {'cgi_url': cgi_url, 'root_url': root_url,
                 'xml_url': xml_url, 'xml_user': xml_user, 'xml_pass': xml_pass,
                 'cgi_path': cgi_path, 'admin_user': admin_user,
                 'admin_name': admin_name, 'admin_email': admin_email,
-                'auth_type': auth_type, 'open_root_url': open_root_url}
+                'auth_type': auth_type}
     return out_args
 
 
@@ -750,9 +717,6 @@ def configure_files(cfgfile_tmpl, cfgfile, clifile_tmpl, clifile, adminfile,
         fin.close()
     with file(cfgfile, "w") as fout:
         for line in lines:
-            if "CLI_URL" in line:
-                can = string.Template(line)
-                line = can.substitute(CLI_URL=in_args['cli_url'])
             if "CGI_PATH" in line:
                 can = string.Template(line)
                 line = can.substitute(CGI_PATH=in_args['cgi_path'])
@@ -815,7 +779,7 @@ def configure_files(cfgfile_tmpl, cfgfile, clifile_tmpl, clifile, adminfile,
                         line = can.safe_substitute(CGI_URL=in_args['cgi_url'])
                     fout.write(line)
                 fout.close()
-    return (in_args['cgi_url'], in_args['cgi_path'], in_args['cli_url'],
+    return (in_args['cgi_url'], in_args['cgi_path'],
             in_args['root_url'])
 
 
@@ -930,7 +894,7 @@ def create_virtualenv(deploy_dir, indirs):
         sys.exit(return_code)
 
 
-def print_done(deploy_dir, indirs, data_dir, root_url, cgi_url, cli_url):
+def print_done(deploy_dir, indirs, data_dir, root_url, cgi_url):
     '''Print out some help upon completion'''
 
     data_url = os.path.join(cgi_url, data_dir)
@@ -940,34 +904,6 @@ def print_done(deploy_dir, indirs, data_dir, root_url, cgi_url, cli_url):
 
     print ""
     print "Configuration Completed"
-    print "Please copy:"
-    print "1. the directory containing web pages: "
-    print "'%s'" % html_dir
-    print "to the path corresponding to the URL:"
-    print "'%s'" % root_url
-    print "2. the directory containing cgi scripts:"
-    print "'%s'" % cgi_dir
-    print "to the directory corresponding to the URL:"
-    print "'%s'" % cgi_url
-    print "3. the directory containing WSGI scripts:"
-    print "'%s'" % wsgi_dir
-    print "to the directory coresponding to the URL:"
-    print "'%s'" % cli_url
-    print ""
-    print "Notes:"
-    print "- Please make sure the directory corresponding to the url:"
-    print "'%s'" % data_url
-    print "is writeable by your webserver."
-    print ""
-    print "- You will need to make sure that your baseX database exists before"
-    print "using the web interface."
-    print "WARNING: creating a database will DELETE an existing database."
-    print "You must verify a database does not exist before creating it."
-    print ""
-    print "- You may need to remove the '.htaccess' file from your web pages"
-    print "directory if you are running in STANDALONE mode."
-    print ""
-
 
 if __name__ == '__main__':
     dbase_types = ["resource", "action", "profile"]
@@ -1018,7 +954,7 @@ if __name__ == '__main__':
                                      deploy_dir))
 
     # Configure the data files
-    cgi_url, cgi_path, cli_url, root_url = configure_files(cfgfile_tmpl,
+    cgi_url, cgi_path, root_url = configure_files(cfgfile_tmpl,
                                                            cfgfile,
                                                            clifile_tmpl,
                                                            clifile,
@@ -1070,4 +1006,4 @@ if __name__ == '__main__':
 
     create_virtualenv(deploy_dir, build_dirs)
 
-    print_done(deploy_dir, build_dirs, data_dir, root_url, cgi_url, cli_url)
+    print_done(deploy_dir, build_dirs, data_dir, root_url, cgi_url)
