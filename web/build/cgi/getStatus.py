@@ -96,7 +96,7 @@ def query_db(config):
                                 if an_elem.tag in tags and tags[an_elem.tag] == "log_state":
                                     children = an_elem.getchildren()
                                     for achild in children:
-                                        if achild.tag in tags and tags[achild.tag_name] == "log_state_overall":
+                                        if achild.tag in tags and tags[achild.tag] == "log_state_overall":
                                             status_obj[tag_name] = achild.text.strip()
                                 else:
                                     status_obj[tag_name] = an_elem.text.strip()
