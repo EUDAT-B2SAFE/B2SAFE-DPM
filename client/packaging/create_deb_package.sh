@@ -75,7 +75,7 @@ Version: ${VERSION}-${RELEASE}
 Section: unknown
 Priority: optional
 Architecture: all
-Depends: irods-icat (>= 4.0.0)
+Depends: irods-icat (>= 4.0.0) | irods-server (>= 4.2.0) | irods-icommands (>= 4.2.0)
 Maintainer: Robert Verkerk <robert.verkerk@surfsara.nl>
 Description: B2SAFE DPM client for iRODS package
 B2SAFE DPM client are a set of scripts to implement policies in iRODS.
@@ -86,10 +86,14 @@ EOF
 cat > $RPM_BUILD_ROOT${PACKAGE}/DEBIAN/postinst << EOF
 #!/bin/bash
 # create symbolic links
-if [ -e "/var/lib/irods/iRODS/server/bin/cmd" ]
+IRODS_DIR=/var/lib/irods
+if [ -e "\${IRODS_DIR}/msiExecCmd_bin" ]
 then
-    ln -sf ${IRODS_PACKAGE_DIR}/cmd/PolicyManager.py /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
-fi
+  IRODS_LINK_DIR="\${IRODS_DIR}/msiExecCmd_bin"
+else
+  IRODS_LINK_DIR="\${IRODS_DIR}/iRODS/server/bin/cmd"
+fi 
+ln -sf ${IRODS_PACKAGE_DIR}/cmd/PolicyManager.py \${IRODS_LINK_DIR}/runPolicyManager.py
 
 # show package installation/configuration info 
 cat << EOF1
@@ -109,7 +113,7 @@ then
     source \$IRODS_SERVICE_ACCOUNT_CONFIG
     chown -R \$IRODS_SERVICE_ACCOUNT_NAME:\$IRODS_SERVICE_GROUP_NAME ${IRODS_PACKAGE_DIR} 
     chown -R \$IRODS_SERVICE_ACCOUNT_NAME:\$IRODS_SERVICE_GROUP_NAME /var/log/irods
-    chown -R \$IRODS_SERVICE_ACCOUNT_NAME:\$IRODS_SERVICE_GROUP_NAME /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
+    chown -R \$IRODS_SERVICE_ACCOUNT_NAME:\$IRODS_SERVICE_GROUP_NAME \${IRODS_LINK_DIR}/runPolicyManager.py
 fi
 
 EOF
