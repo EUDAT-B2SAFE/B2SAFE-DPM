@@ -293,7 +293,7 @@ def updatePolicyStatus(args):
         response = statusManagement(args.suspended, args.rejected, args.show, 
                                     args.id, debug, logger, conn)
         print ('Updated the status of the policy {}, response: {}'
-              ).format(policyId, response)
+              ).format(args.id, response)
     else:
         # get the list of the policies to be updated
         policies = conn.listPolicies()

@@ -12,7 +12,7 @@ BuildArch:	noarch
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 #BuildRequires:	
-Requires:	irods-icat
+#Requires:	irods-icat
 
 %define _whoami %(whoami)
 %define _b2safehomepackaging %(pwd)
@@ -97,6 +97,10 @@ if [ -e "/var/lib/irods/iRODS/server/bin/cmd" ]
 then
     ln -sf %{_irodsPackage}/cmd/PolicyManager.py /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
 fi
+if [ -e "/var/lib/irods/msiExecCmd_bin" ]
+then
+    ln -sf %{_irodsPackage}/cmd/PolicyManager.py /var/lib/irods/msiExecCmd_bin/runPolicyManager.py
+fi
 # only show info on first installation
 if [ "$1" = "1" ]
 then 
@@ -120,7 +124,14 @@ then
     source $IRODS_SERVICE_ACCOUNT_CONFIG
     chown -R $IRODS_SERVICE_ACCOUNT_NAME:$IRODS_SERVICE_GROUP_NAME %{_irodsPackage}
     chown -R $IRODS_SERVICE_ACCOUNT_NAME:$IRODS_SERVICE_GROUP_NAME /var/log/irods
-    chown -R $IRODS_SERVICE_ACCOUNT_NAME:$IRODS_SERVICE_GROUP_NAME /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
+    if [ -e "/var/lib/irods/iRODS/server/bin/cmd" ]
+    then
+       chown -R $IRODS_SERVICE_ACCOUNT_NAME:$IRODS_SERVICE_GROUP_NAME /var/lib/irods/iRODS/server/bin/cmd/runPolicyManager.py
+    fi
+    if [ -e "/var/lib/irods/msiExecCmd_bin" ]
+    then
+       chown -R $IRODS_SERVICE_ACCOUNT_NAME:$IRODS_SERVICE_GROUP_NAME /var/lib/irods/msiExecCmd_bin/runPolicyManager.py
+    fi
 fi
 
 
@@ -134,5 +145,7 @@ then
     fi
 fi
 %changelog
+* Thu Nov 30 2017  Robert Verkerk <robert.verkerk@surfsara.nl> 1.0-1
+- make sure it works on iRODS 4.2 and higher
 * Wed Aug 12 2015  Robert Verkerk <robert.verkerk@surfsara.nl> 1.0
 - Initial version of b2safe dpm client package
