@@ -1,10 +1,21 @@
 div.timeout {
 display: none;
 background: grey;
-height: 100%;
+height: 10%;
 width: 100%;
 z-index: 1;
 position: absolute;
+}
+
+div#timeout-text {
+    text-align: center;
+    font-size: x-large;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    width: 100%;
+    height: 100%;
 }
 
 div#buttons {
