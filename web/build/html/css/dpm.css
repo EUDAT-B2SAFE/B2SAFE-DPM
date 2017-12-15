@@ -62,7 +62,8 @@ body{
 	height:auto;
 	overflow:scroll;
 	background-color:#f7f7f7;
-	background-image:url(../img/bk-num.png);
+	background-image:url(../img/bg_page.png);
+	/* background-image:url(../img/bk-num.png); */
 	background-repeat:no-repeat;
 	background-position: right 150px;
 	background-attachment:scroll;

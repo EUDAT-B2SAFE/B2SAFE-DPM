@@ -22,7 +22,9 @@
     <body>
       <div id="header-wrapper">
         <div id="header">
-          <img src="img/logo.jpg" />
+            <a title="EUDAT Main Page" href="https://eudat/eu">
+                <img src="img/logo.jpg" />
+            </a>
           <h1 class="title">Data Policy Manager</h1>
         </div>
         <hr style="margin: 0px 0px;">
