@@ -51,7 +51,9 @@ class ServerConnector:
 
         # load properties from configuration
         self.config = ConfigLoader(config)
-
+        # XML DB's prefixes
+        self.st_pre = self.config.SectionMap('DpmServer')['status_prefix']
+        self.pol_pre = self.config.SectionMap('DpmServer')['policies_prefix']
         # load credentials
         self.auth = None
         with open(self.config.SectionMap('DpmServer')['tokenfile'], 'r') as fin:
@@ -79,27 +81,39 @@ class ServerConnector:
 
 #TODO verify if it is possible to merge update and create in a single function
 
-    def updateStatus(self, policyId, state):
+    def updateStatus(self, policyId, state, reason=None):
         """ This method updates or creates, if not already present, the status 
             document related to a specific policy document.
 
         @type  policyId: string
         @param policyId: The policy id
         @type  state:    string
-        @param state:    The status value [QUEUED | FAILED | DONE | RUNNING]
+        @param state:    The status value
+        @type  reason:   string
+        @param reason:   The reason behind the status
         @rtype:          string
         @return:         The response of the HTTP POST request to the DB
         """
+
+        self.logger.debug('Updating the policy with id {} to the status {}'
+                          .format(policyId, state))
+        statusdb = self.config.SectionMap('DpmServer')['statusdbname']
         # check if the status doc is already available, 
         # if not it creates a new one
-        if not self.getStatus(policyId)[1]:
-            return self.createStatus(policyId, state)
-
-        statusdb = self.config.SectionMap('DpmServer')['statusdbname']
-
+        xmldict, doc = self.getStatus(policyId)
+        if xmldict is None:
+            if doc is not None:
+                return doc
+            else:
+                self.createStatus(policyId, state, statusdb)
+        
         # get the current UNIX timestamp and convert to 2016-08-21T09:30:10Z
         timestamp = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-
+        # set the reason element
+        re = ''
+        if reason is not None:
+            re = ("replace value of node $res/tns:status/tns:reason with '{}',"
+                 ).format(reason)
         # xquery request to update the status doc fields: status and timestamp
         post_data = '''<rest:query xmlns:rest="http://basex.org/rest">
                          <rest:text>
@@ -107,12 +121,13 @@ class ServerConnector:
                            for $res in collection("{}")/tns:policy
                              where $res[@uniqueid = "{}"]
                              return(
-                             replace value of node $res/tns:status with '{}',
+                             replace value of node $res/tns:status/tns:overall with '{}',
+                             {}
                              replace value of node $res/tns:timestamp with '{}'
                              )
                       </rest:text>
                     </rest:query>'''.format(self.staNs, statusdb, policyId, 
-                                            state, timestamp)
+                                            state, re, timestamp)
 
         self.logger.info('Updating policies [{}]'.format(self.url))
         self.logger.debug('post_data: ' + post_data + '; auth: ' +
@@ -124,17 +139,20 @@ class ServerConnector:
 
         if response is not None and len(response.text) > 0:
             self.logger.debug("response is: " + response.text)
+            return response.text
         
         return response
 
 
-    def createStatus(self, policyId, state):
+    def createStatus(self, policyId, state, dbname):
         """ This method create a new status document related to a specific policy 
 
         @type  policyId: string
         @param policyId: The policy id
         @type  state:    string
         @param state:    The status value [QUEUED | FAILED | DONE | RUNNING]
+        @type  dbname:   string
+        @param dbname:   The name of the XML DB related to the status of the policy
         @rtype:          boolean
         @return:         True if the document is created, False otherwise
          
@@ -161,7 +179,10 @@ class ServerConnector:
                        <ns0:name>{}</ns0:name>
                        <ns0:version>{}</ns0:version>
                        <ns0:checksum method="{}">{}</ns0:checksum>
-                       <ns0:status>{}</ns0:status>
+                       <ns0:status>
+                          <ns0:overall>{}</ns0:overall>
+                          <ns0:reason/>
+                       </ns0:status> 
                        <ns0:timestamp>{}</ns0:timestamp>
                     </ns0:policy>'''.format(policyId, self.staNs, name, ver,
                                             chk_alg, chk_val, status, timestamp)
@@ -172,8 +193,7 @@ class ServerConnector:
             return False
 
         # perform the HTTP PUT request to the DB
-        statusdb = self.config.SectionMap('DpmServer')['statusdbname']
-        put_url = '{}/{}/{}-{}_status.xml'.format(self.url, statusdb, name, ver)
+        put_url = '{}/{}/{}-{}_status.xml'.format(self.url, dbname, name, ver)
         headers = {'Content-Type': 'application/xml'}
         self.logger.debug('put_url: ' + put_url + '; put_data: ' + statusDoc
                           + '; auth: ' + str(self.auth) + '; http verify: ' 
@@ -182,7 +202,7 @@ class ServerConnector:
                                 auth=self.auth, verify=self.veri)
 
         self.logger.debug("response is: " + response.text)
-        return True
+        return response.text
 
 
     def listPolicies(self, attributes=None, start_date=0, end_date=2544652800):
@@ -198,7 +218,16 @@ class ServerConnector:
         @rtype:          list of strings
         @return:         A list of urls, pointing to the policies in the DB
         """
-        policiesdb = self.config.SectionMap('DpmServer')['policiesdbname']
+        policiesdbs = self.config.SectionMap('DpmServer')['policiesdbname']
+        db_filter = ''
+        if policiesdbs is None or len(policiesdbs) == 0:
+            db_filter += ('let $dblist := db:list()'
+                         +'for $dbname in ($dblist)'
+                         +' where starts-with($dbname, "{}")').format(
+                                                               self.pol_pre)
+        else:
+            db_filter += ('let $dblist := tokenize("' + policiesdbs + '", ",")'
+                         +'for $dbname in ($dblist)')
 
         # xquery filter condition clause built from the attributes dictionary
         data_filter = ''
@@ -226,22 +255,33 @@ class ServerConnector:
                                                                  attributes[key])
         # xquery request to select policy docs from the DB according to the
         # requirements provided as input
+
         post_data = '''<rest:query xmlns:rest="http://basex.org/rest">
                           <rest:text>
                              declare namespace tns = "%s";
                              declare namespace irodsns = "%s";
-                             let $results := collection("%s")/tns:policy
-                             for $policy in $results where $policy
-                                 %s
-                                 and $policy[@created > %s]
-                                 and not($policy[@created > %s])
-                                     let $policies := string-join(("%s/%s", 
-                                                         db:path($policy)), "/")
-                             return $policies 
+                             let $list := ()
+                             %s
+                                 let $db := normalize-space($dbname)
+                                 let $results := collection($db)/tns:policy
+                                 let $policies := ()
+                                 return insert-before($list,1,(
+                                     for $policy in $results where $policy
+                                     %s
+                                     and $policy[@created > %s]
+                                     and not($policy[@created > %s])
+                                         let $policies := insert-before(
+                                                          $policies, 1,
+                                                          string-join(("%s",$db, 
+                                                              db:path($policy)),
+                                                              "/")
+                                                          )
+                                         return $policies 
+                                 ))
                           </rest:text>
-                     </rest:query>''' % (self.polNs, self.irodsNs, policiesdb, 
+                     </rest:query>''' % (self.polNs, self.irodsNs, db_filter,
                                          data_filter, start_date, end_date, 
-                                         self.url, policiesdb)
+                                         self.url)
 
         self.logger.info('Listing policies [%s]' % self.url)
         self.logger.debug('post_data: ' + post_data + '; auth: ' + 
@@ -291,21 +331,31 @@ class ServerConnector:
             return response.text
 
 
-    def getStatus(self, policyId):
+    def getStatus(self, policyId, dbname=None):
         """ Get a status document from the DB based on its id 
 
         @type  policyId: string
         @param policyId: The policy id
+        @type  dbname:   string
+        @param dbname:   The DB's name
         @rtype:          tuple(dictionary, string)
         @return:         A tuple of two representations of the same document
         """
- 
-        statusdb = self.config.SectionMap('DpmServer')['statusdbname']
+  
+        self.logger.debug('Getting the status of the policy with id {}'
+                          .format(policyId))
+        if dbname is None:
+            statusdb = self.config.SectionMap('DpmServer')['statusdbname']
+        else:
+            statusdb = dbname
+        self.logger.debug('from the DB: ' + statusdb)        
         doc = self.getDocumentById(policyId, statusdb, self.staNs)
-        if doc is not None:
-            # it use the "xmltodict" module to transform the XML doc to a python
+        if doc is not None and self.validateXML(doc):
+            # it uses the "xmltodict" module to transform the XML doc to a python
             # dictionary, taking into account the namespaces
+            self.logger.debug('status doc found')
             return (xmltodict.parse(doc, process_namespaces=True), doc)
+        self.logger.debug('status doc not found')
         return (None, doc)
 
 
@@ -317,8 +367,8 @@ class ServerConnector:
         @rtype:          tuple(dictionary, string)
         @return:         A tuple of two representations of the same document
         """
-        statusdb = self.config.SectionMap('DpmServer')['policiesdbname']
-        doc = self.getDocumentById(policyId, statusdb, self.polNs)
+        policiesdbs = self.config.SectionMap('DpmServer')['policiesdbname']
+        doc = self.getDocumentById(policyId, policiesdbs, self.polNs, self.pol_pre)
         if doc is not None:
             # it uses the "xmltodict" module to transform the XML doc to a python
             # dictionary, taking into account the namespaces
@@ -326,29 +376,45 @@ class ServerConnector:
         return (None, doc)
 
 
-    def getDocumentById(self, policyId, dbname, ns):
+    def getDocumentById(self, policyId, dbnames, ns, db_prefix=None):
         """ Get a document from the DB based on its id 
 
         @type  policyId: string
         @param policyId: The policy id
-        @type  dbname:   string
-        @param dbname:   The name of the BaseX DB to query
+        @type  dbname:   list
+        @param dbname:   The list of names of the BaseX DBs to query
         @type  ns:       string
         @param ns:       The namespace related to the wanted document
+        @type  db_prefix:string
+        @param db_prefix:The prefix of the BaseX DBs to query   
         @rtype:          string
         @return:         The document if found, None otherwise
         """
         self.logger.info('Getting xml doc with id: ' + policyId)
 
+        db_filter = ''
+        if dbnames is None or len(dbnames) == 0:
+            db_filter += ('let $dblist := db:list() '
+                         +'for $dbname in ($dblist)'
+                         +' where starts-with($dbname, "' + db_prefix  + '")')
+        else:
+            db_filter += ('let $dblist := tokenize("' + dbnames + '", ",") '
+                         +'for $dbname in ($dblist)')
+
         # xquery request to select a single document based on the id
         post_data = '''<rest:query xmlns:rest="http://basex.org/rest">
                          <rest:text>
                            declare namespace tns = "{}";
-                           for $res in collection("{}")/tns:policy
-                               where $res[@uniqueid = "{}"]
-                               return $res
+                           {}
+                               let $db := normalize-space($dbname)
+                               let $policies := ()
+                               return insert-before($policies,1,(
+                                   for $res in collection($db)/tns:policy
+                                   where $res[@uniqueid = "{}"]
+                                       return $res
+                               ))
                       </rest:text>
-                    </rest:query>'''.format(ns, dbname, policyId)
+                    </rest:query>'''.format(ns, db_filter, policyId)
 
         self.logger.debug('post_data: ' + post_data + '; auth: ' +
                           str(self.auth) + '; http verify: ' + str(self.veri))
@@ -380,7 +446,11 @@ class ServerConnector:
         xmlSchemaDoc = etree.parse(schemaPath)
         xmlschema = etree.XMLSchema(xmlSchemaDoc)
         # parse the XML input
-        root = etree.fromstring(xmlText)
+        try:
+            root = etree.fromstring(xmlText)
+        except Exception as e:
+            self.logger.error(e)
+            return False
         # validate the XML doc
         if not xmlschema(root):
             self.logger.error(xmlschema.error_log.last_error)

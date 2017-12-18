@@ -16,6 +16,7 @@
         <input type="button" data-ng-click="reloadPolicyList()" value="Reload List">
         <input type=button id="listlogbutton" data-ng-click="loadLogList()" value="List Logs">
     </div>
+    <!--
     <div id="checkboxes" data-ng-show="displayKeys">
         <div class="checkbox" data-ng-repeat="policy_column in policy_columns">
             <input type="checkbox" data-ng-model="policy_key.name"
@@ -24,6 +25,7 @@
                 {{policy_column.name}}
         </div>
     </div>
+    -->
     <h3 class="field">Policy List</h3>
     <table data-ng-table="tabs" show-filter="true" class="table ng-table-rowselected">
         <thead>
@@ -39,7 +41,7 @@
         </thead>
         <tbody>
             <tr data-ng-repeat="pol_data in $data"
-                data-ng-show="pol_data.visible && !pol_data.removed"
+                data-ng-show="pol_data.visible" 
                 data-ng-click="resetFlag(); pol_data.$selected = !pol_data.$selected; display_pol(pol_data)"
                 data-ng-class="{'rowhighlight': pol_data.$selected, '': !pol_data.$selected}">
                 <td data-ng-repeat="pol_val in pol_data.pol_vals"
@@ -49,7 +51,7 @@
                 <td>
                     <select data-ng-model="polselected"
                     data-ng-change="actionPolicy()"
-                    data-ng-options="laction.name for laction in pol_data.listaction" disabled="disabled">
+                    data-ng-options="laction.name for laction in pol_data.listaction">
                     <option value=""> --- Select --- </option>
                     </select>
                 </td>

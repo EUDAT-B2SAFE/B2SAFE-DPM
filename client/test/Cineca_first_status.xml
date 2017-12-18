@@ -3,6 +3,8 @@
     <tns:name>Cineca_first</tns:name>
     <tns:version>1.0</tns:version>
     <tns:checksum method="MD5">93ed6021618e1f451d2307244fdd4db0</tns:checksum>
-    <tns:status>DONE</tns:status>
+    <tns:status>
+      <tns:overall>NEW</tns:overall>
+    </tns:status>
     <tns:timestamp>2016-08-21T09:30:10Z</tns:timestamp>
 </tns:policy>

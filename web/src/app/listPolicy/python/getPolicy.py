@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
 import sys
-import os
 import cgi
 import json
 import ConfigParser
-import sqlite3
 import requests
 
 
@@ -19,15 +17,12 @@ def usage():
     print ""
 
 
-def getData(config, uuid):
+def getData(config, url, uuid):
     '''Function to get the policy from the database
     '''
 
-    # TODO: This function needs to change we need to use the uuid to do the
-    # XPATH query to get the policy.
-
     # Create the URL for the policy xml file
-    policy_url = config.get("XMLDATABASE", "name") + "/policy_%s.xml" % uuid
+    policy_url = url + "/policy_%s.xml" % (uuid)
     response = requests.get(policy_url,
                             auth=(config.get("XMLDATABASE", "user"),
                                   config.get("XMLDATABASE", "pass")))
@@ -67,6 +62,7 @@ def getData(config, uuid):
     print ""
     print json.dumps(policy)
 
+
 if __name__ == '__main__':
     cfgfile = "./config/policy.cfg"
 
@@ -76,11 +72,11 @@ if __name__ == '__main__':
         usage()
         sys.exit()
 
-    # Get the uuid
     uuid = fields["uuid"].value
+    url = fields["policyURL"].value
 
     # Read the configs
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
 
-    getData(config, uuid)
+    getData(config, url, uuid)

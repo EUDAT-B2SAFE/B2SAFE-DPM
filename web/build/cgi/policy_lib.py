@@ -622,13 +622,18 @@ class policy(GeneratedsSuper):
     the data set."""
     subclass = None
     superclass = None
-    def __init__(self, name=None, created=None, author=None, community=None, version=None, uniqueid=None, dataset=None, actions=None, anytypeobjs_=None):
+
+    def __init__(self, name=None, created=None, author=None,
+                 community=None, version=None, uniqueid=None,
+                 family=None,
+                 dataset=None, actions=None, anytypeobjs_=None):
         self.name = _cast(None, name)
         self.created = _cast(int, created)
         self.author = _cast(None, author)
         self.community = _cast(None, community)
         self.version = _cast(None, version)
         self.uniqueid = _cast(None, uniqueid)
+        self.family = _cast(None, family)
         self.dataset = dataset
         self.actions = actions
         self.anytypeobjs_ = anytypeobjs_
@@ -656,6 +661,8 @@ class policy(GeneratedsSuper):
     def set_version(self, version): self.version = version
     def get_uniqueid(self): return self.uniqueid
     def set_uniqueid(self, uniqueid): self.uniqueid = uniqueid
+    def get_family(self): return self.family
+    def set_family(self, family): self.family = family
     def hasContent_(self):
         if (
             self.dataset is not None or
@@ -700,6 +707,11 @@ class policy(GeneratedsSuper):
         if self.uniqueid is not None and 'uniqueid' not in already_processed:
             already_processed.add('uniqueid')
             outfile.write(' uniqueid=%s' % (self.gds_format_string(quote_attrib(self.uniqueid).encode(ExternalEncoding), input_name='uniqueid'), ))
+        if self.family is not None and 'family' not in already_processed:
+            already_processed.add('family')
+            outfile.write(' family=%s' % (self.gds_format_string(quote_attrib(self.family).encode(ExternalEncoding),
+                                                                 input_name='family'), ))
+ 
     def exportChildren(self, outfile, level, namespace_='tns:', name_='policy', fromsubclass_=False, pretty_print=True):
         if pretty_print:
             eol_ = '\n'
@@ -742,6 +754,11 @@ class policy(GeneratedsSuper):
             already_processed.add('uniqueid')
             showIndent(outfile, level)
             outfile.write('uniqueid="%s",\n' % (self.uniqueid,))
+        if self.family is not None and 'family' not in already_processed:
+            already_processed.add('family')
+            showIndent(outfile, level)
+            outfile.write('family="%s",\n' % (self.family,))
+ 
     def exportLiteralChildren(self, outfile, level, name_):
         if self.dataset is not None:
             showIndent(outfile, level)
@@ -796,6 +813,11 @@ class policy(GeneratedsSuper):
         if value is not None and 'uniqueid' not in already_processed:
             already_processed.add('uniqueid')
             self.uniqueid = value
+        value = find_attr_value_('family', node)
+        if value is not None and 'family' not in already_processed:
+            already_processed.add('family')
+            self.family = value
+
     def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
         if nodeName_ == 'dataset':
             obj_ = datasetType.factory()

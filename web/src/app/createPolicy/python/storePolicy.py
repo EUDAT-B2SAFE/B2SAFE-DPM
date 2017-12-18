@@ -3,11 +3,11 @@ import json
 import sys
 import ConfigParser
 import StringIO
-import hashlib
 import time
 import os
 import sqlite3
 import requests
+import xml.etree.ElementTree
 
 sys.path.append(os.path.dirname(os.path.realpath(sys.argv[0])))
 import policy_irods_sub
@@ -66,6 +66,8 @@ class Policy(object):
         self.policy[self.config.get('ACTIONS_SCHEMA',
                                     'type').strip()] = \
             self.form_data['type']['name']
+        self.policy['family'] = "%s-%s" % (self.form_data['community'],
+                                           self.form_data['uuid'])
         if self.form_data['trigger']['name'] == periodic_type:
             trigger_val = self.form_data['trigger_period']['name']
             self.trigger_time = True
@@ -81,40 +83,42 @@ class Policy(object):
         self.__fill_colls(self.form_data['sources'], 'SOURCES_SCHEMA')
         self.__fill_colls(self.form_data['targets'], 'TARGETS_SCHEMA')
 
-        # print "policy is ", self.policy
-
     def __fill_colls(self, form_colls, schema):
         '''Fill the collection attributes for the policy
         '''
         col_idx = 0
         col_idx2 = 0
         for acoll in form_colls:
-            key_type = "%s_%s" % (self.config.get(schema,
-                                                  'type').strip(), col_idx)
-            key_identifier = "%s_%s" % (self.config.get(schema,
-                                                        'identifier').strip(),
-                                        col_idx)
             key_hostname = "%s_%s" % (self.config.get(schema,
                                                       'hostname'),
                                       col_idx2)
             key_resource = "%s_%s" % (self.config.get(schema,
                                                       'resource'),
                                       col_idx2)
-            self.policy[key_type] = None
-            self.policy[key_identifier] = None
-            self.policy[key_hostname] = None
-            self.policy[key_resource] = None
-
             if acoll['type']['name'] == 'pid':
+                key_type = "%s_%s" %\
+                    (self.config.get(schema, 'type').strip(), col_idx)
+                key_identifier = "%s_%s" %\
+                    (self.config.get(schema, 'identifier').strip(),
+                     col_idx)
                 self.policy[key_type] = acoll['type']['name']
                 self.policy[key_identifier] = acoll['identifier']['name']
                 col_idx += 1
             elif acoll['type']['name'] == 'collection':
+                key_type = "%s_%s" %\
+                    (self.config.get(schema, 'type').strip(), col_idx)
+                key_identifier = "%s_%s" %\
+                    (self.config.get(schema, 'identifier').strip(),
+                     col_idx)
+                key_hostname = "%s_%s" %\
+                    (self.config.get(schema, 'hostname'), col_idx)
+                key_resource = "%s_%s" %\
+                    (self.config.get(schema, 'resource'), col_idx)
                 self.policy[key_hostname] = acoll['hostname']['name']
                 self.policy[key_resource] = acoll['resource']['name']
                 self.policy[key_identifier] = acoll['identifier']['name']
                 self.policy[key_type] = acoll['type']['name']
-                col_idx2 += 1
+                col_idx += 1
 
     def create_xml(self, formdata):
         '''Method to create an XML policy
@@ -140,6 +144,7 @@ class Policy(object):
         xml_pol.community = formdata['community']
         xml_pol.created = self.policy[self.config.get('POLICY_SCHEMA',
                                                       'ctime').strip()]
+        xml_pol.family = self.policy['family']
         xml_pol.dataset = xml_dataset
         xml_pol.actions = xml_actions
 
@@ -230,7 +235,6 @@ class Policy(object):
         xml_site = policy_irods_sub.siteType2Sub()
         xml_site.type_ = 'EUDAT'
         site_key = '%s%s' % (self.config.get(schema, 'hostname'), index)
-        print 'index is ', index
         xml_site.valueOf_ = self.policy[site_key]
         return xml_site
 
@@ -332,18 +336,14 @@ def dump_to_xml_store(pol, config):
     '''Store the policy in the XML database'''
     baseX_url = config.get("XMLDATABASE", "name").strip()
 
-    # Check the database exists
-#    resp = requests.put(baseX_url, auth=(config.get("XMLDATABASE", "user"),
-#                                         config.get("XMLDATABASE", "pass")))
-#    if resp.status_code != 201:
-#        print "Problem creating the XML database: ", resp.status_code
-#        print resp.text
-#        sys.exit(-100)
+    # Create the database
+    create_database(config, pol[config.get("POLICY_SCHEMA", "community")])
 
     # Store the policy in the XML database. We assume the database exists
     # beforehand
-    policy_url = baseX_url + "/policy_%s.xml" %\
-        pol[config.get("POLICY_SCHEMA", "uniqueid")]
+    policy_url = baseX_url.strip() + "_%s/policy_%s.xml" %\
+        (pol[config.get("POLICY_SCHEMA", "community")],
+         pol[config.get("POLICY_SCHEMA", "uniqueid")])
     resp = requests.put(policy_url,
                         data=pol[config.get("POLICY_SCHEMA", "object")],
                         auth=(config.get("XMLDATABASE", "user"),
@@ -353,6 +353,41 @@ def dump_to_xml_store(pol, config):
             resp.status_code
         print resp.text
         sys.exit(-100)
+
+
+def create_database(config, community):
+    '''Create the database if it doesn't exist. If it does do nothing'''
+    root_url = config.get("XMLDATABASE", "root_name")
+    response = requests.get(root_url,
+                            auth=(config.get("XMLDATABASE", "user"),
+                                  config.get("XMLDATABASE", "pass")))
+    if response.status_code != 200:
+        print "Problem querying the XML database: ", response.status_code
+        print response.text
+        sys.exit(-100)
+    else:
+        xml_response =\
+            xml.etree.ElementTree.ElementTree(
+                xml.etree.ElementTree.fromstring(response.text))
+        db_community = []
+        for xml_node in xml_response.getiterator():
+            if "database" in xml_node.tag:
+                if (len(xml_node.text.strip()) > 0
+                        and "policy_" in xml_node.text):
+                    xml_community = xml_node.text.strip().split("_")[-1]
+                    if xml_community not in db_community:
+                        db_community.append(xml_community)
+
+        if community not in db_community:
+            url = config.get("XMLDATABASE", "name").strip() + "_%s" % community
+            response = requests.put(url,
+                                    auth=(config.get("XMLDATABASE", "user"),
+                                          config.get("XMLDATABASE", "pass")))
+            if response.status_code != 201:
+                print "Problem creating the XML database: ",\
+                        response.status_code
+                print response.text
+                sys.exit(-300)
 
 
 def dump_to_store(pol, config):
@@ -436,6 +471,7 @@ def run_store():
 
     print ""
     print json.dumps({'policy_exists': exists})
+
 
 if __name__ == '__main__':
     run_store()

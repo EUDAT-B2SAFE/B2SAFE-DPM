@@ -178,7 +178,7 @@ if __name__ == '__main__':
 
     username = ''
     if (config.get("AUTHENTICATION", "type") == "AAI"):
-        username = os.environ["REMOTE_USER"]
+        username = os.environ["persistentid"]
     elif (config.get("AUTHENTICATION", "type") == "STANDALONE"):
         if (config.has_option("HTMLENV", "user")):
             username = config.get("HTMLENV", "user")

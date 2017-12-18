@@ -292,6 +292,8 @@ def updatePolicyStatus(args):
     if args.id:
         response = statusManagement(args.suspended, args.rejected, args.show, 
                                     args.id, debug, logger, conn)
+        print ('Updated the status of the policy {}, response: {}'
+              ).format(args.id, response)
     else:
         # get the list of the policies to be updated
         policies = conn.listPolicies()
@@ -304,10 +306,11 @@ def updatePolicyStatus(args):
                     response = statusManagement(args.suspended, args.rejected, 
                                                 args.show, policyId, debug, 
                                                 logger, conn)
+                    print ('Updated the status of the policy {}, response: {}'
+                          ).format(policyId, response)
                 else:
                     logger.info('policy id not found')
-
-    return response
+                    print 'Policy with id {} not found'.format(policyId)
 
 
 def getPolicyStatus(id, debug):
@@ -319,8 +322,7 @@ def getPolicyStatus(id, debug):
     @type  debug: boolean
     @param debug: If True the debug is enabled    
     @rtype:       string
-    @return:      The status of the enforcement of the policy:
-                  [QUEUED | RUNNING | DONE | WAITING]
+    @return:      The status of the enforcement of the policy
     """
     # define the paths where to find the irods rules and the related output
     rulePath = os.path.join(os.path.dirname(sys.path[0]), 'rules')
@@ -341,7 +343,7 @@ def getPolicyStatus(id, debug):
                 status = 'RUNNING'
     else:
         # the policy is not currently translated to a rule
-        status = 'WAITING'
+        status = 'NEW'
         if resFiles is not None and len(resFiles) > 0:
             # the rule has been executed and it is not scheduled
             status = 'DONE'
@@ -367,6 +369,8 @@ def statusManagement(suspended, rejected, show, policyId, debug, logger, conn):
     @param debug:    If True the debug is enabled
     @type  logger:   the logger type
     @param logger:   The logger   
+    @type  conn:     the ServerConnector object
+    @param conn:     The class representing the connection with the policy DB
     @rtype:       string
     @return:      The status of the request to update the policy DB
     """
@@ -383,11 +387,15 @@ def statusManagement(suspended, rejected, show, policyId, debug, logger, conn):
 #TODO manage the message of explanation associated to suspended/rejected states,
 #     adding a further option to the function updateStatus
         if rejected is not None:
+            rej = ' '.join(rejected)
+            print "reason: " + rej
             logger.debug('Updating the status to REJECTED')
-            response = conn.updateStatus(policyId, 'REJECTED')
+            response = conn.updateStatus(policyId, 'REJECTED', rej)
         elif suspended is not None:
+            sus = ' '.join(suspended)
+            print "reason: " + sus
             logger.debug('Updating the status to SUSPENDED')
-            response = conn.updateStatus(policyId, 'SUSPENDED')
+            response = conn.updateStatus(policyId, 'SUSPENDED', sus)
         else:
             logger.debug('Updating the status to ' + state)
             response = conn.updateStatus(policyId, state)
@@ -406,6 +414,7 @@ def getInfoPolicies(args, mylogger=None):
     """
     debug = args.verbose
     config = ConfigLoader(args.config)
+    st_pre = config.SectionMap('DpmServer')['status_prefix']
     if mylogger is None:
         logger = setLoggingSystem(config, debug)
     else:
@@ -454,6 +463,7 @@ def getInfoPolicies(args, mylogger=None):
     if policies is not None:
         for url in policies:
             print url
+            community_name = (url.rsplit('/', 2)[-2]).split('_',2)[2]
             if args.subcmd == 'list'and args.ext:
                 # listing policies with extended attributes
                 xmldoc = conn.getDocumentByUrl(url)
@@ -463,15 +473,34 @@ def getInfoPolicies(args, mylogger=None):
                         print '{} = {}'.format(key[1:], 
                                                pol[polNs+':policy'][key])
                 # get the status doc from the DB
-                status, doc = conn.getStatus(pol[polNs+':policy']['@uniqueid'])
+                dbname = None
+                if args.all:
+                    dbname = st_pre + community_name
+                status, doc = conn.getStatus(pol[polNs+':policy']['@uniqueid'], dbname)
                 if status is None:
                     print 'status = '
                     print 'checksum = '
                 else:
-                    print 'status = {}'.format(
-                           status[staNs+':policy'][staNs+':status'])
+                    st = status[staNs+':policy'][staNs+':status']
+                    if args.all:
+                        print 'overall status = {}'.format(st[staNs+':overall'])
+                        if (st[staNs+':details'] is not None
+                            and st[staNs+':details'][staNs+':site'] is not None):
+                            if isinstance(st[staNs+':details'][staNs+':site'], list):
+                                for line in st[staNs+':details'][staNs+':site']:
+                                    print '{: ^4}status[{}] = {}'.format('', 
+                                                                  line['@name'],
+                                                                  line['#text'])
+                            else:
+                                print '{: ^4}status[{}] = {}'.format('',
+                                   st[staNs+':details'][staNs+':site']['@name'],
+                                   st[staNs+':details'][staNs+':site']['#text'])
+                    else:
+                        print 'status = {}'.format(
+                            status[staNs+':policy'][staNs+':status']
+                                                   [staNs+':overall'])
                     print 'checksum = {}'.format(
-                           status[staNs+':policy'][staNs+':checksum']['#text'])
+                          status[staNs+':policy'][staNs+':checksum']['#text'])
             print '{: ^40}'.format('')
     else:
         print 'Nothing found'
@@ -559,6 +588,8 @@ def main():
 
     parser_list = subparsers.add_parser('list', 
                                         help='list policies in the central DB')
+    parser_list.add_argument('-a', '--all', action='store_true', 
+                             help='get the overall status')
     parser_list.add_argument('-i', '--id', help='id of the policy')
     parser_list.add_argument('-e', '--ext', action='store_true', 
                              help='extended set of information')

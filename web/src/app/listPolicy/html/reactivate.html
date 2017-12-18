@@ -26,16 +26,17 @@
                     <td>{{policy.community}}</td>
                 </tr>
                 <tr data-ng-repeat="src in policy.sources"
-                  data-ng-show="collDefined()">
+                  data-ng-show="collDefined(src)">
                     <td>Source Collection</td>
                     <td>{{src.organisation.name}}, {{src.system.name}},
-                        {{src.site.name}}, {{src.resource.name}},
-                        {{src.path}}</td>
+                        {{src.hostname.name}}, {{src.identifier.name}},
+                    </td>
                 </tr>
-                <tr data-ng-repeat="col in policy.collections"
-                  data-ng-show="pidDefined()">
+                <tr data-ng-repeat="src in policy.sources"
+                  data-ng-show="pidDefined(src)">
                     <td>Source Collection</td>
-                    <td>{{col.type}}, {{col.name}}</td>
+                     <td>{{src.type}}, {{src.name}},
+                     </td>
                 </tr>
                 <tr>
                     <td>Action</td>
@@ -49,13 +50,17 @@
                     <td>Trigger</td>
                     <td>{{policy.trigger.name}}</td>
                 </tr>
-                <tr>
+                <tr data-ng-repeat="tgt in policy.targets"
+                  data-ng-show="pidDefined(tgt)">
                     <td>Target Collection</td>
-                    <td>{{policy.target.organisation.name}},
-                        {{policy.target.system.name}},
-                        {{policy.target.site.name}},
-                        {{policy.target.resource.name}},
-                        {{policy.target.path}}</td>
+                    <td>{{tgt.type}}, {{tgt.name}}</td>
+                </tr>
+                <tr data-ng-repeat="tgt in policy.targets"
+                  data-ng-show="collDefined(tgt)">
+                    <td>Target Collection</td>
+                    <td>{{tgt.organisation.name}}, {{tgt.system.name}},
+                        {{tgt.hostname.name}}, {{tgt.identifier.name}}
+                    </td>
                 </tr>
             </tbody>
         </table>

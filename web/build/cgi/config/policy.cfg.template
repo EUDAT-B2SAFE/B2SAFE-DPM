@@ -13,9 +13,9 @@ removed=policy_removed
 [LOG_SCHEMA]
 state=log_state
 timestamp=log_timestamp
-hostname=log_hostname
-comment=log_comment
-identifier=log_policy_identifier
+uniqueid=policy_uniqueid
+name=policy_name
+version=policy_version
 last_index=log_last_index
 
 [ACTIONS_SCHEMA]
@@ -59,12 +59,15 @@ resource_name=${CGI_PATH}/config/resources.db
 action_name=${CGI_PATH}/config/actions.db
 
 [XMLDATABASE]
-name=${XML_PATH}/policy
+root_name=${XML_PATH}
+name=${XML_PATH}/policy_community
+status_name=${XML_PATH}/status_community
 user=${XML_USER}
 pass=${XML_PASS}
 
 [HTML]
 not_registered=./errors/not_reg.html
+dpm_page=html/dpm.html
 
 [AUTHENTICATION]
 type=${AUTHTYPE}

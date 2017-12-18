@@ -1,0 +1,48 @@
+[Logs]
+logfile: log/dpm-commander.log
+# supported INFO, DEBUG
+loglevel: INFO
+
+[DpmServer]
+## server endpoint
+# scheme: http | https
+scheme: 
+# hostname: 123.456.78.910 | myhostname.net
+hostname: 
+# port: 8443
+port:
+# path: /BaseX851/rest
+path: 
+## authentication
+# tokenFile: conf/credentials.json
+tokenFile:
+# http_verify: False | True | the path to the public key of the server certificate (or of its CA)
+http_verify: False
+## BaseX DBs
+# policiesdbname: | policies_community_A,policies_community_B
+policiesdbname:
+# statusdbname: | status_community_A,status_community_B
+statusdbname:
+# policies_prefix: policies_community_
+policies_prefix: policies_community_
+# status_prefix: status_community_
+status_prefix: status_community_
+# status_site_prefix: status_site_
+status_site_prefix: status_site_
+
+[Integrity]
+# checksum_verify: False | True
+checksum_verify: False
+
+[Schemas]
+# it can be an url (http://...) or a file path
+policies: schema/policy.template.xsd
+status: schema/policy.status.xsd
+
+[PolicyFilters]
+# the key:value pairs that allows to filter the policies
+# the allowed ones are: author, version, name, community, created, source.site,
+# source.pid, target.site, target.pid, action
+#source.site: RZG
+#community: CLARIN
+#action: replicate

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # Fetch the policies from the database
 import os
+import cgi
 import sys
 import json
 import requests
@@ -8,8 +9,8 @@ import ConfigParser
 import xml.etree.ElementTree
 
 
-def get_policies(config):
-    remote_user_str = "REMOTE_USER"
+def get_policies(config, cummunity):
+    remote_user_str = "persistentid"
     remote_user = ""
     policies = []
     if remote_user_str in os.environ:
@@ -18,7 +19,7 @@ def get_policies(config):
         if config.get("AUTHENTICATION", "type") == "STANDALONE":
             remote_user = config.get("HTMLENV", "user")
 
-    policy_url = config.get("XMLDATABASE", "name") +\
+    policy_url = "%s_%s" % (config.get("XMLDATABASE", "name"), community) +\
         "?query=//*[local-name()='policy'][@author='%s']" % remote_user
     response = requests.get(policy_url,
                             auth=(config.get("XMLDATABASE", "user"),
@@ -68,4 +69,6 @@ if __name__ == '__main__':
     cfgfile = "./config/policy.cfg"
     config = ConfigParser.ConfigParser()
     config.read(cfgfile)
-    get_policies(config)
+    fields = cgi.FieldStorage()
+    community = fields['community'].value
+    get_policies(config, community)

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <meta charset="utf-8" />
+		<title>B2Access Session Renewed</title>
+        <link rel="stylesheet" type="text/css" href="./css/dpm.css" type="text/css" />
+	</head>
+	<body>
+        <div id="header-wrapper">
+            <div id="header">
+                <img src="./img/logo.jpg" />
+                <h1 class="title">B2Access Session Renewed</h1>
+            </div>
+            <hr style="margin: 0px 0px;">
+        </div>
+        <div id="page">
+            <div id="closedbox">
+                <div id="closedtxt">
+                    Your B2Access session has successfully been renewed. You can now close this window
+                    and continue to use your DPM session.
+                    <form>
+                        <button class="button" onClick="window.open('', '_self', ''); window.close();">Close Window</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            window.onbeforeunload = function(event){
+                if (localStorage.getItem("session_renew") !== null) {
+                    localStorage.removeItem("session_renew");
+                }
+                console.log("closing renew window");
+            };
+        </script>
+	</body>
+</html>

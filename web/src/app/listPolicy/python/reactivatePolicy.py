@@ -2,43 +2,56 @@
 import json
 import sys
 import ConfigParser
-import StringIO
 import hashlib
+import xml.etree.ElementTree
 import time
-import os
-import sqlite3
+import requests
+
 
 def reactivatePol(config):
     '''Function to reactivate the policy
     '''
-    
+
     # Read the input
     data = {}
     data = json.load(sys.stdin)
-    # Open the database
-    dbfile = config.get("DATABASE", "name").strip()
-    if (not os.path.isfile(dbfile)):
-        sys.stderr.write("Unable to open the database: %s" % dbfile)
+
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    ckval = hashlib.md5(data["policy"])
+
+    # Create the XML document
+    nsurl = "http://eudat.eu/2016/policy-status"
+    root = xml.etree.ElementTree.Element("ns0:policy",
+                                         attrib={"xmlns:ns0": nsurl,
+                                                 "uniqueid": data["uuid"]})
+    name = xml.etree.ElementTree.SubElement(root, "ns0:name")
+    name.text = data["name"]
+    version = xml.etree.ElementTree.SubElement(root, "ns0:version")
+    version.text = data["version"]
+    checksum = xml.etree.ElementTree.SubElement(root, "ns0:checksum",
+                                                attrib={"method": "MD5"})
+    checksum.text = ckval.hexdigest()
+    status = xml.etree.ElementTree.SubElement(root, "ns0:status")
+    overall = xml.etree.ElementTree.SubElement(status, "ns0:overall")
+    overall.text = "NEW"
+    details = xml.etree.ElementTree.SubElement(status, "ns0:details")
+    timestamp = xml.etree.ElementTree.SubElement(root, "ns0:timestamp")
+    timestamp.text = now
+
+    policy_status = xml.etree.ElementTree.tostring(root)
+    policy_name = "status_%s.xml" % data["uuid"]
+    status_url = "%s_%s/%s" % (config.get("XMLDATABASE", "status_name"),
+                               data["community"], policy_name)
+
+    resp = requests.put(status_url, data=policy_status,
+                        auth=(config.get("XMLDATABASE", "user"),
+                              config.get("XMLDATABASE", "pass")))
+    if resp.status_code != 201:
+        print "Problem storing the status in the XML database: ",\
+            resp.status_code
+        print resp.text
         sys.exit(-100)
-    
-    # Find the key for the uuid
-    conn = sqlite3.connect(dbfile)
-    cur = conn.cursor()
-    uuid_key = "%s%%" % config.get("POLICY_SCHEMA", "uniqueid")
-    cur.execute("select key from policies where key like ? and value=?",
-            (uuid_key, data['uuid']))
-    result = cur.fetchone()
-    uuid_idx = -1
-    if (len(result) > 0):
-        uuid_idx = result[0].split("_")[-1]
 
-    # Construct the remove key
-    pol_rm = "%s_%s" % (config.get("POLICY_SCHEMA", "removed"), uuid_idx)
-
-    # Set the removed key to false - this means the policy is reactivated
-    cur.execute("update policies set value=? where key=?",
-            ('false', pol_rm))
-    conn.commit()
 
 if __name__ == '__main__':
     cfgfile = 'config/policy.cfg'

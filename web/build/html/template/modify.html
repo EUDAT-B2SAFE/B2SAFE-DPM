@@ -1,162 +1,333 @@
 <div data-ng-controller="modifyCtrl">
     <div id="modify" class="modify">
-        <h3 class="field">Modify Policy</h3>
-        <p>Title</p>
-        <input type="text" data-ng-change="titleChange()"
-            data-ng-model="policy.name"><br>
-        <p>Author</p>
-        <select data-ng-model="policy.author"
-            data-ng-change="authorChange()"
-            data-ng-options="un for un in ulist">
-        </select>
-        <p>Community</p>
-        <select data-ng-model="policy.community"
-            data-ng-change="communityChange()"
-            data-ng-options="co for co in comlist">
-        </select>
-        <div data-ng-repeat="src in policy.sources"
-          data-ng-show="collDefined()">
-            <p>Source Organisation</p>
-            <select data-ng-model="policy.sources[$index].organisation"
-              data-ng-change="srcOrganisationChange()"
-              data-ng-options="orgt for orgt in orgList">
-              <option name="policy.sources[$index].organisation.name" value="">
-                {{policy.sources[$index].organisation.name}}
-              </option>
+        <h2 class="field">Modify Policy</h2>
+        <div class="personalblock">
+            <p>Title</p>
+            <input type="text" data-ng-change="titleChange()"
+                               data-ng-model="policy.name"><br>
+            <p>Author</p>
+            <select data-ng-model="policy.author"
+                data-ng-change="authorChange()"
+                data-ng-options="un for un in ulist">
             </select>
-            <p>Source System</p>
-            <select data-ng-model="policy.sources[$index].system"
-              data-ng-change="srcSystemChange()"
-              data-ng-options="tsys for tsys in sysList">
-              <option name="policy.sources[$index].system.name" value="">
-                {{policy.sources[$index].system.name}}
-              </option>
+            <p>Community</p>
+            <input type="text" data-ng-readonly="true" data-ng-model="policy.community">
+            <!--
+            <select data-ng-model="policy.community"
+                data-ng-change="communityChange()"
+                data-ng-options="co for co in comlist"
+                data-ng-readonly="true">
             </select>
-            <p>Source Site</p>
-            <select data-ng-model="policy.sources[$index].site"
-              data-ng-change="srcSiteChange()"
-              data-ng-options="tsite for tsite in siteList">
-              <option name="policy.sources[$index].site.name" value="">
-                {{policy.sources[$index].site.name}}
-              </option>
-            </select>
-            <p>Source Resource</p>
-            <select data-ng-model="policy.sources[$index].resource"
-              data-ng-change="srcResourceChange()"
-              data-ng-options="tres for tres in resList">
-              <option name="policy.sources[$index].resource.name" value="">
-                {{policy.sources[$index].resource.name}}
-              </option>
-            </select>
-            <p>Source Path</p>
-            <input type="text" data-ng-change="srcPathChange()"
-              data-ng-model="policy.sources[$index].path">
-              <br/>
+            -->
         </div>
-        <div data-ng-repeat="col in policy.collections"
-          data-ng-show="pidDefined()">
-            <p>Identifier Type</p>
-            <select data-ng-model="policy.collections[$index].type"
-                data-ng-change="identifierChange()"
-                data-ng-options="pid for pid in pidList">
-            </select><br/>
-            <p>Collection</p>
-            <input type="text" data-ng-change="collectionChange()"
-                data-ng-model="col.name"></br>
-        </div>
-        <p>Action</p>
-        <select data-ng-model="policy.action.name"
-            data-ng-change="actionChange()"
-            data-ng-options="act for act in actionList">
-        </select>
-        <p>Type</p>
-        <select data-ng-model="policy.type.name"
-            data-ng-change="typeChange()"
-            data-ng-options="ty for ty in typeList">
-        </select>
-        <p>Trigger</p>
-        <select data-ng-model="policy.trigger.name"
-            data-ng-change="triggerChange()"
-            data-ng-options="trg for trg in triggerList">
-        </select>
 
-        <div id="tdate" data-ng-show="showDate(policy.trigger.name)">
-            <p>Date</p>
-            <input type="text" is-open="opened"
-                data-datepicker-popup="dd-MM-yyyy"
-                data-ng-model="trigger_date"
-                data-ng-change="updateDate()">
-            <button class="btn btn-default" data-ng-click="datOpen($event)">
-                <i class="glyphicon glyphicon-calendar"> </i>
+        <h3 class="field">Action</h3>
+        <div class="stepblock">
+            <p>Step</p>
+            <select data-ng-model="policy.type.name"
+                data-ng-change="typeChange()"
+                data-ng-options="ty for ty in typeList">
+            </select>
+        </div>
+        
+        <div class="whenblock">
+            <p>When</p>
+            <select id="whensel" name="trigger"
+                                 data-ng-options="tr for tr in triggerList"
+                                 data-ng-model="policy.trigger.name"
+                                 data-ng-change="updateTrigger()"
+                                 data-validate-select required>
+            </select>
+
+            <div data-ng-show="submitted || datasetactions.trigger.$invalid">
+                <span id="error" data-ng-show="pristineFlags.action.trigger || datasetactions.trigger.$error.required">
+                    The trigger is required
+                </span>
+            </div>
+            <div id="period-space">
+            </div>
+            <div id="action-period" 
+                data-ng-show="showPeriod(policy.trigger.name)">
+                <p>Period</p>
+                <select id="datesel" name="trigger_date" 
+                                     data-ng-options="trd.name for trd in trigger_date"
+                                     data-ng-model="policy.trigger_date"
+                                     data-ng-change="updateTriggerDate()"
+                                     data-validate-select required>
+                    <option name="policy.trigger_date.name" value="">
+                        {{policy.trigger_date.name}}
+                    </option>
+                </select>
+                <div data-ng-show="submitted || datasetactions.trigger_date.$invalid">
+                    <span id="error" data-ng-show="pristineFlags.action.trigger_date || datasetactions.trigger_date.$error.required">
+                        The trigger period is required
+                    </span>
+                </div>
+
+                <div id="action-period-period"
+                    data-ng-show="showPeriodPeriod(policy.trigger_date.name)">
+                    <input type="text" name="trigger_period" class="period" data-ng-change="updatePeriod()"
+                                                                            data-ng-model="policy.trigger_period.name">
+                    <div data-ng-show="submitted">
+                        <span id="error" data-ng-show="invalidFlags.action.period">
+                            The period is incorrect
+                        </span>
+                    </div>
+                </div>
+                <div id="action-period-date" 
+                    data-ng-show="showPeriodDate(policy.trigger_date.name)">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <div class="input-group date" id="periodDate">
+                                        <input type="text" name="period_date" class="form-control" 
+                                                                              data-ng-change="updatePeriodDate()" 
+                                                                              data-ng-model="policy.dateString" required>
+                                        <span class="input-group-addon">
+                                            <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                                    </div>
+                                    <div data-ng-show="submitted || !pristineFlags.action.period_date">
+                                        <span id="error" data-ng-show="invalidFlags.action.period_date">
+                                            The date is incorrect
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="vspace"></div>
+
+      <h3 class="field">Source</h3>
+      <div data-ng-repeat="source in policy.sources | startFrom:currentSourcePage*3 | limitTo:3">
+        <div class="datasets">
+          <div class="collblock">
+            <p>Type</p>
+            <select name="srcid" id="colltype"
+              data-ng-options="id for id in id_types"
+              data-ng-change="typeSelected($index + currentSourcePage*3, 'source')"
+              data-ng-model="policy.sources[$index + currentSourcePage*3].type.name"
+              data-validate-select required>
+            </select>
+            <div data-ng-show="submitted">
+              <span id="error"
+                data-ng-show="pristineFlags.sources[$index + currentSourcePage*3].location_type">
+                The type is required
+              </span>
+            </div>
+          </div>
+
+          <div id="collection" data-ng-show="showSrcPID[$index + currentSourcePage*3]">
+            <div class="pidblock">
+              <p>Identifier</p>
+              <input type="text" name="srccoll" id="identifier"
+                data-ng-model="policy.sources[$index + currentSourcePage*3].identifier.name"
+                data-ng-minlength="3"
+                data-ng-change="changeColl($index+currentSourcePage*3, 'source', 'collection')"
+                required/>
+                <div data-ng-show="submitted">
+                  <span id="error"
+                    data-ng-show="invalidFlags.sources[$index + currentSourcePage*3].coll">
+                    The identifier is required
+                  </span>
+                </div>
+            </div>
+          </div>
+
+          <div id="policy" data-ng-show="showSrcPolicy[$index + currentSourcePage*3]">
+            <div class="policyblock">
+              <p>Policy identifier</p>
+              <select name="srcpolicy" class="policy"
+                data-ng-options="p.name for p in src_policies[$index + currentSourcePage*3]"
+                data-ng-model="policy.policy_action_id"
+                data-ng-change="updateSrcPolicy($index + currentSourcePage*3, 'srcpolicy')"
+                data-validate-select required>
+                  <option name="policy.policy_action_id.name" value="">
+                    {{policy.policy_action_id.name}}
+                  </option>
+              </select>
+              <div data-ng-show="submitted">
+                <span id="error"
+                  data-ng-show="pristineFlags.identifiers[$index + currentSourcePage*3].name">
+                  Policy is required
+                </span>
+              </div>
+              <div class="hostblock" data-ng-show="showSrcPolColl">
+                <p>Hostname</p>
+                <input name="srchost" type="text" id="srchost"
+                  data-ng-change="changeHost($index + currentSourcePage*3, 'source', 'pid')"
+                  data-ng-model="policy.sources[$index + currentSourcePage*3].hostname.name" readonly="readonly"/>
+              </div>
+              <div class="pidblock" data-ng-show="showSrcPolPid">
+                  <p>Identifier</p>
+                  <input name="srcpid" type="text" id="identifier"
+                    data-ng-change="changeColl($index+currentSourcePage*3, 'source', 'pid')"
+                    data-ng-model="policy.sources[$index + currentSourcePage*3].identifier.name" readonly="readonly"/>
+              </div>
+            </div>
+          </div>
+
+          <div id="srcColl" data-ng-show="showSrcColl[$index + currentSourcePage*3]">
+            <div class="hostblock">
+              <p>Hostname</p>
+              <select name="srcsite" class="host"
+                data-ng-options="s.name for s in src_sites"
+                data-ng-model="policy.sources[$index + currentSourcePage*3].hostname"
+                data-ng-change="updateCollection($index + currentSourcePage*3, 'source')"
+                data-validate-select required>
+                <option name="policy.sources[$index +currentSourcePage*3].hostname.name" value="">
+                  {{policy.sources[$index + currentSourcePage*3].hostname.name}}
+                </option>
+              </select>
+
+              <div data-ng-show="submitted">
+                <span id="error"
+                  data-ng-show="pristineFlags.sources[$index + currentSourcePage*3].site">
+                  Hostname is required
+                </span>
+              </div>
+            </div>
+
+            <div class="pidblock">
+              <p>Identifier</p>
+              <input name="srcpid" type="text" id="identifier"
+              data-ng-change="changeColl($index+currentSourcePage*3, 'source', 'pid')"
+              data-ng-model="policy.sources[$index + currentSourcePage*3].identifier.name" />
+
+              <div data-ng-show="submitted">
+                <span id="error"
+                  data-ng-show="invalidFlags.sources[$index + currentSourcePage*3].pid || pristineFlags.sources[$index + currentSourcePage*3].pid">
+                  The identifier is required
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="removeSource" data-ng-show="policy.sources.length > 1">
+            <button id="removeSource" data-ng-click="removeSource(policy.sources, $index + currentSourcePage*3)">
+                Remove
             </button>
         </div>
+      </div>
+        
+      <br>
+      <div id="addMoreSource" data-ng-show="showAddSources">
+        <button id="previouspage" data-ng-disabled="currentSourcePage == 0"
+          data-ng-click="currentSourcePage=currentSourcePage-1">
+          Previous
+        </button>
+        {{currentSourcePage+1}}/{{numberOfSourcePages()}}
+        <button id="nextpage" data-ng-click="currentSourcePage=currentSourcePage+1"
+          data-ng-disabled="currentSourcePage >= (policy.sources.length -1)/3">
+          Next
+        </button>
+        <button id="addmore" data-ng-click="addMoreSources()">
+          Add more sources
+        </button>
+      </div>
 
-        <div id="tperiod" data-ng-show="showPeriod(policy.trigger.name)">
-            Day of Week: <select id="period"
-            data-ng-options="p.name for p in period.weekday"
-            data-ng-change="changePeriod()"
-            data-ng-model="policy.trigger_period.weekday">
-                <option name="policy.trigger_period.weekday.name"
-                    value="">{{policy.trigger_period.weekday.name}}
-                </option>
-            </select>
-            Month: <select id="period"
-                data-ng-options="p.name for p in period.month"
-                data-ng-change="changePeriod()"
-                data-ng-model="policy.trigger_period.month">
-                <option name="policy.trigger_period.month.name"
-                    value="">{{policy.trigger_period.month.name}}
-                </option>
-            </select>
-            Day of Month: <select data-ng-options="p.name for p in period.day"
-                    data-ng-change="changePeriod()"
-                    id="period" data-ng-model="policy.trigger_period.day">
-                <option name="policy.trigger_period.day.name"
-                    value="">{{policy.trigger_period.day.name}}
-                </option>
-            </select>
-            Hour: <select data-ng-options="p.name for p in period.hour"
-                    data-ng-change="changePeriod()"
-                    id="period" data-ng-model="policy.trigger_period.hour">
-                <option name="policy.trigger_period.hour.name"
-                    value="">{{policy.trigger_period.hour.name}}
-                </option>
-            </select>
-            Minute: <select data-ng-options="p.name for p in period.minute"
-                    data-ng-change="changePeriod()"
-                    id="period"
-                    data-ng-model="policy.trigger_period.minute">
-                <option name="policy.trigger_period.minute.name"
-                    value="">{{policy.trigger_period.minute.name}}
-                </option>
-            </select>
+      <h3 class="field">Target</h3>
+      <div data-ng-repeat="target in policy.targets | startFrom:currentTargetPage*3 | limitTo:3">
+          <div class="datasets">
+            <div class="collblock">
+              <p>Type</p>
+              <select name="tgtid" id="colltype"
+                data-ng-options="id for id in tgt_id_types"
+                data-ng-change="typeSelected($index + currentTargetPage*3, 'target')"
+                data-ng-model="policy.targets[$index + currentTargetPage*3].type.name"
+                data-validate-select required>
+              </select>
+              <div data-ng-show="submitted">
+                <span id="error"
+                  data-ng-show="pristineFlags.targets[$index + currentTargetPage*3].location_type">
+                  The type is required
+                </span>
+              </div>
+            </div>
+
+            <div id="collection" data-ng-show="showTgtPID[$index + currentTargetPage*3]">
+              <div class="pidblock">
+                <p>Identifier</p>
+                <input type="text" name="tgtcoll" id="identifier"
+                  data-ng-model="policy.targets[$index + currentTargetPage*3].identifier.name"
+                  data-ng-minlength="3"
+                  data-ng-change="changeColl($index+currentTargetPage*3, 'target', 'collection')"
+                  required/>
+                <div data-ng-show="submitted">
+                  <span id="error"
+                    data-ng-show="invalidFlags.targets[$index + currentTargetPage*3].coll">
+                    The identifier is required
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div id="tgtColl" data-ng-show="showTgtColl[$index + currentTargetPage*3]">
+              <div class="hostblock">
+                <p>Hostname</p>
+                <select name="tgtsite" class="host"
+                  data-ng-options="t.name for t in tgt_sites"
+                  data-ng-model="policy.targets[$index + currentTargetPage*3].hostname"
+                  data-ng-change="updateCollection($index + currentTargetPage*3, 'target')"
+                  data-validate-select required>
+                  <option name="policy.targets[$index +currentTargetPage*3].hostname.name" value="">
+                    {{policy.targets[$index + currentTargetPage*3].hostname.name}}
+                  </option>
+                </select>
+
+                <div data-ng-show="submitted">
+                  <span id="error"
+                    data-ng-show="pristineFlags.targets[$index + currentTargetPage*3].site">
+                    Hostname is required
+                  </span>
+                </div>
+              </div>
+
+              <div class="pidblock">
+                <p>Identifier</p>
+                <input name="tgtpid" data-ng-change="changeColl($index+currentTargetPage*3, 'target', 'pid')"
+                  type="text" id="identifier" data-ng-model="policy.targets[$index + currentTargetPage*3].identifier.name" />
+
+                <div data-ng-show="submitted">
+                  <span id="error"
+                    data-ng-show="invalidFlags.targets[$index + currentTargetPage*3].pid || pristineFlags.targets[$index + currentTargetPage*3].pid">
+                    The identifier is required
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <div id="removeTarget" data-ng-show="policy.targets.length > 1">
+              <button id="removeTarget" data-ng-click="removeTarget(policy.targets, $index + currentTargetPage*3)">
+                  Remove
+              </button>
+          </div>
         </div>
-        <br/>
-        <p>Target Organisation</p>
-        <select data-ng-model="policy.target.organisation.name"
-            data-ng-change="organisationChange()"
-            data-ng-options="orgt for orgt in orgList">
-        </select>
-        <p>Target System</p>
-        <select data-ng-model="policy.target.system.name"
-            data-ng-change="systemChange()"
-            data-ng-options="tsys for tsys in sysList">
-        </select>
-        <p>Target Site</p>
-        <select data-ng-model="policy.target.site.name"
-            data-ng-change="siteChange()"
-            data-ng-options="tsite for tsite in siteList">
-        </select>
-        <p>Target Resource</p>
-        <select data-ng-model="policy.target.resource.name"
-            data-ng-change="resourceChange()"
-            data-ng-options="tres for tres in resList">
-        </select>
-        <p>Target Path</p>
-        <input type="text" data-ng-change="pathChange()"
-            data-ng-model="policy.target.path"><br/>
-        <div id="modbutton" class="modbutton">
-            <button id="backbtn" data-ng-click="backToList()">
+
+          <br>
+          <div id="addMoreTarget" data-ng-show="showAddTargets"> 
+            <button id="previouspage" data-ng-disabled="currentPage == 0"
+                data-ng-click="currentTargetPage=currentTargetPage-1">
+                Previous
+            </button>
+            {{currentTargetPage+1}}/{{numberOfTargetPages()}}
+            <button id="nextpage" data-ng-click="currentTargetPage=currentTargetPage+1"
+                data-ng-disabled="currentTargetPage >= (policy.targets.length -1)/3">
+                Next
+            </button>
+            <button id="addmore" data-ng-click="addMoreTargets()">
+                Add more targets
+            </button>
+          </div>
+ 
+        
+        <button id="backbtn" data-ng-click="backToList()">
                 Back to List Policies
             </button>
             <button id="submitbtn" data-ng-click="updatePolicy()">

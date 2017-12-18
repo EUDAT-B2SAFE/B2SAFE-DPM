@@ -1,7 +1,7 @@
 <data-ng-form name="datasetactions">
     <div id="policydetails">
       <fieldset>
-        <h3 class="field">Actions</h3>
+        <h3 class="field">Action</h3>
         <div class="stepblock">
           <p>Step</p>
           <select name="type" data-ng-options="ty.name for ty in actionTypes"
@@ -101,16 +101,16 @@
           </div>
         </div>
       </fieldset>
-
-      <h3 class="field">Sources</h3>
-      <div data-ng-repeat="source in policy.sources | startFrom:currentPage*3 | limitTo:3">
+      <br/>
+      <h3 class="field">Source</h3>
+      <div data-ng-repeat="source in policy.sources | startFrom:currentSourcePage*3 | limitTo:3">
         <div class="datasets">
           <div class="collblock">
             <p>Type</p>
             <select name="srcid" id="colltype"
               data-ng-options="id.name for id in identifier_types"
-              data-ng-change="typeSelected($index + currentPage*3, 'source')"
-              data-ng-model="policy.sources[$index + currentPage*3].type"
+              data-ng-change="typeSelected($index + currentSourcePage*3, 'source')"
+              data-ng-model="policy.sources[$index + currentSourcePage*3].type"
               data-validate-select required>
               <option value="">
                 --- Select ---
@@ -118,36 +118,36 @@
             </select>
             <div data-ng-show="submitted">
               <span id="error"
-                data-ng-show="pristineFlags.sources[$index + currentPage*3].location_type">
+                data-ng-show="pristineFlags.sources[$index + currentSourcePage*3].location_type">
                 The type is required
               </span>
             </div>
           </div>
 
-          <div id="collection" data-ng-show="showSrcPID[$index + currentPage*3]">
+          <div id="collection" data-ng-show="showSrcPID[$index + currentSourcePage*3]">
             <div class="pidblock">
               <p>Identifier</p>
               <input type="text" name="srccoll" id="identifier"
-                data-ng-model="policy.sources[$index + currentPage*3].identifier.name"
+                data-ng-model="policy.sources[$index + currentSourcePage*3].identifier.name"
                 data-ng-minlength="3"
-                data-ng-change="changeColl($index+currentPage*3, 'source', 'collection')"
+                data-ng-change="changeColl($index+currentSourcePage*3, 'source', 'collection')"
                 required/>
                 <div data-ng-show="submitted">
                   <span id="error"
-                    data-ng-show="invalidFlags.sources[$index + currentPage*3].coll">
+                    data-ng-show="invalidFlags.sources[$index + currentSourcePage*3].coll">
                     The identifier is required
                   </span>
                 </div>
             </div>
           </div>
 
-          <div id="policy" data-ng-show="showSrcPolicy[$index + currentPage*3]">
+          <div id="policy" data-ng-show="showSrcPolicy[$index + currentSourcePage*3]">
             <div class="policyblock">
               <p>Policy identifier</p>
               <select name="srcpolicy" class="policy"
-                data-ng-options="p.name for p in src_policies[$index + currentPage*3]"
+                data-ng-options="p.name for p in src_policies[$index + currentSourcePage*3]"
                 data-ng-model="policy.policy_action_id"
-                data-ng-change="updateSrcPolicy($index + currentPage*3, 'srcpolicy')"
+                data-ng-change="updateSrcPolicy($index + currentSourcePage*3, 'srcpolicy')"
                 data-validate-select required>
                   <option name="policy.policy_action_id.name" value="">
                     {{policy.policy_action_id.name}}
@@ -155,41 +155,41 @@
               </select>
               <div data-ng-show="submitted">
                 <span id="error"
-                  data-ng-show="pristineFlags.identifiers[$index + currentPage*3].name">
+                  data-ng-show="pristineFlags.identifiers[$index + currentSourcePage*3].name">
                   Policy is required
                 </span>
               </div>
               <div class="hostblock" data-ng-show="showSrcPolColl">
                 <p>Hostname</p>
                 <input name="srchost" type="text" id="srchost"
-                  data-ng-change="changeHost($index + currentPage*3, 'source', 'pid')"
-                  data-ng-model="policy.sources[$index + currentPage*3].hostname.name" readonly="readonly"/>
+                  data-ng-change="changeHost($index + currentSourcePage*3, 'source', 'pid')"
+                  data-ng-model="policy.sources[$index + currentSourcePage*3].hostname.name" readonly="readonly"/>
               </div>
               <div class="pidblock" data-ng-show="showSrcPolPid">
                   <p>Identifier</p>
                   <input name="srcpid" type="text" id="identifier"
-                    data-ng-change="changeColl($index+currentPage*3, 'source', 'pid')"
-                    data-ng-model="policy.sources[$index + currentPage*3].identifier.name" readonly="readonly"/>
+                    data-ng-change="changeColl($index+currentSourcePage*3, 'source', 'pid')"
+                    data-ng-model="policy.sources[$index + currentSourcePage*3].identifier.name" readonly="readonly"/>
               </div>
             </div>
           </div>
 
-          <div id="srcColl" data-ng-show="showSrcColl[$index + currentPage*3]">
+          <div id="srcColl" data-ng-show="showSrcColl[$index + currentSourcePage*3]">
             <div class="hostblock">
               <p>Hostname</p>
               <select name="srcsite" class="host"
                 data-ng-options="s.name for s in src_sites"
-                data-ng-model="policy.sources[$index + currentPage*3].hostname"
-                data-ng-change="updateCollection($index + currentPage*3, 'source')"
+                data-ng-model="policy.sources[$index + currentSourcePage*3].hostname"
+                data-ng-change="updateCollection($index + currentSourcePage*3, 'source')"
                 data-validate-select required>
-                <option name="policy.sources[$index +currentPage*3].hostname.name" value="">
-                  {{policy.sources[$index + currentPage*3].hostname.name}}
+                <option name="policy.sources[$index +currentSourcePage*3].hostname.name" value="">
+                  {{policy.sources[$index + currentSourcePage*3].hostname.name}}
                 </option>
               </select>
 
               <div data-ng-show="submitted">
                 <span id="error"
-                  data-ng-show="pristineFlags.sources[$index + currentPage*3].site">
+                  data-ng-show="pristineFlags.sources[$index + currentSourcePage*3].site">
                   Hostname is required
                 </span>
               </div>
@@ -198,43 +198,49 @@
             <div class="pidblock">
               <p>Identifier</p>
               <input name="srcpid" type="text" id="identifier"
-              data-ng-change="changeColl($index+currentPage*3, 'source', 'pid')"
-              data-ng-model="policy.sources[$index + currentPage*3].identifier.name" />
+              data-ng-change="changeColl($index+currentSourcePage*3, 'source', 'pid')"
+              data-ng-model="policy.sources[$index + currentSourcePage*3].identifier.name" />
 
               <div data-ng-show="submitted">
                 <span id="error"
-                  data-ng-show="invalidFlags.sources[$index + currentPage*3].pid || pristineFlags.sources[$index + currentPage*3].pid">
+                  data-ng-show="invalidFlags.sources[$index + currentSourcePage*3].pid || pristineFlags.sources[$index + currentSourcePage*3].pid">
                   The identifier is required
                 </span>
               </div>
             </div>
           </div>
         </div>
-        <br>
-        <!--
-        <button id="previouspage" data-ng-disabled="currentPage == 0"
-          data-ng-click="currentPage=currentPage-1">
+        <div id="removeSource" data-ng-show="policy.sources.length > 1">
+            <button id="removeSource" data-ng-click="removeSource(policy.sources, $index + currentSourcePage*3)">
+                Remove
+            </button>
+        </div>
+      </div>
+        
+      <br>
+      <div id="addMoreSource" data-ng-show="showAddSources">
+        <button id="previouspage" data-ng-disabled="currentSourcePage == 0"
+          data-ng-click="currentSourcePage=currentSourcePage-1">
           Previous
         </button>
-        {{currentPage+1}}/{{numberOfPages()}}
-        <button id="nextpage" data-ng-click="currentPage=currentPage+1"
-          data-ng-disabled="currentPage >= (policy.sources.length -1)/3">
+        {{currentSourcePage+1}}/{{numberOfSourcePages()}}
+        <button id="nextpage" data-ng-click="currentSourcePage=currentSourcePage+1"
+          data-ng-disabled="currentSourcePage >= (policy.sources.length -1)/3">
           Next
         </button>
-        <button id="addmore" data-ng-click="addMore()">
-          Add More
+        <button id="addmore" data-ng-click="addMoreSources()">
+          Add more sources
         </button>
-      -->
-
-        <h3 class="field">Targets</h3>
-        <div data-ng-repeat="target in policy.targets | startFrom:currentPage*3 | limitTo:3">
+      </div>
+      <h3 class="field">Targets</h3>
+      <div data-ng-repeat="target in policy.targets | startFrom:currentTargetPage*3 | limitTo:3">
           <div class="datasets">
             <div class="collblock">
               <p>Type</p>
               <select name="tgtid" id="colltype"
                 data-ng-options="id.name for id in target_identifier_types"
-                data-ng-change="typeSelected($index + currentPage*3, 'target')"
-                data-ng-model="policy.targets[$index + currentPage*3].type"
+                data-ng-change="typeSelected($index + currentTargetPage*3, 'target')"
+                data-ng-model="policy.targets[$index + currentTargetPage*3].type"
                 data-validate-select required>
                 <option value="">
                   --- Select ---
@@ -242,45 +248,45 @@
               </select>
               <div data-ng-show="submitted">
                 <span id="error"
-                  data-ng-show="pristineFlags.targets[$index + currentPage*3].location_type">
+                  data-ng-show="pristineFlags.targets[$index + currentTargetPage*3].location_type">
                   The type is required
                 </span>
               </div>
             </div>
 
-            <div id="collection" data-ng-show="showTgtPID[$index + currentPage*3]">
+            <div id="collection" data-ng-show="showTgtPID[$index + currentTargetPage*3]">
               <div class="pidblock">
                 <p>Identifier</p>
                 <input type="text" name="tgtcoll" id="identifier"
-                  data-ng-model="policy.targets[$index + currentPage*3].identifier.name"
+                  data-ng-model="policy.targets[$index + currentTargetPage*3].identifier.name"
                   data-ng-minlength="3"
-                  data-ng-change="changeColl($index+currentPage*3, 'target', 'collection')"
+                  data-ng-change="changeColl($index+currentTargetPage*3, 'target', 'collection')"
                   required/>
                 <div data-ng-show="submitted">
                   <span id="error"
-                    data-ng-show="invalidFlags.targets[$index + currentPage*3].coll">
+                    data-ng-show="invalidFlags.targets[$index + currentTargetPage*3].coll">
                     The identifier is required
                   </span>
                 </div>
               </div>
             </div>
 
-            <div id="tgtColl" data-ng-show="showTgtColl[$index + currentPage*3]">
+            <div id="tgtColl" data-ng-show="showTgtColl[$index + currentTargetPage*3]">
               <div class="hostblock">
                 <p>Hostname</p>
                 <select name="tgtsite" class="host"
                   data-ng-options="t.name for t in tgt_sites"
-                  data-ng-model="policy.targets[$index + currentPage*3].hostname"
-                  data-ng-change="updateCollection($index + currentPage*3, 'target')"
+                  data-ng-model="policy.targets[$index + currentTargetPage*3].hostname"
+                  data-ng-change="updateCollection($index + currentTargetPage*3, 'target')"
                   data-validate-select required>
-                  <option name="policy.targets[$index +currentPage*3].hostname.name" value="">
-                    {{policy.targets[$index + currentPage*3].hostname.name}}
+                  <option name="policy.targets[$index +currentTargetPage*3].hostname.name" value="">
+                    {{policy.targets[$index + currentTargetPage*3].hostname.name}}
                   </option>
                 </select>
 
                 <div data-ng-show="submitted">
                   <span id="error"
-                    data-ng-show="pristineFlags.targets[$index + currentPage*3].site">
+                    data-ng-show="pristineFlags.targets[$index + currentTargetPage*3].site">
                     Hostname is required
                   </span>
                 </div>
@@ -288,12 +294,12 @@
 
               <div class="pidblock">
                 <p>Identifier</p>
-                <input name="tgtpid" data-ng-change="changeColl($index+currentPage*3, 'target', 'pid')"
-                  type="text" id="identifier" data-ng-model="policy.targets[$index + currentPage*3].identifier.name" />
+                <input name="tgtpid" data-ng-change="changeColl($index+currentTargetPage*3, 'target', 'pid')"
+                  type="text" id="identifier" data-ng-model="policy.targets[$index + currentTargetPage*3].identifier.name" />
 
                 <div data-ng-show="submitted">
                   <span id="error"
-                    data-ng-show="invalidFlags.targets[$index + currentPage*3].pid || pristineFlags.targets[$index + currentPage*3].pid">
+                    data-ng-show="invalidFlags.targets[$index + currentTargetPage*3].pid || pristineFlags.targets[$index + currentTargetPage*3].pid">
                     The identifier is required
                   </span>
                 </div>
@@ -301,21 +307,27 @@
 
             </div>
           </div>
-          <br>
-          <!--
-          <button id="previouspage" data-ng-disabled="currentPage == 0"
-            data-ng-click="currentPage=currentPage-1">
-            Previous
-          </button>
-          {{currentPage+1}}/{{numberOfPages()}}
-          <button id="nextpage" data-ng-click="currentPage=currentPage+1"
-            data-ng-disabled="currentPage >= (policy.targets.length -1)/3">
-            Next
-          </button>
-          <button id="addmore" data-ng-click="addMore()">
-            Add More
-          </button>
-        -->
+          <div id="removeTarget" data-ng-show="policy.targets.length > 1">
+              <button id="removeTarget" data-ng-click="removeTarget(policy.targets, $index + currentTargetPage*3)">
+                  Remove
+              </button>
+          </div>
         </div>
+
+          <br>
+          <div id="addMoreTarget" data-ng-show="showAddTargets">
+            <button id="previouspage" data-ng-disabled="currentPage == 0"
+                data-ng-click="currentTargetPage=currentTargetPage-1">
+                Previous
+            </button>
+            {{currentTargetPage+1}}/{{numberOfTargetPages()}}
+            <button id="nextpage" data-ng-click="currentTargetPage=currentTargetPage+1"
+                data-ng-disabled="currentTargetPage >= (policy.targets.length -1)/3">
+                Next
+            </button>
+            <button id="addmore" data-ng-click="addMoreTargets()">
+                Add more targets
+            </button>
+          </div>
       </div>
 </data-ng-form>

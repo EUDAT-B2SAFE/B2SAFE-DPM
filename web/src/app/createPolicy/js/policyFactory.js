@@ -37,7 +37,7 @@ var policy = function() {
     });
 
     var policyObj = {name: '', id: '',
-        version: '1.0', uuid: '', author: '', community: '',
+        version: '1', uuid: '', author: '', community: '',
         type: type,
         trigger: trigger,
         trigger_period: trigger_period,
