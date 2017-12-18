@@ -1,3 +1,10 @@
+18/12/2017 - v1.2.0
+
+- the web UI supports multiple targets and sources,
+- added monitoring probe for th web UI, nagios compatible,
+- various bug fixes,
+- added management scripts to keep synchronized the various tables of th back-end DB.
+
 10/10/2016 - v1.1.0 beta
 
 - the web UI offers the possibility 
