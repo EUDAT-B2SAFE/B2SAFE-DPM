@@ -13,7 +13,7 @@ script to point to your email server.
 
 1. Download the baseX XML database server (http://basex.org) and follow the
 instructions to install and run the server. NOTE: although the baseX server
-is populated by the DPM direct access to the DPM is needed for clients wishing to
+is populated by the DPM direct access to the baseX database is needed for clients wishing to
 query or download policies.
 
 2. Make sure the python packages passlib  and virtualenv installed:
@@ -29,8 +29,7 @@ pip install virtualenv
 This will prompt you for the following paths:
 
 * Base URI for the CGI scripts.
-* Base PATH for the CGI scripts (this is the directory in which the scripts live).
-* Root URI for the REST API used by client tools.
+* Base PATH for the CGI scripts (this is the directory in which the cgi scripts live).
 * Base URI for the BaseX XML database.
 * Username and password for access to the BaseX database.
 * Authentication method - currently EUDAT AAI is supported and a STANDALONE method.
@@ -44,10 +43,9 @@ the AAI persistent identifier for the administrator.
 
 You can supply the input parameters via config file using the '-c' option (see
 the 'Config File Schema' section for the structure of the file). The script
-will create the python virtual environment for the REST API, the databases for
-the DPM and assemble the web pages.
+will create the databases for the DPM and assemble the web pages and cgi scripts.
 
-5. Once script has completed you will need to copy the 'html', 'cgi'
+5. Once the script has completed you will need to copy the 'html', 'cgi'
 directories under the 'deploy' directory to those that map to the corresponding
 URI. NOTE: the wsgi directory does not need to be copied. This directory and its
 contents will be removed from future releases.
@@ -57,7 +55,7 @@ the webserver to allow the web server to populate the policy database.
 
 ## Using the DPM
 You can use the web interface to create a policy for replication (currently the
-only supported policy). A description of how to create a policy can be found on
+only supported policy on the client-side). A description of how to create a policy can be found on
 the wiki: https://github.com/EUDAT-B2SAFE/B2SAFE-DPM/wiki/Quick-start:-definition-of-a-specific-data-policy
 
 
@@ -98,7 +96,9 @@ parameters in a config file. The structure of the file should follow:
     [DEFAULT]
     CGI_URL=<root url to the cgi scripts>
     CGI_PATH=<root path to the cgi scripts>
-    CLI_URL=<root url to the cgi scripts that provide the command line interface>
+    XML_URL=<url to the baseX XML database>
+    XML_USER=<baseX username that has admin access to the databases>
+    XML_PASS=<password for the baseX user>
     ADMIN_USER=<the username or AAI persistent identifier for the admin user>
     ADMIN_NAME=<the firstname lastname of the admin user>
     ADMIN_EMAIL=<the email address of the admin user>
