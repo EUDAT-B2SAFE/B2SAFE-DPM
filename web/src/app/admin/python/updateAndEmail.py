@@ -5,18 +5,19 @@ import ConfigParser
 import sqlite3
 import json
 import smtplib
+from email.Utils import formatdate
 
 def sendEmail(config, dataVals):
     '''Function to construct and send the email to the user
     '''
-    sender = "noreply@usit.uio.no"
+    sender = config.get("EMAIL", "from")
     receivers = [dataVals["email"]]
     msg = file(config.get("EMAIL", "header"), 'r').read()
-    msg = msg % (dataVals["email"], dataVals["e_subject"])
+    msg = msg % (config.get("EMAIL", "from"), config.get("EMAIL", "reply_to"), formatdate(localtime=1), dataVals["email"], dataVals["e_subject"])
     msg = msg + dataVals["e_body"]
 
     try:
-        smtpObj = smtplib.SMTP(config.get("EMAIL", "server"))
+        smtpObj = smtplib.SMTP(config.get("EMAIL", "server"),config.get("EMAIL", "serverport"))
         smtpObj.sendmail(sender, receivers, msg)
         print "msgSent"
     except smtplib.SMTPException:

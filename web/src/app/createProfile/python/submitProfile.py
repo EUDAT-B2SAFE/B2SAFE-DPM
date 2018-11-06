@@ -8,6 +8,7 @@ import json
 import csv
 import smtplib
 import passlib.apps
+from email.Utils import formatdate
 
 def getAdmin(config):
     '''Function to load the DPM admin users
@@ -40,11 +41,13 @@ def submitRequest(config):
         print "Exiting"
         sys.exit(1)
 
-    smtpObj = smtplib.SMTP(config.get("EMAIL", "server"))
+    smtpObj = smtplib.SMTP(config.get("EMAIL", "server"),config.get("EMAIL", "serverport"))
 
-    email_from = 'noreply@dmpadmin.localhost'
+    email_from = config.get("EMAIL", "from")
     email_msg = "From: %s \n" % email_from + "To: %s \n" + \
-            "Subject: Request for Access to the Data Policy Manager \n" +\
+            "Reply-To: %s \n" % config.get("EMAIL", "reply_to") + \
+            "Date: %s \n" % formatdate(localtime=1) + \
+            "Subject: Request for Access to the Data Policy Manager \n\n" +\
             "User '%s' (request id %s) has requested '%s' access to " +\
             "the Data Policy Manager for the community '%s'.\n"
 
@@ -147,7 +150,7 @@ def submitRequest(config):
                     if (admin["email"] not in emails):
                         emails.append(admin["email"])
                 admin_email = ",".join(emails)
-                email_from = emails
+            #    email_from = emails
 
             msg = email_msg % (admin_email, dataVals["username"].strip(),
                     next_user_comm, dataVals["role"], comm["name"])

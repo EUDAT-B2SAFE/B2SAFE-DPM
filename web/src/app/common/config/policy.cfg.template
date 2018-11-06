@@ -84,6 +84,9 @@ close_body=${CGI_PATH}/config/close_body.txt
 close_subject=${CGI_PATH}/config/close_subject.txt
 header=${CGI_PATH}/config/header.txt
 server=localhost
+serverport=25
+from=noreply@domain
+reply_to=dpm-admin@domain
 
 [DPM_ADMIN]
 admin_file=${CGI_PATH}/config/dpm_admin.txt
