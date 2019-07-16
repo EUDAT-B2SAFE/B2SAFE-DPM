@@ -10,6 +10,7 @@ from crontab import CronTab
 import os
 import time
 import json
+import ExecuteRule
 
 
 class PolicyRunner:
@@ -121,9 +122,10 @@ class PolicyRunner:
             else:
                 cronJob_iter = self.crontab.find_comment(jobId)
                 if sum(1 for _ in cronJob_iter) == 0:
-                    cmd = ('export clientUserName=' + author + '; '
-                          + self.iruleCmd + ' -F ' + rulePath + ' > ' 
-                          + resultPath)
+                    cmdPath = os.path.join(os.path.dirname(os.realpath(__file__)),
+                                           "ExecuteRule.py")
+                    cmd = cmdPath + " " + rulePath + " " + author + " > " \
+                          + resultPath
                     cronJob = self.crontab.new(command=cmd, comment=jobId)
                     self.logger.debug('time trigger: ' + action.trigger)
                     cronJob.setall((action.trigger).split())
@@ -146,19 +148,14 @@ class PolicyRunner:
         """
         self.logger.info('Executing command: '+self.iruleCmd+' -F '+rulePath)
         if not self.test:
-            d = dict(os.environ)
-            d['clientUserName'] = author
-            proc = subprocess.Popen([self.iruleCmd+' -F '+rulePath], env=d,
-                                    stdout=subprocess.PIPE, shell=True)
-            output, err = proc.communicate()
-            rc = proc.poll()
-            if rc:
-                self.logger.debug("ret=%s", rc)
+            status, output = ExecuteRule.run(rulePath=rulePath, author=author)	
+            if status:
+                self.logger.debug("ret=%s", status)
                 self.logger.debug("msg=%s", output)
                 self.logger.info('Command executed')
         else:
-            print ('[Test mode] executing command: ' + self.iruleCmd + ' -F ' 
-                  + rulePath)
+            print ('[Test mode] executing: ExecuteRule.run(rulePath=' 
+		   + rulePath + 'author=' + author + ')')
             output = ("{'policyId':'', 'result':'', "
                                     + "'response':'Skipped in test mode'}")
             self.logger.info('Skipped in test mode')

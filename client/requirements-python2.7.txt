@@ -1,0 +1,14 @@
+certifi==2019.3.9
+chardet==3.0.4
+idna==2.8
+lxml==4.3.3
+pkg-resources==0.0.0
+prettytable==0.7.2
+python-crontab==2.3.6
+python-dateutil==2.8.0
+python-irodsclient==0.8.1
+requests==2.21.0
+six==1.12.0
+urllib3==1.24.3
+xmlrunner==1.7.7
+xmltodict==0.12.0
