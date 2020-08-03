@@ -1,0 +1,16 @@
+certifi==2020.6.20
+chardet==3.0.4
+greenlet==0.4.16
+idna==2.10
+lxml==4.5.2
+msgpack==1.0.0
+parso==0.7.1
+prettytable==0.7.2
+python-crontab==2.5.1
+python-dateutil==2.8.1
+python-irodsclient==0.8.3
+requests==2.24.0
+six==1.15.0
+urllib3==1.25.10
+xmlrunner==1.7.7
+xmltodict==0.12.0
