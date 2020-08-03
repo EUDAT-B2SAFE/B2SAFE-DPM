@@ -1,7 +1,7 @@
 behave==1.2.5
 enum34==1.1.2
 passlib==1.6.5
-Flask==0.10.1
+Flask==1.0
 Flask-HTTPAuth==3.1.0
 itsdangerous==0.24
 Jinja2==2.8
