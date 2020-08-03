@@ -1,14 +1,14 @@
 __author__ = 'Willem Elbers (MPI-TLA) <willem.elbers@mpi.nl> \
               Claudio Cacciari (Cineca) <c.cacciari@cineca.it>'
 
-import ConfigParser
+import configparser
 
 class ConfigLoader():
 
     def __init__(self, config_file):
 
         self.config_file = config_file
-        self.config = ConfigParser.ConfigParser()
+        self.config = configparser.configparser()
         self.config.read(self.config_file)
 
     def SectionMap(self, section):

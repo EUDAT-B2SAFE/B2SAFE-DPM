@@ -76,7 +76,7 @@ class PolicyRunner:
                     if self.shouldRuleBeRun(action, rulePath):
                         jobId = policyId + '_' + str(a_id) + '_' + str(c_id) + '_' + str(t_id)
                         self.createAndRunRule(policyId, action, source, target, author, rulePath, jobId)
-        return None  
+        return None
 
 
     def shouldRuleBeRun(self, action, rulePath):
@@ -110,7 +110,7 @@ class PolicyRunner:
         if action.triggerType == 'runonce':
             self.logger.info('Executing the rule just one time')
             if self.test:
-                print '[Test mode] Executing the rule just one time'
+                print('[Test mode] Executing the rule just one time')
             result = self.executeRule(author, rulePath)
             resultJson = json.loads(result.strip().replace("'",'"'))
             with open(resultPath, 'w') as outfile:
@@ -118,7 +118,7 @@ class PolicyRunner:
         elif action.triggerType == 'time':
             self.logger.info('Scheduling the rule execution via system crontab')
             if self.test:
-                print '[Test mode] Scheduling the execution via system crontab'
+                print('[Test mode] Scheduling the execution via system crontab')
             else:
                 cronJob_iter = self.crontab.find_comment(jobId)
                 if sum(1 for _ in cronJob_iter) == 0:
@@ -137,8 +137,8 @@ class PolicyRunner:
         else:
             self.logger.error('Unkown trigger type [%s]', action.triggerType)
             if self.test:
-                print 'ERROR: unkown trigger type [{}]'.format(
-                                                        action.triggerType)
+                print('ERROR: unkown trigger type [{}]'.format(
+                                                        action.triggerType))
 
 
     def executeRule(self, author, rulePath):
@@ -148,13 +148,13 @@ class PolicyRunner:
         """
         self.logger.info('Executing command: '+self.iruleCmd+' -F '+rulePath)
         if not self.test:
-            status, output = ExecuteRule.run(rulePath=rulePath, author=author)	
+            status, output = ExecuteRule.run(rulePath=rulePath, author=author)
             if status:
                 self.logger.debug("ret=%s", status)
                 self.logger.debug("msg=%s", output)
                 self.logger.info('Command executed')
         else:
-            print ('[Test mode] executing: ExecuteRule.run(rulePath=' 
+            print ('[Test mode] executing: ExecuteRule.run(rulePath='
 		   + rulePath + 'author=' + author + ')')
             output = ("{'policyId':'', 'result':'', "
                                     + "'response':'Skipped in test mode'}")
@@ -171,7 +171,7 @@ class PolicyRunner:
 
         if source.type == 'eudat pid' or source.type == 'pid':
             f.write('\t*pidValue = "{}";\n'.format(source.value))
-            # expected a sourceNode of type 
+            # expected a sourceNode of type
             # irods://130.186.13.115:1247/cinecaDMPZone2/home/claudio/coll_C
             f.write('\tEUDATeURLsearch(*pidValue, *url);\n')
             f.write('\tmsiSubstr("*url", "8", "-1", *remaining);\n')

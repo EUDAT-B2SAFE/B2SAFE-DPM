@@ -182,7 +182,7 @@ def cleanRules(policyId, logger, test):
         try:
             os.remove(path)
             logger.debug('File removed')
-        except OSError, e:
+        except OSError as e:
             logger.exception('Impossible to remove the file')
     logger.info('Rules removed')
     for path in resFiles:
@@ -190,7 +190,7 @@ def cleanRules(policyId, logger, test):
         try:
             os.remove(path)
             logger.debug('File removed')
-        except OSError, e:
+        except OSError as e:
             logger.exception('Impossible to remove the file')
     logger.info('Outputs removed')
 
@@ -215,7 +215,7 @@ def runPolicy(policy, usermap, test, loggerName, debug):
     runner = PolicyRunner(usermap, test, loggerName, debug)
     errMsg = runner.runPolicy(policy)
     if errMsg is not None:
-        print 'ERROR: ' + errMsg
+        print('ERROR: ' + errMsg)
         exit(1)
 
 
@@ -261,7 +261,7 @@ def queryDpm(args, config):
                 # parse the policy and validate against schema
                 errMsg = pParser.parseFromUrl(url, policySchemaDoc, conn)
             if errMsg is not None:
-                print 'ERROR: ' + errMsg
+                print('ERROR: ' + errMsg)
                 exit(1)            
             if pParser.policy is not None:
                 # load user mapping
@@ -310,7 +310,7 @@ def updatePolicyStatus(args):
                           ).format(policyId, response)
                 else:
                     logger.info('policy id not found')
-                    print 'Policy with id {} not found'.format(policyId)
+                    print('Policy with id {} not found'.format(policyId))
 
 
 def getPolicyStatus(id, debug):
@@ -380,20 +380,20 @@ def statusManagement(suspended, rejected, show, policyId, debug, logger, conn):
     if show:
         logger.debug('Just showing the status')
         # show the status
-        print 'Policy id: ' + policyId
-        print 'Policy status: ' + state + '\n'
+        print('Policy id: ' + policyId)
+        print('Policy status: ' + state + '\n')
     else:
         # update the status doc on the DB
 #TODO manage the message of explanation associated to suspended/rejected states,
 #     adding a further option to the function updateStatus
         if rejected is not None:
             rej = ' '.join(rejected)
-            print "reason: " + rej
+            print("reason: " + rej)
             logger.debug('Updating the status to REJECTED')
             response = conn.updateStatus(policyId, 'REJECTED', rej)
         elif suspended is not None:
             sus = ' '.join(suspended)
-            print "reason: " + sus
+            print("reason: " + sus)
             logger.debug('Updating the status to SUSPENDED')
             response = conn.updateStatus(policyId, 'SUSPENDED', sus)
         else:
@@ -425,7 +425,7 @@ def getInfoPolicies(args, mylogger=None):
     if args.subcmd == 'list' and args.id:
         logger.debug('Policy with id [{}] is downloaded'.format(args.id))
         polDict, polDoc = conn.getPolicy(args.id)
-        print polDoc
+        print(polDoc)
         return None
     attributes = {}
     # loading the default from config
@@ -441,7 +441,7 @@ def getInfoPolicies(args, mylogger=None):
             try:
                 key, value = pair.split(':')
             except:
-                print 'wrong value [{}] as a filter'.format(str(pair))
+                print('wrong value [{}] as a filter'.format(str(pair)))
                 sys.exit(1)
             attributes[key] = value
     # filter policies according to input time interval
@@ -462,7 +462,7 @@ def getInfoPolicies(args, mylogger=None):
     # listing of the policies matching the criteria of the dict "attributes"
     if policies is not None:
         for url in policies:
-            print url
+            print(url)
             community_name = (url.rsplit('/', 2)[-2]).split('_',2)[2]
             if args.subcmd == 'list'and args.ext:
                 # listing policies with extended attributes
@@ -470,40 +470,40 @@ def getInfoPolicies(args, mylogger=None):
                 pol = xmltodict.parse(xmldoc, process_namespaces=True)
                 for key in pol[polNs+':policy']:
                     if isinstance(key, basestring) and key.startswith('@'):
-                        print '{} = {}'.format(key[1:], 
-                                               pol[polNs+':policy'][key])
+                        print('{} = {}'.format(key[1:], 
+                                               pol[polNs+':policy'][key]))
                 # get the status doc from the DB
                 dbname = None
                 if args.all:
                     dbname = st_pre + community_name
                 status, doc = conn.getStatus(pol[polNs+':policy']['@uniqueid'], dbname)
                 if status is None:
-                    print 'status = '
-                    print 'checksum = '
+                    print('status = ')
+                    print('checksum = ')
                 else:
                     st = status[staNs+':policy'][staNs+':status']
                     if args.all:
-                        print 'overall status = {}'.format(st[staNs+':overall'])
+                        print('overall status = {}'.format(st[staNs+':overall']))
                         if (st[staNs+':details'] is not None
                             and st[staNs+':details'][staNs+':site'] is not None):
                             if isinstance(st[staNs+':details'][staNs+':site'], list):
                                 for line in st[staNs+':details'][staNs+':site']:
-                                    print '{: ^4}status[{}] = {}'.format('', 
+                                    print('{: ^4}status[{}] = {}'.format('', 
                                                                   line['@name'],
-                                                                  line['#text'])
+                                                                  line['#text']))
                             else:
-                                print '{: ^4}status[{}] = {}'.format('',
+                                print('{: ^4}status[{}] = {}'.format('',
                                    st[staNs+':details'][staNs+':site']['@name'],
-                                   st[staNs+':details'][staNs+':site']['#text'])
+                                   st[staNs+':details'][staNs+':site']['#text']))
                     else:
-                        print 'status = {}'.format(
+                        print('status = {}'.format(
                             status[staNs+':policy'][staNs+':status']
-                                                   [staNs+':overall'])
-                    print 'checksum = {}'.format(
-                          status[staNs+':policy'][staNs+':checksum']['#text'])
-            print '{: ^40}'.format('')
+                                                   [staNs+':overall']))
+                    print('checksum = {}'.format(
+                          status[staNs+':policy'][staNs+':checksum']['#text']))
+            print('{: ^40}'.format(''))
     else:
-        print 'Nothing found'
+        print('Nothing found')
     
     return policies
 
@@ -604,7 +604,7 @@ def main():
 
     args = argp.parse_args()
     if args.subcmd == 'list' and args.id and (args.ext or args.filter):
-        print "-i and -e|-f are mutually exclusive ..."
+        print("-i and -e|-f are mutually exclusive ...")
         sys.exit(2)
     args.func(args)
 
