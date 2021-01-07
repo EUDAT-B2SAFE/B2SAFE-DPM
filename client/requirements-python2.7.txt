@@ -1,7 +1,7 @@
 certifi==2019.3.9
 chardet==3.0.4
 idna==2.8
-lxml==4.3.3
+lxml==4.6.2
 pkg-resources==0.0.0
 prettytable==0.7.2
 python-crontab==2.3.6
